@@ -1,0 +1,49 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: autoservicio_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    container_name: autoservicio_api
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      # URL de la app: rol dedicado sin superuser para que RLS aplique
+      DATABASE_URL: "postgresql://${POSTGRES_APP_USER}:${POSTGRES_APP_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public"
+      # URL de administración: rol superuser para migraciones, RLS y seed
+      MIGRATE_DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    command: sh -c "DATABASE_URL=$$MIGRATE_DATABASE_URL npx prisma db push --accept-data-loss && npx prisma db execute --url \"$$MIGRATE_DATABASE_URL\" --file prisma/rls.sql && DATABASE_URL=$$MIGRATE_DATABASE_URL npx prisma db seed && npm run start:dev"
+
+  frontend:
+    build: ./frontend
+    container_name: autoservicio_web
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://backend:3000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev -- --host 0.0.0.0
+
+volumes:
+  pgdata:

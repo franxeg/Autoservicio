@@ -1,0 +1,318 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Rol {
+  ADMIN
+  GERENTE
+  CAJERO
+  REPOSITOR
+  SETUP
+}
+
+enum EstadoVenta {
+  PENDIENTE
+  COMPLETADA
+  CANCELADA
+}
+
+enum TipoMovimientoCaja {
+  APERTURA
+  VENTA
+  COMPRA
+  GASTO
+  RETIRO
+  CIERRE
+}
+
+model Empresa {
+  id        String   @id @default(cuid())
+  nombre    String
+  cuit      String?  @unique
+  activa    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sucursales     Sucursal[]
+  usuarios       Usuario[]
+  categorias     Categoria[]
+  productos      Producto[]
+  stocks         Stock[]
+  proveedores    Proveedor[]
+  clientes       Cliente[]
+  ventas         Venta[]
+  compras        Compra[]
+  cajas          Caja[]
+  detallesVenta  DetalleVenta[]
+  detallesCompra DetalleCompra[]
+  movimientosCaja MovimientoCaja[]
+}
+
+model Sucursal {
+  id        String   @id @default(cuid())
+  nombre    String
+  direccion String?
+  telefono  String?
+  activa    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+
+  usuarios  Usuario[]
+  productos Stock[]
+  ventas    Venta[]
+  compras   Compra[]
+  cajas     Caja[]
+  clientes  Cliente[]
+
+  @@index([empresaId])
+}
+
+model Usuario {
+  id         String   @id @default(cuid())
+  username   String?  @unique
+  email      String?  @unique
+  password   String
+  nombre     String
+  rol        Rol      @default(CAJERO)
+  activo     Boolean  @default(true)
+  sucursalId String?
+  sucursal   Sucursal? @relation(fields: [sucursalId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+
+  ventas Venta[]
+  cajas  Caja[]
+
+  @@index([empresaId])
+}
+
+model Categoria {
+  id          String     @id @default(cuid())
+  nombre      String
+  descripcion String?
+  productos   Producto[]
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+
+  @@unique([empresaId, nombre])
+  @@index([empresaId])
+}
+
+model Producto {
+  id           String   @id @default(cuid())
+  codigoBarras String?
+  codigoInterno String?
+  nombre       String
+  descripcion  String?
+  categoriaId  String?
+  categoria    Categoria? @relation(fields: [categoriaId], references: [id])
+  precioCosto  Float
+  precioVenta  Float
+  margen       Float?
+  iva          Float    @default(21)
+  activo       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+
+  stocks        Stock[]
+  detalleVentas DetalleVenta[]
+  detalleCompras DetalleCompra[]
+
+  @@unique([empresaId, codigoBarras])
+  @@unique([empresaId, codigoInterno])
+  @@index([empresaId])
+}
+
+model Stock {
+  id         String   @id @default(cuid())
+  productoId String
+  producto   Producto @relation(fields: [productoId], references: [id])
+  sucursalId String
+  sucursal   Sucursal @relation(fields: [sucursalId], references: [id])
+  cantidad   Float    @default(0)
+  stockMinimo Float   @default(5)
+  updatedAt  DateTime @updatedAt
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+
+  @@unique([productoId, sucursalId])
+  @@index([sucursalId])
+  @@index([empresaId])
+}
+
+model Proveedor {
+  id        String   @id @default(cuid())
+  nombre    String
+  cuit      String?
+  telefono  String?
+  email     String?
+  direccion String?
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+
+  compras Compra[]
+
+  @@unique([empresaId, cuit])
+  @@index([empresaId])
+}
+
+model Cliente {
+  id        String   @id @default(cuid())
+  nombre    String
+  dni       String?
+  telefono  String?
+  email     String?
+  direccion String?
+  saldoCuenta Float @default(0) // cuenta corriente
+  sucursalId String?
+  sucursal   Sucursal? @relation(fields: [sucursalId], references: [id])
+  createdAt DateTime @default(now())
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+
+  ventas Venta[]
+
+  @@unique([empresaId, dni])
+  @@index([empresaId])
+}
+
+model Venta {
+  id         String      @id @default(cuid())
+  nroComprobante Int    @unique @default(autoincrement())
+  fecha      DateTime    @default(now())
+  total      Float
+  descuento  Float       @default(0)
+  estado     EstadoVenta @default(COMPLETADA)
+  metodoPago String      @default("EFECTIVO") // EFECTIVO, TARJETA, TRANSFERENCIA, CUENTA_CORRIENTE
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+
+  sucursalId String
+  sucursal   Sucursal @relation(fields: [sucursalId], references: [id])
+
+  clienteId String?
+  cliente   Cliente? @relation(fields: [clienteId], references: [id])
+
+  usuarioId String?
+  usuario   Usuario? @relation(fields: [usuarioId], references: [id])
+
+  detalles DetalleVenta[]
+  cajaId   String?
+  caja     Caja? @relation(fields: [cajaId], references: [id])
+
+  @@index([empresaId, sucursalId, fecha])
+}
+
+model DetalleVenta {
+  id         String  @id @default(cuid())
+  ventaId    String
+  venta      Venta   @relation(fields: [ventaId], references: [id], onDelete: Cascade)
+  productoId String
+  producto   Producto @relation(fields: [productoId], references: [id])
+  cantidad   Float
+  precioUnitario Float
+  subtotal   Float
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+
+  @@index([productoId])
+  @@index([empresaId])
+}
+
+model Compra {
+  id         String   @id @default(cuid())
+  fecha      DateTime @default(now())
+  total      Float
+  nroFactura String?
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+
+  sucursalId String
+  sucursal   Sucursal @relation(fields: [sucursalId], references: [id])
+
+  proveedorId String?
+  proveedor   Proveedor? @relation(fields: [proveedorId], references: [id])
+
+  detalles DetalleCompra[]
+
+  @@index([empresaId, sucursalId])
+}
+
+model DetalleCompra {
+  id         String  @id @default(cuid())
+  compraId   String
+  compra     Compra  @relation(fields: [compraId], references: [id], onDelete: Cascade)
+  productoId String
+  producto   Producto @relation(fields: [productoId], references: [id])
+  cantidad   Float
+  precioCosto Float
+  subtotal   Float
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+
+  @@index([empresaId])
+}
+
+model Caja {
+  id         String   @id @default(cuid())
+  fechaApertura DateTime @default(now())
+  fechaCierre   DateTime?
+  montoInicial  Float
+  montoInicialVirtual Float @default(0)
+  montoFinal    Float?
+  montoFinalVirtual Float?
+  estado     String   @default("ABIERTA") // ABIERTA, CERRADA
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+
+  sucursalId String
+  sucursal   Sucursal @relation(fields: [sucursalId], references: [id])
+
+  usuarioId String
+  usuario   Usuario @relation(fields: [usuarioId], references: [id])
+
+  ventas Venta[]
+  movimientos MovimientoCaja[]
+
+  @@index([empresaId, sucursalId, estado])
+}
+
+model MovimientoCaja {
+  id        String @id @default(cuid())
+  cajaId    String
+  caja      Caja @relation(fields: [cajaId], references: [id], onDelete: Cascade)
+  tipo      TipoMovimientoCaja
+  monto     Float
+  descripcion String?
+  createdAt DateTime @default(now())
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+
+  @@index([empresaId])
+}
