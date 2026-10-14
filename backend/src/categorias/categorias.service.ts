@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCategoriaDto } from './dto/create-categoria.dto';
 
@@ -24,12 +24,14 @@ export class CategoriasService {
   }
 
   async update(id: string, dto: CreateCategoriaDto) {
-    await this.findOne(id);
+    const cat = await this.findOne(id);
+    if (cat.esSistema) throw new BadRequestException('No se puede modificar una categoría del sistema');
     return this.prisma.tenant.categoria.update({ where: { id }, data: dto });
   }
 
   async remove(id: string) {
-    await this.findOne(id);
+    const cat = await this.findOne(id);
+    if (cat.esSistema) throw new BadRequestException('No se puede eliminar una categoría del sistema');
     return this.prisma.tenant.categoria.delete({ where: { id } });
   }
 }

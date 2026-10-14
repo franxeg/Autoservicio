@@ -122,6 +122,7 @@ model Categoria {
   id          String     @id @default(cuid())
   nombre      String
   descripcion String?
+  esSistema   Boolean    @default(false) // categorías del sistema (ej. "Elaborados"): no se renombran ni borran
   productos   Producto[]
 
   empresaId String

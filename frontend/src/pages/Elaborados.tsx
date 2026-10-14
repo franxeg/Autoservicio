@@ -91,8 +91,6 @@ export default function Elaborados({ sucursalId }: { sucursalId: string }) {
     try {
       await api.put(`/productos/${edit.id}/receta`, {
         items: items.map(it => ({ insumoId: it.insumoId, cantidad: redondear(parseFloat(it.cantidad) || 0), merma: parseFloat(it.merma) || 0 })),
-        porcentajeVenta: parseFloat(pctVenta) || 0,
-        porcentajeCrecimiento: parseFloat(pctCrec) || 0,
       }, { params: { sucursalId } });
       setMsg('Receta guardada y precios recalculados');
       await fetchElaborados();
@@ -123,7 +121,7 @@ export default function Elaborados({ sucursalId }: { sucursalId: string }) {
       {error && <div style={{ background: '#fee2e2', color: '#b91c1c', padding: 10, borderRadius: 6, marginBottom: 12 }}>{error}</div>}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ background: '#eff6ff', color: '#1d4ed8', padding: 10, borderRadius: 6, fontSize: 14, flex: 1, marginRight: 12 }}>
-          Los elaborados no tienen costo propio: se calcula con los insumos de su receta. Si sube el costo de un insumo, el precio se recalcula solo al confirmar la compra.
+          Los elaborados pertenecen a la categoría <b>Elaborados</b> y no tienen costo propio: se calcula con los insumos de su receta. Si cambia el costo de un insumo (por compra o edición), el precio del elaborado se recalcula solo.
         </div>
         <button onClick={() => setShowNuevo(true)} style={{ padding: '10px 16px', background: '#059669', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}>+ Nuevo elaborado</button>
       </div>
@@ -208,9 +206,10 @@ export default function Elaborados({ sucursalId }: { sucursalId: string }) {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginTop: 12, alignItems: 'end' }}>
               <label style={{ fontSize: 14 }}>Costo (calculado)<div style={{ fontWeight: 'bold', fontSize: 20, padding: '6px 0' }}>${costoRedondeado}</div></label>
-              <label style={{ fontSize: 14 }}>% Venta<input type="number" min="0" step="any" value={pctVenta} onChange={e => setPctVenta(e.target.value)} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db', boxSizing: 'border-box' }} /></label>
-              <label style={{ fontSize: 14 }}>% Crecimiento<input type="number" min="0" step="any" value={pctCrec} onChange={e => setPctCrec(e.target.value)} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db', boxSizing: 'border-box' }} /></label>
+              <label style={{ fontSize: 14 }}>% Venta<div style={{ fontSize: 18, padding: '6px 0' }}>{pctVenta}%</div></label>
+              <label style={{ fontSize: 14 }}>% Crecimiento<div style={{ fontSize: 18, padding: '6px 0' }}>{pctCrec}%</div></label>
             </div>
+            <small style={{ color: '#6b7280' }}>El % de venta y crecimiento quedan fijos desde el alta del elaborado.</small>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, padding: '10px 12px', background: '#f3f4f6', borderRadius: 6, border: '1px solid #e5e7eb' }}>
               <span style={{ fontSize: 14, color: '#374151' }}>Precio de venta (calculado)</span>
               <strong style={{ fontSize: 22 }}>${ventaPreview}</strong>

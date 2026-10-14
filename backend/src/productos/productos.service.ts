@@ -54,13 +54,45 @@ export class ProductosService {
     return Math.round(costo * (1 + (pctVenta ?? 30) / 100) * (1 + (pctCrec ?? 10) / 100));
   }
 
+  private static readonly CATEGORIA_ELABORADOS = 'Elaborados';
+
+  // Devuelve el id de la categoría de sistema "Elaborados", creándola si hace falta
+  private async categoriaElaborados(empresaId: string): Promise<string> {
+    const nombre = ProductosService.CATEGORIA_ELABORADOS;
+    const cat = await this.prisma.tenant.categoria.findFirst({ where: { empresaId, nombre } });
+    if (cat) {
+      if (!cat.esSistema) await this.prisma.tenant.categoria.update({ where: { id: cat.id }, data: { esSistema: true } });
+      return cat.id;
+    }
+    const creada = await this.prisma.tenant.categoria.upsert({
+      where: { empresaId_nombre: { empresaId, nombre } },
+      update: { esSistema: true },
+      create: { empresaId, nombre, esSistema: true, descripcion: 'Productos elaborados (recetas). Categoría del sistema.' },
+    });
+    return creada.id;
+  }
+
+  // El nombre no puede repetirse dentro de la empresa (sin distinguir mayúsculas/minúsculas)
+  private async validarNombreUnico(empresaId: string, nombre: string, exceptoId?: string) {
+    const limpio = nombre.trim();
+    const dup = await this.prisma.tenant.producto.findFirst({
+      where: { empresaId, nombre: { equals: limpio, mode: 'insensitive' }, ...(exceptoId ? { NOT: { id: exceptoId } } : {}) },
+    });
+    if (dup) throw new ConflictException(`Ya existe un producto con el nombre "${limpio}"`);
+  }
+
   async create(dto: CreateProductoDto) {
     const empresaId = this.prisma.empresaId!;
     if (dto.codigoBarras) {
       const exists = await this.prisma.tenant.producto.findFirst({ where: { empresaId, codigoBarras: dto.codigoBarras } });
       if (exists) throw new ConflictException('Código de barras ya existe');
     }
+    const nombre = dto.nombre.trim();
+    await this.validarNombreUnico(empresaId, nombre);
     const { stockInicial, sucursalId, stockMinimo, ...data } = dto;
+    data.nombre = nombre;
+    // Los elaborados pertenecen siempre a la categoría de sistema "Elaborados"
+    if (dto.esElaborado) data.categoriaId = await this.categoriaElaborados(empresaId);
     const precioCosto = Math.round(dto.precioCosto ?? 0);
     const porcentajeVenta = dto.porcentajeVenta ?? 30;
     const porcentajeCrecimiento = dto.porcentajeCrecimiento ?? 10;
@@ -95,11 +127,26 @@ export class ProductosService {
 
   async update(id: string, dto: UpdateProductoDto) {
     const actual = await this.findOne(id);
+    const empresaId = this.prisma.empresaId!;
     if (dto.codigoBarras) {
-      const exists = await this.prisma.tenant.producto.findFirst({ where: { empresaId: this.prisma.empresaId!, codigoBarras: dto.codigoBarras, NOT: { id } } });
+      const exists = await this.prisma.tenant.producto.findFirst({ where: { empresaId, codigoBarras: dto.codigoBarras, NOT: { id } } });
       if (exists) throw new ConflictException('Código de barras ya existe en otro producto');
     }
     const { stockInicial, sucursalId, stockMinimo, ...data } = dto;
+    if (data.nombre !== undefined) {
+      data.nombre = data.nombre.trim();
+      await this.validarNombreUnico(empresaId, data.nombre, id);
+    }
+    // Los elaborados se manejan por receta/producción/venta: no se editan a mano costo, %venta,
+    // %crecimiento, unidad ni stock, y su categoría queda fija en "Elaborados".
+    if (actual.esElaborado) {
+      delete data.precioCosto;
+      delete data.precioVenta;
+      delete data.porcentajeVenta;
+      delete data.porcentajeCrecimiento;
+      delete data.unidad;
+      data.categoriaId = await this.categoriaElaborados(empresaId);
+    }
     if (data.precioCosto !== undefined) data.precioCosto = Math.round(data.precioCosto);
     if (data.porcentajeVenta !== undefined) data.porcentajeVenta = Math.round(data.porcentajeVenta * 100) / 100;
     if (data.porcentajeCrecimiento !== undefined) data.porcentajeCrecimiento = Math.round(data.porcentajeCrecimiento * 100) / 100;
@@ -114,12 +161,24 @@ export class ProductosService {
     const producto = await this.prisma.tenant.producto.update({ where: { id }, data });
 
     const unidadFinal = data.unidad ?? actual.unidad;
-    if (sucursalId && stockMinimo !== undefined && unidadFinal !== 'KG') {
+    if (sucursalId && stockMinimo !== undefined && unidadFinal !== 'KG' && !actual.esElaborado) {
       await this.prisma.tenant.stock.upsert({
         where: { productoId_sucursalId: { productoId: id, sucursalId } },
         update: { stockMinimo: redondearCantidad(stockMinimo) },
         create: { productoId: id, sucursalId, cantidad: redondearCantidad(stockInicial ?? 0), stockMinimo: redondearCantidad(stockMinimo), empresaId: this.prisma.empresaId! },
       });
+    }
+
+    // Si cambió el costo o los %: recalcular este producto si es elaborado, y
+    // propagar a los elaborados que lo usan como insumo.
+    const cambioPrecios = data.precioCosto !== undefined || data.porcentajeVenta !== undefined || data.porcentajeCrecimiento !== undefined;
+    if (cambioPrecios) {
+      if (actual.esElaborado) {
+        await this.recalcularElaborado(id);
+      } else {
+        await this.recalcularPorInsumos([id]);
+      }
+      return this.prisma.tenant.producto.findUnique({ where: { id } });
     }
     return producto;
   }
@@ -254,10 +313,11 @@ export class ProductosService {
     await this.prisma.tenant.recetaItem.createMany({
       data: dto.items.map(it => ({ elaboradoId: id, insumoId: it.insumoId, cantidad: redondearCantidad(it.cantidad), merma: it.merma ?? 0, empresaId })),
     });
-    const data: any = { esElaborado: true };
-    if (dto.porcentajeVenta !== undefined) data.porcentajeVenta = dto.porcentajeVenta;
-    if (dto.porcentajeCrecimiento !== undefined) data.porcentajeCrecimiento = dto.porcentajeCrecimiento;
-    await this.prisma.tenant.producto.update({ where: { id }, data });
+    // Los % del elaborado quedan fijos (se definen al crear); acá solo se editan los insumos.
+    await this.prisma.tenant.producto.update({
+      where: { id },
+      data: { esElaborado: true, categoriaId: await this.categoriaElaborados(empresaId) },
+    });
     await this.recalcularElaborado(id);
     return this.getReceta(id, sucursalId);
   }
