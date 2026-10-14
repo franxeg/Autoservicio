@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber, IsBoolean, Min } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsBoolean, IsIn, Min } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateProductoDto {
@@ -26,15 +26,45 @@ export class CreateProductoDto {
   @IsString()
   categoriaId?: string;
 
-  @ApiProperty({ example: 2500 })
+  @ApiPropertyOptional({ example: 2500, description: 'Se asigna desde las compras' })
+  @IsOptional()
   @IsNumber()
   @Min(0)
-  precioCosto: number;
+  precioCosto?: number;
 
-  @ApiProperty({ example: 3200 })
+  @ApiPropertyOptional({ example: 3200, description: 'Ignorado: se calcula con costo + %venta + %crecimiento' })
+  @IsOptional()
   @IsNumber()
   @Min(0)
-  precioVenta: number;
+  precioVenta?: number;
+
+  @ApiPropertyOptional({ example: 30, description: '% de venta sobre el costo' })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  porcentajeVenta?: number;
+
+  @ApiPropertyOptional({ example: 10, description: '% de crecimiento sobre el precio ya marcado' })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  porcentajeCrecimiento?: number;
+
+  @ApiPropertyOptional({ example: 5, description: 'Mínimo en stock para alertas de stock crítico' })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  stockMinimo?: number;
+
+  @ApiPropertyOptional({ enum: ['UNIDAD', 'KG'], description: 'Unidad de venta; KG permite cantidades con decimales' })
+  @IsOptional()
+  @IsIn(['UNIDAD', 'KG'])
+  unidad?: 'UNIDAD' | 'KG';
+
+  @ApiPropertyOptional({ example: false, description: 'Producto elaborado (tiene receta de insumos)' })
+  @IsOptional()
+  @IsBoolean()
+  esElaborado?: boolean;
 
   @ApiPropertyOptional({ example: 21 })
   @IsOptional()

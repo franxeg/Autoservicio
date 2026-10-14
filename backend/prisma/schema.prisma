@@ -28,6 +28,20 @@ enum TipoMovimientoCaja {
   GASTO
   RETIRO
   CIERRE
+  PAGO_CUENTA
+}
+
+enum TipoMovimientoStock {
+  ENTRADA
+  SALIDA
+  AJUSTE
+  MERMA
+  PRODUCCION
+}
+
+enum UnidadVenta {
+  UNIDAD
+  KG
 }
 
 model Empresa {
@@ -48,9 +62,12 @@ model Empresa {
   ventas         Venta[]
   compras        Compra[]
   cajas          Caja[]
+  pagosClientes  PagoCliente[]
   detallesVenta  DetalleVenta[]
   detallesCompra DetalleCompra[]
   movimientosCaja MovimientoCaja[]
+  movimientosStock MovimientoStock[]
+  recetas        RecetaItem[]
 }
 
 model Sucursal {
@@ -71,6 +88,8 @@ model Sucursal {
   compras   Compra[]
   cajas     Caja[]
   clientes  Cliente[]
+  pagos     PagoCliente[]
+  movimientosStock MovimientoStock[]
 
   @@index([empresaId])
 }
@@ -93,6 +112,8 @@ model Usuario {
 
   ventas Venta[]
   cajas  Caja[]
+  pagos  PagoCliente[]
+  movimientosStock MovimientoStock[]
 
   @@index([empresaId])
 }
@@ -118,8 +139,12 @@ model Producto {
   descripcion  String?
   categoriaId  String?
   categoria    Categoria? @relation(fields: [categoriaId], references: [id])
-  precioCosto  Float
-  precioVenta  Float
+  precioCosto  Float    @default(0)
+  precioVenta  Float    @default(0)
+  porcentajeVenta      Float    @default(30)
+  porcentajeCrecimiento Float   @default(10)
+  unidad       UnidadVenta @default(UNIDAD)
+  esElaborado  Boolean  @default(false)
   margen       Float?
   iva          Float    @default(21)
   activo       Boolean  @default(true)
@@ -132,6 +157,9 @@ model Producto {
   stocks        Stock[]
   detalleVentas DetalleVenta[]
   detalleCompras DetalleCompra[]
+  movimientosStock MovimientoStock[]
+  receta        RecetaItem[] @relation("Elaborado")
+  usadoEnReceta RecetaItem[] @relation("Insumo")
 
   @@unique([empresaId, codigoBarras])
   @@unique([empresaId, codigoInterno])
@@ -156,6 +184,51 @@ model Stock {
   @@index([empresaId])
 }
 
+model MovimientoStock {
+  id           String              @id @default(cuid())
+  fecha        DateTime            @default(now())
+  tipo         TipoMovimientoStock
+  cantidad     Float // positivo = entra stock, negativo = sale
+  stockAntes   Float
+  stockDespues Float
+  costoUnitario Float              @default(0) // costo del producto al momento (para valuar la merma)
+  descripcion  String?
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+
+  productoId String
+  producto   Producto @relation(fields: [productoId], references: [id])
+
+  sucursalId String
+  sucursal   Sucursal @relation(fields: [sucursalId], references: [id])
+
+  usuarioId String?
+  usuario   Usuario? @relation(fields: [usuarioId], references: [id])
+
+  @@index([empresaId, sucursalId, fecha])
+  @@index([empresaId, productoId, fecha])
+}
+
+model RecetaItem {
+  id       String @id @default(cuid())
+  cantidad Float // en la unidad base del insumo (KG -> kg, UNIDAD -> unidades)
+  merma    Float @default(0) // % de merma del insumo (ej. 10 = se aprovecha el 90%)
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+
+  elaboradoId String
+  elaborado   Producto @relation("Elaborado", fields: [elaboradoId], references: [id], onDelete: Cascade)
+
+  insumoId String
+  insumo   Producto @relation("Insumo", fields: [insumoId], references: [id])
+
+  @@unique([elaboradoId, insumoId])
+  @@index([elaboradoId])
+  @@index([empresaId])
+}
+
 model Proveedor {
   id        String   @id @default(cuid())
   nombre    String
@@ -163,6 +236,7 @@ model Proveedor {
   telefono  String?
   email     String?
   direccion String?
+  saldoCuenta Float  @default(0) // deuda a cuenta corriente con el proveedor
   activo    Boolean  @default(true)
   createdAt DateTime @default(now())
 
@@ -191,9 +265,35 @@ model Cliente {
   empresa   Empresa @relation(fields: [empresaId], references: [id])
 
   ventas Venta[]
+  pagos   PagoCliente[]
 
   @@unique([empresaId, dni])
   @@index([empresaId])
+}
+
+model PagoCliente {
+  id         String   @id @default(cuid())
+  fecha      DateTime @default(now())
+  monto      Float
+  metodoPago String // EFECTIVO, TARJETA, TRANSFERENCIA
+  descripcion String?
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+
+  clienteId String
+  cliente   Cliente @relation(fields: [clienteId], references: [id])
+
+  sucursalId String?
+  sucursal   Sucursal? @relation(fields: [sucursalId], references: [id])
+
+  usuarioId String?
+  usuario   Usuario? @relation(fields: [usuarioId], references: [id])
+
+  cajaId String?
+  caja   Caja? @relation(fields: [cajaId], references: [id])
+
+  @@index([empresaId, clienteId, fecha])
 }
 
 model Venta {
@@ -234,6 +334,13 @@ model DetalleVenta {
   precioUnitario Float
   subtotal   Float
 
+  // Foto del precio al momento de vender (desglose: costo + %venta + %crecimiento)
+  precioCosto           Float?
+  porcentajeVenta       Float?
+  porcentajeCrecimiento Float?
+  aporteVenta           Float?
+  aporteCrecimiento     Float?
+
   empresaId String
   empresa   Empresa @relation(fields: [empresaId], references: [id])
 
@@ -246,6 +353,9 @@ model Compra {
   fecha      DateTime @default(now())
   total      Float
   nroFactura String?
+  metodoPago String   @default("EFECTIVO") // EFECTIVO, TRANSFERENCIA, TARJETA, CUENTA_CORRIENTE
+  estado     String   @default("CONFIRMADA") // BORRADOR, CONFIRMADA
+  fechaConfirmacion DateTime?
 
   empresaId String
   empresa   Empresa @relation(fields: [empresaId], references: [id])
@@ -269,6 +379,8 @@ model DetalleCompra {
   producto   Producto @relation(fields: [productoId], references: [id])
   cantidad   Float
   precioCosto Float
+  porcentajeVenta Float @default(30)
+  porcentajeCrecimiento Float @default(10)
   subtotal   Float
 
   empresaId String
@@ -297,6 +409,7 @@ model Caja {
   usuario   Usuario @relation(fields: [usuarioId], references: [id])
 
   ventas Venta[]
+  pagos   PagoCliente[]
   movimientos MovimientoCaja[]
 
   @@index([empresaId, sucursalId, estado])
@@ -308,6 +421,7 @@ model MovimientoCaja {
   caja      Caja @relation(fields: [cajaId], references: [id], onDelete: Cascade)
   tipo      TipoMovimientoCaja
   monto     Float
+  metodoPago String  @default("EFECTIVO") // EFECTIVO, TRANSFERENCIA, TARJETA
   descripcion String?
   createdAt DateTime @default(now())
 

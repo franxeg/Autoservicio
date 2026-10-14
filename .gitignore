@@ -18,6 +18,9 @@ frontend/.env
 # Prisma
 backend/prisma/migrations/
 
+# Backups
+backups/
+
 # OS
 .DS_Store
 Thumbs.db

@@ -20,6 +20,20 @@ export class ReportesController {
     return this.service.ventasPorDia(sucursalId, dias ? parseInt(dias) : 7);
   }
 
+  @Get('desglose')
+  desglose(@Query('sucursalId') sucursalId?: string, @Query('periodo') periodo?: string) {
+    return this.service.desglose(sucursalId, periodo);
+  }
+
+  @Get('movimientos')
+  movimientos(
+    @Query('sucursalId') sucursalId?: string,
+    @Query('desde') desde?: string,
+    @Query('hasta') hasta?: string,
+  ) {
+    return this.service.movimientos(sucursalId, desde, hasta);
+  }
+
   @Get('stock-critico')
   stockCritico(@Query('sucursalId') sucursalId?: string) {
     return this.service.stockCritico(sucursalId);

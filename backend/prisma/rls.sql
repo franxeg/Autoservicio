@@ -18,7 +18,7 @@ DECLARE
   t text;
   tables text[] := ARRAY[
     'Sucursal','Usuario','Categoria','Producto','Stock','Proveedor',
-    'Cliente','Venta','DetalleVenta','Compra','DetalleCompra','Caja','MovimientoCaja'
+    'Cliente','Venta','DetalleVenta','Compra','DetalleCompra','Caja','MovimientoCaja','PagoCliente'
   ];
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = app_role) THEN

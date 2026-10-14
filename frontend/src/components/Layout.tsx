@@ -37,7 +37,8 @@ export default function Layout() {
         {(isAdmin || rol === 'CAJERO') && <Link to="/pos" style={linkStyle('/pos')}>🛒 POS / Ventas</Link>}
         <Link to="/productos" style={linkStyle('/productos')}>📦 Productos</Link>
         <Link to="/stock" style={linkStyle('/stock')}>📋 Stock</Link>
-        {(isAdmin || rol === 'REPOSITOR') && <Link to="/compras" style={linkStyle('/compras')}>🚚 Compras</Link>}
+        {(isAdmin || rol === 'REPOSITOR') && <Link to="/compras" style={linkStyle('/compras')}>🚚 Compras/Gastos</Link>}
+        {isAdmin && <Link to="/movimientos" style={linkStyle('/movimientos')}>📈 Movimientos</Link>}
         {can(['ADMIN','GERENTE','CAJERO']) && <Link to="/clientes" style={linkStyle('/clientes')}>👥 Clientes</Link>}
         {(isAdmin || rol === 'REPOSITOR') && <Link to="/proveedores" style={linkStyle('/proveedores')}>🏭 Proveedores</Link>}
         {(isAdmin || rol === 'CAJERO') && <Link to="/caja" style={linkStyle('/caja')}>💰 Caja</Link>}

@@ -31,6 +31,15 @@ export default function Proveedores() {
     } catch (e: any) { setError(e.response?.data?.message || e.message); }
   };
 
+  const handleDelete = async (p: any) => {
+    if (!confirm(`¿Eliminar al proveedor "${p.nombre}"? Dejará de aparecer en el listado.`)) return;
+    setError('');
+    try {
+      await api.delete(`/proveedores/${p.id}`);
+      fetch();
+    } catch (e: any) { setError(e.response?.data?.message || e.message); }
+  };
+
   return (
     <div>
       <h2>Proveedores</h2>
@@ -60,10 +69,16 @@ export default function Proveedores() {
         </form>
       </div>
       <table style={{ width: '100%', background: 'white', borderRadius: 8, borderCollapse: 'collapse' }}>
-        <thead><tr style={{ borderBottom: '2px solid #e5e7eb', textAlign: 'left' }}><th style={{ padding: 10 }}>Nombre</th><th>CUIT</th><th>Tel</th><th>Email</th></tr></thead>
+        <thead><tr style={{ borderBottom: '2px solid #e5e7eb', textAlign: 'left' }}><th style={{ padding: 10 }}>Nombre</th><th>CUIT</th><th>Tel</th><th>Email</th><th>Saldo</th><th></th></tr></thead>
         <tbody>
-          {list.map(p => <tr key={p.id} style={{ borderBottom: '1px solid #f3f4f6' }}><td style={{ padding: 10 }}>{p.nombre}</td><td>{p.cuit || '-'}</td><td>{p.telefono || '-'}</td><td>{p.email || '-'}</td></tr>)}
-          {list.length === 0 && <tr><td colSpan={4} style={{ textAlign: 'center', padding: 20, color: '#9ca3af' }}>Sin proveedores</td></tr>}
+          {list.map(p => (
+            <tr key={p.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+              <td style={{ padding: 10 }}>{p.nombre}</td><td>{p.cuit || '-'}</td><td>{p.telefono || '-'}</td><td>{p.email || '-'}</td>
+              <td style={{ color: p.saldoCuenta > 0 ? '#dc2626' : '#059669', fontWeight: 'bold' }}>${Number(p.saldoCuenta || 0).toFixed(0)}</td>
+              <td style={{ textAlign: 'right' }}><button onClick={() => handleDelete(p)} style={{ padding: '6px 10px', background: '#fee2e2', color: '#b91c1c', border: '1px solid #fecaca', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}>Eliminar</button></td>
+            </tr>
+          ))}
+          {list.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', padding: 20, color: '#9ca3af' }}>Sin proveedores</td></tr>}
         </tbody>
       </table>
     </div>

@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateVentaDto } from './dto/create-venta.dto';
+import { redondearCantidad } from '../common/numeros';
 
 @Injectable()
 export class VentasService {
@@ -70,34 +71,49 @@ export class VentasService {
     for (const item of dto.items) {
       const producto = await tx.producto.findUnique({ where: { id: item.productoId } });
       if (!producto || !producto.activo) throw new NotFoundException(`Producto ${item.productoId} no encontrado`);
-      const precio = item.precioUnitario ?? producto.precioVenta;
-      const subtotal = precio * item.cantidad;
+      const precio = Math.round(item.precioUnitario ?? producto.precioVenta);
+      const cantidad = redondearCantidad(item.cantidad);
+      const subtotal = Math.round(precio * cantidad);
       total += subtotal;
 
-      // Verificar y descontar stock
-      const stock = await tx.stock.findUnique({
-        where: { productoId_sucursalId: { productoId: item.productoId, sucursalId: dto.sucursalId } },
-      });
-      const cantidadActual = stock?.cantidad ?? 0;
-      if (cantidadActual < item.cantidad) {
-        throw new BadRequestException(`Stock insuficiente para ${producto.nombre}. Disponible: ${cantidadActual}, solicitado: ${item.cantidad}`);
+      // Foto del precio al momento de vender: costo + %venta + %crecimiento
+      const costo = Math.round(producto.precioCosto);
+      const pctVenta = producto.porcentajeVenta ?? 30;
+      const pctCrec = producto.porcentajeCrecimiento ?? 10;
+      const aporteVenta = Math.round((costo * pctVenta) / 100);
+      const aporteCrecimiento = Math.round(((costo + aporteVenta) * pctCrec) / 100);
+
+      // Los productos por peso (KG) no usan control de stock: no se valida ni descuenta
+      if (producto.unidad !== 'KG') {
+        const stock = await tx.stock.findUnique({
+          where: { productoId_sucursalId: { productoId: item.productoId, sucursalId: dto.sucursalId } },
+        });
+        const cantidadActual = redondearCantidad(stock?.cantidad ?? 0);
+        if (cantidadActual + 0.0001 < cantidad) {
+          throw new BadRequestException(`Stock insuficiente para ${producto.nombre}. Disponible: ${cantidadActual}, solicitado: ${cantidad}`);
+        }
+        await tx.stock.upsert({
+          where: { productoId_sucursalId: { productoId: item.productoId, sucursalId: dto.sucursalId } },
+          update: { cantidad: redondearCantidad(cantidadActual - cantidad) },
+          create: { productoId: item.productoId, sucursalId: dto.sucursalId, cantidad: redondearCantidad(-cantidad), empresaId },
+        });
       }
-      await tx.stock.upsert({
-        where: { productoId_sucursalId: { productoId: item.productoId, sucursalId: dto.sucursalId } },
-        update: { cantidad: cantidadActual - item.cantidad },
-        create: { productoId: item.productoId, sucursalId: dto.sucursalId, cantidad: -item.cantidad, empresaId },
-      });
 
       detallesData.push({
         productoId: item.productoId,
-        cantidad: item.cantidad,
+        cantidad,
         precioUnitario: precio,
         subtotal,
+        precioCosto: costo,
+        porcentajeVenta: pctVenta,
+        porcentajeCrecimiento: pctCrec,
+        aporteVenta,
+        aporteCrecimiento,
         empresaId,
       });
     }
 
-    const descuento = dto.descuento ?? 0;
+    const descuento = Math.round(dto.descuento ?? 0);
     total = Math.max(0, total - descuento);
 
     const venta = await tx.venta.create({
@@ -115,10 +131,12 @@ export class VentasService {
       include: { detalles: true },
     });
 
-    // Movimiento de caja
-    await tx.movimientoCaja.create({
-      data: { cajaId: cajaId!, tipo: 'VENTA', monto: total, descripcion: `Venta #${venta.nroComprobante}`, empresaId },
-    });
+    // Movimiento de caja (cuenta corriente no entra: el cliente no paga ahora)
+    if (dto.metodoPago !== 'CUENTA_CORRIENTE') {
+      await tx.movimientoCaja.create({
+        data: { cajaId: cajaId!, tipo: 'VENTA', monto: total, descripcion: `Venta N° ${venta.nroComprobante}`, empresaId },
+      });
+    }
 
     // Si es cuenta corriente, incrementar saldo
     if (dto.metodoPago === 'CUENTA_CORRIENTE' && dto.clienteId) {
@@ -136,8 +154,9 @@ export class VentasService {
     if (venta.estado === 'CANCELADA') throw new BadRequestException('Venta ya cancelada');
     const tx = this.prisma.tenant;
 
-    // Reponer stock
+    // Reponer stock (solo productos con control de stock)
     for (const det of venta.detalles) {
+      if (det.producto?.unidad === 'KG') continue;
       const stock = await tx.stock.findUnique({
         where: { productoId_sucursalId: { productoId: det.productoId, sucursalId: venta.sucursalId } },
       });
@@ -149,9 +168,9 @@ export class VentasService {
       }
     }
     // Revertir movimiento? Crear movimiento negativo
-    if (venta.cajaId) {
+    if (venta.cajaId && venta.metodoPago !== 'CUENTA_CORRIENTE') {
       await tx.movimientoCaja.create({
-        data: { cajaId: venta.cajaId, tipo: 'GASTO', monto: venta.total, descripcion: `Cancelación venta #${venta.nroComprobante}`, empresaId: this.prisma.empresaId! },
+        data: { cajaId: venta.cajaId, tipo: 'GASTO', monto: venta.total, descripcion: `Cancelación venta N° ${venta.nroComprobante}`, empresaId: this.prisma.empresaId! },
       });
     }
     if (venta.clienteId && venta.metodoPago === 'CUENTA_CORRIENTE') {

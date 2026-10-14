@@ -6,6 +6,7 @@ import Productos from './pages/Productos';
 import Caja from './pages/Caja';
 import Proveedores from './pages/Proveedores';
 import Compras from './pages/Compras';
+import Movimientos from './pages/Movimientos';
 import Stock from './pages/Stock';
 import Clientes from './pages/Clientes';
 import Empleados from './pages/Empleados';
@@ -44,6 +45,7 @@ export default function App() {
           <Route path="productos" element={<Productos />} />
           <Route path="stock" element={<Stock />} />
           <Route path="compras" element={<Compras />} />
+          <Route path="movimientos" element={<Movimientos />} />
           <Route path="clientes" element={<Clientes />} />
           <Route path="proveedores" element={<Proveedores />} />
           <Route path="caja" element={<Caja />} />

@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber, IsArray, ValidateNested, Min } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsArray, IsBoolean, IsIn, ValidateNested, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -16,6 +16,18 @@ export class CompraItemDto {
   @IsNumber()
   @Min(0)
   precioCosto: number;
+
+  @ApiPropertyOptional({ example: 30, description: '% de venta aplicado al costo' })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  porcentajeVenta?: number;
+
+  @ApiPropertyOptional({ example: 10, description: '% de crecimiento aplicado sobre el precio con margen' })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  porcentajeCrecimiento?: number;
 }
 
 export class CreateCompraDto {
@@ -32,6 +44,16 @@ export class CreateCompraDto {
   @IsOptional()
   @IsString()
   nroFactura?: string;
+
+  @ApiPropertyOptional({ example: 'EFECTIVO', enum: ['EFECTIVO', 'TRANSFERENCIA', 'TARJETA', 'CUENTA_CORRIENTE'] })
+  @IsOptional()
+  @IsIn(['EFECTIVO', 'TRANSFERENCIA', 'TARJETA', 'CUENTA_CORRIENTE'])
+  metodoPago?: string;
+
+  @ApiPropertyOptional({ description: 'true = guarda como borrador, sin tocar stock ni caja' })
+  @IsOptional()
+  @IsBoolean()
+  borrador?: boolean;
 
   @ApiProperty({ type: [CompraItemDto] })
   @IsArray()

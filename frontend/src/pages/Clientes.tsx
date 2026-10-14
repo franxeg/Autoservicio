@@ -1,22 +1,41 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
+import { fechaCorta } from '../lib/fecha';
 
 export default function Clientes() {
   const [all, setAll] = useState<any[]>([]);
   const [list, setList] = useState<any[]>([]);
-  const [form, setForm] = useState({ nombre: '', dni: '', telefono: '', email: '', direccion: '' });
+  const [form, setForm] = useState({ nombre: '', telefono: '', direccion: '' });
   const [search, setSearch] = useState('');
   const [showSug, setShowSug] = useState(false);
   const [error, setError] = useState('');
   const [selected, setSelected] = useState<any>(null);
   const [cuenta, setCuenta] = useState<any>(null);
+  const [cajaAbierta, setCajaAbierta] = useState<any>(null);
   const [pagoMonto, setPagoMonto] = useState('');
+  const [pagoMetodo, setPagoMetodo] = useState('EFECTIVO');
+  const [pagoOk, setPagoOk] = useState('');
+
+  const METODOS_PAGO = [
+    { value: 'EFECTIVO', label: 'Efectivo' },
+    { value: 'TRANSFERENCIA', label: 'Transferencia' },
+    { value: 'TARJETA', label: 'Tarjeta' },
+  ];
+  const saldo = cuenta ? Number(cuenta.saldo) : 0;
 
   const fetch = async () => {
     const { data } = await api.get('/clientes');
     setAll(data); setList(data);
   };
   useEffect(() => { fetch(); }, []);
+
+  useEffect(() => {
+    const sucursalId = localStorage.getItem('sucursalId');
+    if (!sucursalId) { setCajaAbierta(null); return; }
+    api.get('/caja/abierta', { params: { sucursalId } })
+      .then(r => setCajaAbierta(r.data))
+      .catch(() => setCajaAbierta(null));
+  }, [selected]);
 
   useEffect(() => {
     if (!search) { setList(all); setShowSug(false); return; }
@@ -29,7 +48,7 @@ export default function Clientes() {
     e.preventDefault(); setError('');
     try {
       await api.post('/clientes', form);
-      setForm({ nombre: '', dni: '', telefono: '', email: '', direccion: '' });
+      setForm({ nombre: '', telefono: '', direccion: '' });
       fetch();
     } catch (e: any) { setError(e.response?.data?.message || e.message); }
   };
@@ -41,9 +60,16 @@ export default function Clientes() {
 
   const handlePago = async () => {
     if (!selected) return;
+    setError('');
     try {
-      await api.post(`/clientes/${selected.id}/pago`, { monto: parseFloat(pagoMonto) });
-      setPagoMonto(''); verCuenta(selected.id); fetch();
+      await api.post(`/clientes/${selected.id}/pago`, {
+        monto: Math.round(parseFloat(pagoMonto) || 0),
+        metodoPago: pagoMetodo,
+        sucursalId: localStorage.getItem('sucursalId') || undefined,
+      });
+      const nuevoSaldo = Number(selected.saldoCuenta) - Math.round(parseFloat(pagoMonto) || 0);
+      setPagoMonto(''); setPagoMetodo('EFECTIVO'); setPagoOk(`Pago registrado. Nuevo saldo: $${nuevoSaldo.toFixed(0)}`);
+      verCuenta(selected.id); fetch();
     } catch (e: any) { setError(e.response?.data?.message || e.message); }
   };
 
@@ -53,12 +79,12 @@ export default function Clientes() {
       {error && <div style={{ background: '#fee2e2', padding: 10, borderRadius: 6, marginBottom: 10, color: '#b91c1c' }}>{error}</div>}
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, position: 'relative' }}>
         <div style={{ flex: 1, position: 'relative' }}>
-          <input placeholder="Buscar por nombre o DNI... (filtra la lista)" value={search} onChange={e => setSearch(e.target.value)} onFocus={() => search && setShowSug(true)} onBlur={() => setTimeout(() => setShowSug(false), 200)} style={{ width: '100%', padding: 10, borderRadius: 6, border: '1px solid #d1d5db', boxSizing: 'border-box' }} />
+          <input placeholder="Buscar por nombre... (filtra la lista)" value={search} onChange={e => setSearch(e.target.value)} onFocus={() => search && setShowSug(true)} onBlur={() => setTimeout(() => setShowSug(false), 200)} style={{ width: '100%', padding: 10, borderRadius: 6, border: '1px solid #d1d5db', boxSizing: 'border-box' }} />
           {showSug && (
             <div style={{ position: 'absolute', top: 42, left: 0, right: 0, background: 'white', border: '1px solid #e5e7eb', borderRadius: 6, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 10 }}>
               {list.slice(0, 5).map(c => (
                 <div key={c.id} onMouseDown={() => { setSearch(c.nombre); setShowSug(false); }} style={{ padding: '8px 12px', cursor: 'pointer', borderBottom: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between' }}>
-                  <span>{c.nombre} {c.dni ? `(${c.dni})` : ''}</span><span style={{ color: c.saldoCuenta > 0 ? '#dc2626' : '#059669' }}>${Number(c.saldoCuenta).toFixed(2)}</span>
+                  <span>{c.nombre} {c.dni ? `(${c.dni})` : ''}</span><span style={{ color: c.saldoCuenta > 0 ? '#dc2626' : '#059669' }}>${Number(c.saldoCuenta).toFixed(0)}</span>
                 </div>
               ))}
             </div>
@@ -71,7 +97,7 @@ export default function Clientes() {
         <h4>Alta cliente</h4>
         <form onSubmit={handleCreate} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
           <input required placeholder="Nombre*" value={form.nombre} onChange={e => setForm({ ...form, nombre: e.target.value })} style={{ padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} />
-          <input placeholder="Teléfono" value={form.telefono} onChange={e => setForm({ ...form, telefono: e.target.value })} style={{ padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} />
+          <input placeholder="Teléfono (solo números)" inputMode="numeric" value={form.telefono} onChange={e => setForm({ ...form, telefono: e.target.value.replace(/\D/g, '') })} style={{ padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} />
           <input placeholder="Dirección" value={form.direccion} onChange={e => setForm({ ...form, direccion: e.target.value })} style={{ padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} />
           <button type="submit" style={{ padding: 10, background: '#059669', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Crear</button>
         </form>
@@ -79,12 +105,12 @@ export default function Clientes() {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 16 }}>
         <table style={{ background: 'white', borderRadius: 8, borderCollapse: 'collapse', height: 'fit-content' }}>
-          <thead><tr style={{ borderBottom: '2px solid #e5e7eb', textAlign: 'left' }}><th style={{ padding: 10 }}>Nombre</th><th>DNI</th><th>Saldo</th><th>Acción</th></tr></thead>
+          <thead><tr style={{ borderBottom: '2px solid #e5e7eb', textAlign: 'left' }}><th style={{ padding: 10 }}>Nombre</th><th>Teléfono</th><th>Saldo</th><th>Acción</th></tr></thead>
           <tbody>
             {list.map(c => (
               <tr key={c.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                <td style={{ padding: 10 }}>{c.nombre}</td><td>{c.dni || '-'}</td>
-                <td style={{ color: c.saldoCuenta > 0 ? '#dc2626' : '#059669', fontWeight: 'bold' }}>${Number(c.saldoCuenta).toFixed(2)}</td>
+                <td style={{ padding: 10 }}>{c.nombre}</td><td>{c.telefono || '-'}</td>
+                <td style={{ color: c.saldoCuenta > 0 ? '#dc2626' : '#059669', fontWeight: 'bold' }}>${Number(c.saldoCuenta).toFixed(0)}</td>
                 <td><button onClick={() => verCuenta(c.id)} style={{ padding: '6px 10px', background: '#111827', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Ver</button></td>
               </tr>
             ))}
@@ -93,29 +119,89 @@ export default function Clientes() {
         </table>
 
         <div style={{ background: 'white', padding: 16, borderRadius: 8, height: 'fit-content' }}>
-          {!selected ? <p style={{ color: '#9ca3af' }}>Seleccioná un cliente para ver cuenta corriente</p> : (
+          {!selected ? <p style={{ color: '#9ca3af' }}>Seleccioná un cliente para ver su cuenta corriente</p> : (
             <>
-              <h4>{selected.nombre} - Saldo: <span style={{ color: '#dc2626' }}>${Number(selected.saldoCuenta).toFixed(2)}</span></h4>
+              <h4 style={{ margin: 0 }}>{selected.nombre}</h4>
+              <div style={{ background: saldo > 0 ? '#fef2f2' : '#ecfdf5', border: saldo > 0 ? '1px solid #fecaca' : '1px solid #a7f3d0', padding: 12, borderRadius: 8, marginTop: 8, textAlign: 'center' }}>
+                <small style={{ color: '#6b7280' }}>Saldo a pagar</small>
+                <p style={{ fontSize: 26, fontWeight: 'bold', margin: 0, color: saldo > 0 ? '#dc2626' : '#059669' }}>${saldo.toFixed(0)}</p>
+              </div>
+
               {cuenta && (
                 <>
                   <div style={{ marginTop: 12 }}>
-                    <h5>Registrar pago</h5>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <input type="number" placeholder="Monto" value={pagoMonto} onChange={e => setPagoMonto(e.target.value)} style={{ flex: 1, padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} />
-                      <button onClick={handlePago} style={{ padding: '8px 12px', background: '#059669', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Pagar</button>
+                    <h5 style={{ marginBottom: 6 }}>Cobrar pago</h5>
+                    {!cajaAbierta && (
+                      <div style={{ background: '#fef2f2', color: '#dc2626', padding: 8, borderRadius: 6, marginBottom: 8, fontSize: 13 }}>
+                        No hay caja abierta en esta sucursal. Abrí la caja para poder cobrar.
+                      </div>
+                    )}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
+                      {METODOS_PAGO.map(({ value, label }) => (
+                        <button
+                          key={value}
+                          onClick={() => setPagoMetodo(value)}
+                          style={{
+                            padding: '10px 4px', borderRadius: 6, cursor: 'pointer', fontSize: 12,
+                            border: pagoMetodo === value ? '2px solid #111827' : '1px solid #d1d5db',
+                            background: pagoMetodo === value ? '#111827' : 'white',
+                            color: pagoMetodo === value ? 'white' : '#111827',
+                            fontWeight: pagoMetodo === value ? 'bold' : 'normal',
+                          }}
+                        >
+                          {pagoMetodo === value ? '✓ ' : ''}{label}
+                        </button>
+                      ))}
                     </div>
+                    <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                      <input type="number" min="0" step="1" placeholder="Monto" value={pagoMonto} onChange={e => setPagoMonto(e.target.value)} style={{ flex: 1, padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} />
+                      {saldo > 0 && <button onClick={() => setPagoMonto(String(saldo))} style={{ padding: '8px 10px', background: '#e5e7eb', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Total</button>}
+                      <button onClick={handlePago} disabled={!pagoMonto || parseFloat(pagoMonto) <= 0 || saldo <= 0 || !cajaAbierta} style={{ padding: '8px 12px', background: saldo > 0 && pagoMonto && cajaAbierta ? '#059669' : '#9ca3af', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Cobrar</button>
+                    </div>
+                    {pagoOk && <div style={{ background: '#ecfdf5', color: '#059669', padding: 8, borderRadius: 6, marginTop: 8 }}>{pagoOk}</div>}
                   </div>
+
                   <div style={{ marginTop: 16 }}>
-                    <h5>Ventas a cuenta ({cuenta.ventas?.length || 0})</h5>
-                    {cuenta.ventas?.length === 0 ? <small>Sin ventas</small> : (
-                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                        <thead><tr style={{ borderBottom: '1px solid #e5e7eb', textAlign: 'left' }}><th>Fecha</th><th>Total</th><th>Estado</th></tr></thead>
-                        <tbody>
-                          {cuenta.ventas.map((v: any) => (
-                            <tr key={v.id} style={{ borderBottom: '1px solid #f3f4f6' }}><td>{new Date(v.fecha).toLocaleDateString()}</td><td>${Number(v.total).toFixed(2)}</td><td>{v.estado}</td></tr>
-                          ))}
-                        </tbody>
-                      </table>
+                    <h5 style={{ margin: 0 }}>Resumen de cuenta</h5>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#6b7280', marginTop: 4 }}>
+                      <span>Deuda ({cuenta.ventas?.filter((v: any) => v.estado !== 'CANCELADA').length || 0} ventas)</span>
+                      <span>${Number(cuenta.totalDeuda || 0).toFixed(0)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#6b7280' }}>
+                      <span>Pagos ({cuenta.pagos?.length || 0})</span>
+                      <span>-${Number(cuenta.totalPagado || 0).toFixed(0)}</span>
+                    </div>
+
+                    {cuenta.ventas?.length > 0 && (
+                      <>
+                        <h6 style={{ margin: '12px 0 4px' }}>Ventas a cuenta</h6>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                          <thead><tr style={{ borderBottom: '1px solid #e5e7eb', textAlign: 'left' }}><th>Fecha</th><th>Total</th><th>Estado</th></tr></thead>
+                          <tbody>
+                            {cuenta.ventas.map((v: any) => (
+                              <tr key={v.id} style={{ borderBottom: '1px solid #f3f4f6' }}><td>{fechaCorta(v.fecha)}</td><td>${Number(v.total).toFixed(0)}</td><td>{v.estado}</td></tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </>
+                    )}
+
+                    {cuenta.pagos?.length > 0 && (
+                      <>
+                        <h6 style={{ margin: '12px 0 4px' }}>Pagos recibidos</h6>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                          <thead><tr style={{ borderBottom: '1px solid #e5e7eb', textAlign: 'left' }}><th>Fecha</th><th>Monto</th><th>Medio</th></tr></thead>
+                          <tbody>
+                            {cuenta.pagos.map((p: any) => (
+                              <tr key={p.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                                <td>{fechaCorta(p.fecha)}</td>
+                                <td style={{ color: '#059669', fontWeight: 'bold' }}>${Number(p.monto).toFixed(0)}</td>
+                                <td>{p.metodoPago}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </>
                     )}
                   </div>
                 </>

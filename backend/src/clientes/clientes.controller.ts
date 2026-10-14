@@ -3,6 +3,7 @@ import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { ClientesService } from './clientes.service';
 import { CreateClienteDto, PagoDto } from './dto/create-cliente.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @ApiTags('clientes')
 @ApiBearerAuth()
@@ -29,7 +30,9 @@ export class ClientesController {
   update(@Param('id') id: string, @Body() dto: CreateClienteDto) { return this.service.update(id, dto); }
 
   @Post(':id/pago')
-  pago(@Param('id') id: string, @Body() dto: PagoDto) { return this.service.registrarPago(id, Number(dto.monto), dto.descripcion); }
+  pago(@Param('id') id: string, @Body() dto: PagoDto, @CurrentUser() user: any) {
+    return this.service.registrarPago(id, dto, user?.id);
+  }
 
   @Delete(':id')
   remove(@Param('id') id: string) { return this.service.remove(id); }

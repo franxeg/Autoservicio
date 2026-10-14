@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { api } from '../lib/api';
 import { useAuthStore } from '../lib/store';
+import Elaborados from './Elaborados';
 
 interface Producto {
   id: string;
@@ -9,6 +10,7 @@ interface Producto {
   nombre: string;
   precioCosto: number;
   precioVenta: number;
+  unidad?: string;
   categoria?: { id: string; nombre: string };
   categoriaId?: string;
   stocks?: any[];
@@ -22,13 +24,14 @@ export default function Productos() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [showSug, setShowSug] = useState(false);
-  const [form, setForm] = useState({ codigoBarras: '', nombre: '', precioCosto: '', precioVenta: '', categoriaId: '' });
+  const [form, setForm] = useState({ codigoBarras: '', nombre: '', stockMinimo: '5', categoriaId: '', unidad: 'UNIDAD' });
   const [categorias, setCategorias] = useState<any[]>([]);
   const [error, setError] = useState('');
   const [editing, setEditing] = useState<any>(null);
-  const [editForm, setEditForm] = useState({ codigoBarras: '', nombre: '', precioCosto: '', precioVenta: '', categoriaId: '', stock: '' });
+  const [editForm, setEditForm] = useState({ codigoBarras: '', nombre: '', precioCosto: '', porcentajeVenta: '', porcentajeCrecimiento: '', categoriaId: '', stock: '', stockMinimo: '', unidad: 'UNIDAD' });
   const [newCategoria, setNewCategoria] = useState('');
   const [showCatModal, setShowCatModal] = useState(false);
+  const [vista, setVista] = useState<'productos' | 'elaborados'>('productos');
   const searchRef = useRef<HTMLInputElement>(null);
 
   const fetchProductos = async (q?: string) => {
@@ -79,43 +82,70 @@ export default function Productos() {
       await api.post('/productos', {
         codigoBarras: form.codigoBarras || undefined,
         nombre: form.nombre,
-        precioCosto: parseFloat(form.precioCosto),
-        precioVenta: parseFloat(form.precioVenta),
+        unidad: form.unidad,
+        stockMinimo: form.unidad === 'KG' ? undefined : Math.round(parseFloat(form.stockMinimo) || 5),
         categoriaId: form.categoriaId || undefined,
+        sucursalId,
       });
-      setForm({ codigoBarras: '', nombre: '', precioCosto: '', precioVenta: '', categoriaId: '' });
+      setForm({ codigoBarras: '', nombre: '', stockMinimo: '5', categoriaId: '', unidad: 'UNIDAD' });
       fetchProductos(search);
     } catch (e: any) { setError(e.response?.data?.message || e.message); }
   };
 
   const openEdit = async (p: Producto) => {
-    try {
-      const { data } = await api.get(`/productos/${p.id}`);
-      setEditing(data);
+    const pintar = (data: any) => {
       const stock = data.stocks?.find((s: any) => s.sucursalId === sucursalId)?.cantidad ?? '';
+      const minimo = data.stocks?.find((s: any) => s.sucursalId === sucursalId)?.stockMinimo ?? 5;
       setEditForm({
         codigoBarras: data.codigoBarras || '',
         nombre: data.nombre || '',
-        precioCosto: String(data.precioCosto || ''),
-        precioVenta: String(data.precioVenta || ''),
+        precioCosto: String(Math.round(data.precioCosto || 0)),
+        porcentajeVenta: String(data.porcentajeVenta ?? 30),
+        porcentajeCrecimiento: String(data.porcentajeCrecimiento ?? 10),
         categoriaId: data.categoriaId || '',
         stock: String(stock),
+        stockMinimo: String(minimo),
+        unidad: data.unidad || 'UNIDAD',
       });
-    } catch { setEditing(p); }
+    };
+    try {
+      const { data } = await api.get(`/productos/${p.id}`);
+      setEditing(data);
+      pintar(data);
+    } catch {
+      setEditing(p);
+      pintar(p);
+    }
+  };
+
+  const precioVentaPreview = () => {
+    const costo = Math.round(parseFloat(editForm.precioCosto) || 0);
+    const v = isNaN(parseFloat(editForm.porcentajeVenta)) ? 30 : parseFloat(editForm.porcentajeVenta);
+    const c = isNaN(parseFloat(editForm.porcentajeCrecimiento)) ? 10 : parseFloat(editForm.porcentajeCrecimiento);
+    return Math.round(costo * (1 + v / 100) * (1 + c / 100));
   };
 
   const handleUpdate = async () => {
     if (!editing) return;
+    const pesable = editForm.unidad === 'KG';
+    const parseCant = (v: string) => pesable ? Math.round((parseFloat(v) || 0) * 1000) / 1000 : Math.round(parseFloat(v) || 0);
     try {
       await api.patch(`/productos/${editing.id}`, {
         codigoBarras: editForm.codigoBarras || undefined,
         nombre: editForm.nombre,
-        precioCosto: parseFloat(editForm.precioCosto),
-        precioVenta: parseFloat(editForm.precioVenta),
+        unidad: editForm.unidad,
+        precioCosto: Math.round(parseFloat(editForm.precioCosto) || 0),
+        porcentajeVenta: isNaN(parseFloat(editForm.porcentajeVenta)) ? undefined : parseFloat(editForm.porcentajeVenta),
+        porcentajeCrecimiento: isNaN(parseFloat(editForm.porcentajeCrecimiento)) ? undefined : parseFloat(editForm.porcentajeCrecimiento),
         categoriaId: editForm.categoriaId || undefined,
       });
-      if (editForm.stock !== '') {
-        await api.patch(`/productos/${editing.id}/stock`, { sucursalId, cantidad: parseFloat(editForm.stock) });
+      if (editForm.unidad !== 'KG' && (editForm.stock !== '' || editForm.stockMinimo !== '')) {
+        const actual = editing.stocks?.find((s: any) => s.sucursalId === sucursalId)?.cantidad ?? 0;
+        await api.patch(`/productos/${editing.id}/stock`, {
+          sucursalId,
+          cantidad: editForm.stock !== '' ? parseCant(editForm.stock) : actual,
+          stockMinimo: editForm.stockMinimo !== '' ? parseCant(editForm.stockMinimo) : 5,
+        });
       }
       setEditing(null);
       fetchProductos(search);
@@ -132,9 +162,27 @@ export default function Productos() {
     } catch (e: any) { setError(e.response?.data?.message || e.message); }
   };
 
+  const tabs = (
+    <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+      <button onClick={() => setVista('productos')} style={{ padding: '8px 16px', borderRadius: 6, cursor: 'pointer', fontWeight: 600, border: vista === 'productos' ? '2px solid #111827' : '1px solid #d1d5db', background: vista === 'productos' ? '#111827' : 'white', color: vista === 'productos' ? 'white' : '#111827' }}>Productos</button>
+      <button onClick={() => setVista('elaborados')} style={{ padding: '8px 16px', borderRadius: 6, cursor: 'pointer', fontWeight: 600, border: vista === 'elaborados' ? '2px solid #111827' : '1px solid #d1d5db', background: vista === 'elaborados' ? '#111827' : 'white', color: vista === 'elaborados' ? 'white' : '#111827' }}>Elaborados</button>
+    </div>
+  );
+
+  if (vista === 'elaborados') {
+    return (
+      <div>
+        <h2>Productos</h2>
+        {tabs}
+        <Elaborados sucursalId={sucursalId} />
+      </div>
+    );
+  }
+
   return (
     <div>
       <h2>Productos</h2>
+      {tabs}
       {error && <div style={{ background: '#fee2e2', color: '#b91c1c', padding: 10, borderRadius: 6, marginBottom: 12 }}>{error}</div>}
 
       <form onSubmit={handleSearch} style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
@@ -145,12 +193,12 @@ export default function Productos() {
 
       <div style={{ background: 'white', padding: 16, borderRadius: 8, marginBottom: 20 }}>
         <h4>Alta rápida (con lector: código en Código barras)</h4>
-        <form onSubmit={handleCreate} style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr 1fr 1fr 1fr auto', gap: 8, alignItems: 'end' }}>
+        <form onSubmit={handleCreate} style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr 1fr 0.8fr 0.7fr auto', gap: 8, alignItems: 'end' }}>
           <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>Código barras<input value={form.codigoBarras} onChange={e => setForm({ ...form, codigoBarras: e.target.value })} placeholder="779..." style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
           <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>Nombre*<input required value={form.nombre} onChange={e => setForm({ ...form, nombre: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
           <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>Categoría<div style={{ display: 'flex', gap: 4, alignItems: 'center' }}><select value={form.categoriaId} onChange={e => setForm({ ...form, categoriaId: e.target.value })} style={{ flex: 1, padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }}><option value="">Sin categoría</option>{categorias.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}</select><button type="button" onClick={() => setShowCatModal(true)} style={{ padding: '8px 10px', background: '#111827', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14 }} title="Gestionar categorías">＋</button></div></label>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>Costo*<input required type="number" step="0.01" value={form.precioCosto} onChange={e => setForm({ ...form, precioCosto: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>Venta*<input required type="number" step="0.01" value={form.precioVenta} onChange={e => setForm({ ...form, precioVenta: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>Unidad<select value={form.unidad} onChange={e => setForm({ ...form, unidad: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }}><option value="UNIDAD">Unidad</option><option value="KG">Peso</option></select></label>
+          {form.unidad !== 'KG' && <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>Mínimo stock<input type="number" min="0" step="any" value={form.stockMinimo} onChange={e => setForm({ ...form, stockMinimo: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>}
           <button type="submit" style={{ padding: '10px 16px', background: '#059669', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', height: 38, alignSelf: 'end' }}>Crear</button>
         </form>
       </div>
@@ -160,12 +208,12 @@ export default function Productos() {
           <thead><tr style={{ borderBottom: '2px solid #e5e7eb', textAlign: 'left' }}><th style={{ padding: 10 }}>Código</th><th>Nombre</th><th>Categoría</th><th>Costo</th><th>Venta</th><th>Stock</th></tr></thead>
           <tbody>
             {filtered.map(p => {
-              const stock = (p as any).stocks?.[0]?.cantidad ?? '-';
+              const stock = p.unidad === 'KG' ? '—' : ((p as any).stocks?.[0]?.cantidad ?? '-');
               return (
                 <tr key={p.id} onClick={() => openEdit(p)} style={{ borderBottom: '1px solid #f3f4f6', cursor: 'pointer' }} title="Click para editar">
                   <td style={{ padding: 10 }}><code>{p.codigoBarras || '-'}</code></td>
                   <td>{p.nombre}</td><td>{p.categoria?.nombre || '-'}</td>
-                  <td>${Number(p.precioCosto).toFixed(2)}</td><td style={{ fontWeight: 'bold' }}>${Number(p.precioVenta).toFixed(2)}</td>
+                  <td>${Number(p.precioCosto).toFixed(0)}</td><td style={{ fontWeight: 'bold' }}>${Number(p.precioVenta).toFixed(0)}{p.unidad === 'KG' ? '/kg' : ''}</td>
                   <td>{stock}</td>
                 </tr>
               );
@@ -183,11 +231,22 @@ export default function Productos() {
             <label style={{ display: 'block', marginTop: 10 }}>Código barras<input value={editForm.codigoBarras} onChange={e => setEditForm({ ...editForm, codigoBarras: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
             <label style={{ display: 'block', marginTop: 8 }}>Nombre<input value={editForm.nombre} onChange={e => setEditForm({ ...editForm, nombre: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
             <label style={{ display: 'block', marginTop: 8 }}>Categoría<select value={editForm.categoriaId} onChange={e => setEditForm({ ...editForm, categoriaId: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }}><option value="">Sin categoría</option>{categorias.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}</select></label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 8 }}>
-              <label>Costo<input type="number" value={editForm.precioCosto} onChange={e => setEditForm({ ...editForm, precioCosto: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
-              <label>Venta<input type="number" value={editForm.precioVenta} onChange={e => setEditForm({ ...editForm, precioVenta: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
+            <label style={{ display: 'block', marginTop: 8 }}>Unidad de venta<select value={editForm.unidad} onChange={e => setEditForm({ ...editForm, unidad: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }}><option value="UNIDAD">Unidad</option><option value="KG">Peso</option></select></label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginTop: 8 }}>
+              <label>Costo<input type="number" min="0" step="1" value={editForm.precioCosto} onChange={e => setEditForm({ ...editForm, precioCosto: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
+              <label>% Venta<input type="number" min="0" step="1" value={editForm.porcentajeVenta} onChange={e => setEditForm({ ...editForm, porcentajeVenta: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
+              <label>% Crec.<input type="number" min="0" step="1" value={editForm.porcentajeCrecimiento} onChange={e => setEditForm({ ...editForm, porcentajeCrecimiento: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
             </div>
-            <label style={{ display: 'block', marginTop: 8 }}>Stock ({sucursalId})<input type="number" value={editForm.stock} onChange={e => setEditForm({ ...editForm, stock: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, padding: '10px 12px', background: '#f3f4f6', borderRadius: 6, border: '1px solid #e5e7eb' }}>
+              <span style={{ fontSize: 14, color: '#374151' }}>Precio de venta (calculado)</span>
+              <strong style={{ fontSize: 20 }}>${precioVentaPreview().toFixed(0)}</strong>
+            </div>
+            {editForm.unidad !== 'KG' && (
+              <>
+                <label style={{ display: 'block', marginTop: 8 }}>Stock ({sucursalId})<input type="number" step="any" value={editForm.stock} onChange={e => setEditForm({ ...editForm, stock: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
+                <label style={{ display: 'block', marginTop: 8 }}>Mínimo en stock<input type="number" min="0" step="any" value={editForm.stockMinimo} onChange={e => setEditForm({ ...editForm, stockMinimo: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
+              </>
+            )}
             <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
               <button onClick={handleUpdate} style={{ flex: 1, padding: 10, background: '#111827', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Guardar</button>
               <button onClick={handleDelete} style={{ padding: 10, background: '#fee2e2', color: '#b91c1c', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Eliminar</button>

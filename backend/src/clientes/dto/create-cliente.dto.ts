@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsEmail, IsNumber } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsIn, Matches } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateClienteDto {
@@ -13,12 +13,12 @@ export class CreateClienteDto {
 
   @ApiPropertyOptional({ example: '1122334455' })
   @IsOptional()
-  @IsString()
+  @Matches(/^\d*$/, { message: 'El teléfono solo puede tener números' })
   telefono?: string;
 
-  @ApiPropertyOptional({ example: 'juan@mail.com' })
+  @ApiPropertyOptional({ example: 'juan@mail.com', description: 'Opcional, sin validación' })
   @IsOptional()
-  @IsEmail()
+  @IsString()
   email?: string;
 
   @ApiPropertyOptional({ example: 'Calle 123' })
@@ -36,6 +36,15 @@ export class PagoDto {
   @ApiProperty({ example: 5000 })
   @IsNumber()
   monto: number;
+
+  @ApiProperty({ example: 'EFECTIVO', enum: ['EFECTIVO', 'TARJETA', 'TRANSFERENCIA'] })
+  @IsIn(['EFECTIVO', 'TARJETA', 'TRANSFERENCIA'])
+  metodoPago: string;
+
+  @ApiPropertyOptional({ example: 'sucursal-central' })
+  @IsOptional()
+  @IsString()
+  sucursalId?: string;
 
   @ApiPropertyOptional({ example: 'Pago en efectivo' })
   @IsOptional()

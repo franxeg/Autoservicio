@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
+import { fechaCorta } from '../lib/fecha';
 
 const TOKEN_STORAGE = 'providerToken';
 
@@ -146,7 +147,7 @@ export default function Proveedor() {
   };
 
   const abrirReset = (empresa: any) => {
-    setResetEmpresa(prev => (prev?.id === empresa.id ? null : empresa));
+    setResetEmpresa((prev: any) => (prev?.id === empresa.id ? null : empresa));
     setResetResultado(null);
     setResetUsuario('');
     setResetPassword('');
@@ -175,7 +176,7 @@ export default function Proveedor() {
   };
 
   const abrirPassAdmin = (empresa: any) => {
-    setPassAdminEmpresa(prev => (prev?.id === empresa.id ? null : empresa));
+    setPassAdminEmpresa((prev: any) => (prev?.id === empresa.id ? null : empresa));
     setPassAdminResultado(null);
     setPassAdminNueva('');
   };
@@ -272,7 +273,7 @@ export default function Proveedor() {
                     </div>
                     <div style={{ fontSize: 13, color: '#6b7280', marginTop: 6 }}>
                       {e.cuit ? `CUIT ${e.cuit} · ` : ''}{e.sucursales} sucursal(es) · {e.usuarios} usuario(s)<br />
-                      Admin: <b style={{ color: '#111827' }}>{e.adminUsuario || 'sin admin (pendiente de config)'}</b> · Creada el {new Date(e.createdAt).toLocaleDateString('es-AR')}
+                      Admin: <b style={{ color: '#111827' }}>{e.adminUsuario || 'sin admin (pendiente de config)'}</b> · Creada el {fechaCorta(e.createdAt)}
                     </div>
                     {passAdminResultado?.empresa?.id === e.id && (
                       <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', padding: 12, borderRadius: 8, marginTop: 10, fontSize: 13 }}>
