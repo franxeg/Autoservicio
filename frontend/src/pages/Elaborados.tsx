@@ -151,8 +151,8 @@ export default function Elaborados({ sucursalId }: { sucursalId: string }) {
             <label style={{ display: 'block' }}>Nombre<input value={nuevo.nombre} onChange={e => setNuevo({ ...nuevo, nombre: e.target.value })} placeholder="Ej: Ensalada mixta" style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db', boxSizing: 'border-box' }} /></label>
             <label style={{ display: 'block', marginTop: 8 }}>Unidad<select value={nuevo.unidad} onChange={e => setNuevo({ ...nuevo, unidad: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }}><option value="UNIDAD">Unidad</option><option value="KG">Peso</option></select></label>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 8 }}>
-              <label>% Venta<input type="number" min="0" step="any" value={nuevo.porcentajeVenta} onChange={e => setNuevo({ ...nuevo, porcentajeVenta: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db', boxSizing: 'border-box' }} /></label>
               <label>% Crecimiento<input type="number" min="0" step="any" value={nuevo.porcentajeCrecimiento} onChange={e => setNuevo({ ...nuevo, porcentajeCrecimiento: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db', boxSizing: 'border-box' }} /></label>
+              <label>% Venta<input type="number" min="0" step="any" value={nuevo.porcentajeVenta} onChange={e => setNuevo({ ...nuevo, porcentajeVenta: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db', boxSizing: 'border-box' }} /></label>
             </div>
             <small style={{ color: '#6b7280' }}>Después cargás los insumos de la receta.</small>
             <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
@@ -206,12 +206,12 @@ export default function Elaborados({ sucursalId }: { sucursalId: string }) {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginTop: 12, alignItems: 'end' }}>
               <label style={{ fontSize: 14 }}>Costo (calculado)<div style={{ fontWeight: 'bold', fontSize: 20, padding: '6px 0' }}>${costoRedondeado}</div></label>
-              <label style={{ fontSize: 14 }}>% Venta<div style={{ fontSize: 18, padding: '6px 0' }}>{pctVenta}%</div></label>
               <label style={{ fontSize: 14 }}>% Crecimiento<div style={{ fontSize: 18, padding: '6px 0' }}>{pctCrec}%</div></label>
+              <label style={{ fontSize: 14 }}>% Venta<div style={{ fontSize: 18, padding: '6px 0' }}>{pctVenta}%</div></label>
             </div>
-            <small style={{ color: '#6b7280' }}>El % de venta y crecimiento quedan fijos desde el alta del elaborado.</small>
+            <small style={{ color: '#6b7280' }}>El % de crecimiento y venta quedan fijos desde el alta del elaborado.</small>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, padding: '10px 12px', background: '#f3f4f6', borderRadius: 6, border: '1px solid #e5e7eb' }}>
-              <span style={{ fontSize: 14, color: '#374151' }}>Precio de venta (calculado)</span>
+              <span style={{ fontSize: 14, color: '#374151' }}>Precio de venta (costo + %crecimiento + %venta)</span>
               <strong style={{ fontSize: 22 }}>${ventaPreview}</strong>
             </div>
 

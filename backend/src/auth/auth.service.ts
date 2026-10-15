@@ -6,7 +6,7 @@ import { CrearEmpresaDto } from './dto/crear-empresa.dto';
 import { SetupAdminDto } from './dto/setup-admin.dto';
 import { ResetearCredencialesDto } from './dto/resetear-credenciales.dto';
 import { CambiarPasswordAdminDto } from './dto/cambiar-password-admin.dto';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { randomBytes, timingSafeEqual } from 'crypto';
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';

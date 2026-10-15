@@ -19,6 +19,7 @@ export default function Stock() {
   const [conteoCantidad, setConteoCantidad] = useState('');
   const [conteoDesc, setConteoDesc] = useState('');
   const [conteoMsg, setConteoMsg] = useState('');
+  const [okMsg, setOkMsg] = useState('');
 
   const fetch = async () => {
     const { data } = await api.get('/productos', { params: { sucursalId, limit: 100 } });
@@ -54,7 +55,9 @@ export default function Stock() {
         descripcion: conteoDesc || undefined,
       });
       const etiqueta = data.tipo === 'MERMA' ? 'Merma' : 'Ajuste';
-      setConteoMsg(`Guardado. ${etiqueta}: ${fmt(Math.abs(data.cantidad), conteo.unidad)} ${unidadTxt(conteo.unidad)} = $${data.valor}`);
+      setConteo(null);
+      setOkMsg(`Conteo registrado. ${etiqueta}: ${fmt(Math.abs(data.cantidad), conteo.unidad)} ${unidadTxt(conteo.unidad)} = $${data.valor}`);
+      window.setTimeout(() => setOkMsg(''), 5000);
       fetch();
     } catch (e: any) {
       setConteoMsg(e.response?.data?.message || 'Error al guardar el conteo');
@@ -63,7 +66,12 @@ export default function Stock() {
 
   return (
     <div>
-      <h2>Stock - {sucursalId}</h2>
+      <h2>Stock</h2>
+      {okMsg && (
+        <div style={{ background: '#ecfdf5', color: '#065f46', padding: 12, borderRadius: 6, marginBottom: 12 }}>
+          ✅ {okMsg}
+        </div>
+      )}
       {bajoStock.length > 0 && (
         <div style={{ background: '#fef2f2', color: '#b91c1c', padding: 12, borderRadius: 6, marginBottom: 12 }}>
           ⚠️ {bajoStock.length} productos con stock crítico: {bajoStock.map(p => p.nombre).join(', ')}

@@ -49,7 +49,8 @@ export class ProductosService {
     return producto;
   }
 
-  // precioVenta nunca se edita a mano: se calcula con costo + %venta + %crecimiento
+  // precioVenta nunca se edita a mano: se calcula con costo + %crecimiento + %venta
+  // (el producto es el mismo sin importar el orden, pero se mantiene este orden por consistencia)
   private calcularVenta(costo: number, pctVenta: number | null | undefined, pctCrec: number | null | undefined) {
     return Math.round(costo * (1 + (pctVenta ?? 30) / 100) * (1 + (pctCrec ?? 10) / 100));
   }

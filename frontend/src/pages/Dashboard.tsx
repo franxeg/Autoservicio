@@ -2,12 +2,11 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuthStore } from '../lib/store';
-import { hoyISO, horaCorta, isoCorta, isoDia, isoMesCorto } from '../lib/fecha';
+import { hoyISO, horaCorta, isoCorta, isoDia, isoMesCorto, MESES, mesLargo } from '../lib/fecha';
 
 export default function Dashboard() {
   const user = useAuthStore(s => s.user);
   const sucursalId = user?.sucursalId || localStorage.getItem('sucursalId') || undefined;
-  const sucursalNombre = user?.sucursal?.nombre;
   const navigate = useNavigate();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -15,13 +14,19 @@ export default function Dashboard() {
   const [modalMes, setModalMes] = useState(false);
   const [ventasHoyDet, setVentasHoyDet] = useState<any[]>([]);
   const [periodo, setPeriodo] = useState('mes');
+  const [mesSel, setMesSel] = useState('');
   const [desglose, setDesglose] = useState<any>(null);
 
   useEffect(() => {
-    api.get('/reportes/desglose', { params: { sucursalId, periodo } })
+    api.get('/reportes/desglose', { params: { sucursalId, periodo, mes: mesSel || undefined } })
       .then(r => setDesglose(r.data))
       .catch(() => setDesglose(null));
-  }, [periodo]);
+  }, [periodo, mesSel]);
+
+  const cantTxt = (p: any) => {
+    const n = Number(p.cantidad ?? 0);
+    return p.unidad === 'KG' ? `${n.toFixed(3).replace(/\.?0+$/, '')} kg` : `${Math.round(n)} u.`;
+  };
 
   useEffect(() => {
     api.get('/reportes/dashboard', { params: { sucursalId } })
@@ -49,7 +54,7 @@ export default function Dashboard() {
 
   return (
     <div>
-      <h1>Dashboard {sucursalNombre ? `- ${sucursalNombre}` : sucursalId ? '(Sucursal)' : '(Todas)'}</h1>
+      <h1>Dashboard</h1>
       <p style={{ color: '#6b7280' }}>Click en las tarjetas para ver detalles</p>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginTop: 20 }}>
@@ -104,17 +109,49 @@ export default function Dashboard() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
           <div>
             <h3 style={{ margin: 0 }}>Desglose de precios vendidos</h3>
-            <small style={{ color: '#6b7280' }}>En qué se convirtió el precio de cada producto: costo + utilidad por % de venta + utilidad por % de crecimiento</small>
+            <small style={{ color: '#6b7280' }}>En qué se convirtió el precio de cada producto: costo + utilidad por % de crecimiento + utilidad por % de venta</small>
           </div>
-          <div style={{ display: 'flex', gap: 6 }}>
-            {[{ v: 'hoy', l: 'Hoy' }, { v: '7d', l: '7 días' }, { v: 'mes', l: 'Este mes' }].map(o => (
-              <button key={o.v} onClick={() => setPeriodo(o.v)} style={{
-                padding: '6px 12px', borderRadius: 6, cursor: 'pointer', fontSize: 13, fontWeight: periodo === o.v ? 'bold' : 'normal',
-                border: periodo === o.v ? '2px solid #111827' : '1px solid #d1d5db',
-                background: periodo === o.v ? '#111827' : 'white',
-                color: periodo === o.v ? 'white' : '#111827',
-              }}>{o.l}</button>
-            ))}
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+            {[{ v: 'hoy', l: 'Hoy' }, { v: '7d', l: '7 días' }, { v: 'mes', l: 'Este mes' }].map(o => {
+              const sel = periodo === o.v && !mesSel;
+              return (
+                <button key={o.v} onClick={() => { setPeriodo(o.v); setMesSel(''); }} style={{
+                  padding: '6px 12px', borderRadius: 6, cursor: 'pointer', fontSize: 13, fontWeight: sel ? 'bold' : 'normal',
+                  border: sel ? '2px solid #111827' : '1px solid #d1d5db',
+                  background: sel ? '#111827' : 'white',
+                  color: sel ? 'white' : '#111827',
+                }}>{o.l}</button>
+              );
+            })}
+            <select
+              value={mesSel ? String(Number(mesSel.slice(5, 7))) : ''}
+              onChange={e => {
+                const m = e.target.value;
+                if (!m) { setMesSel(''); return; }
+                const y = mesSel ? mesSel.slice(0, 4) : String(new Date().getFullYear());
+                setMesSel(`${y}-${String(m).padStart(2, '0')}`);
+              }}
+              title="Elegir mes"
+              style={{ padding: '5px 8px', borderRadius: 6, border: mesSel ? '2px solid #111827' : '1px solid #d1d5db', fontSize: 13, background: 'white' }}
+            >
+              <option value="">Mes…</option>
+              {MESES.map((n, i) => <option key={n} value={i + 1}>{n}</option>)}
+            </select>
+            <select
+              value={mesSel ? mesSel.slice(0, 4) : ''}
+              onChange={e => {
+                const y = e.target.value;
+                if (!y) { setMesSel(''); return; }
+                const m = mesSel ? mesSel.slice(5, 7) : String(new Date().getMonth() + 1).padStart(2, '0');
+                setMesSel(`${y}-${m}`);
+              }}
+              title="Elegir año"
+              style={{ padding: '5px 8px', borderRadius: 6, border: mesSel ? '2px solid #111827' : '1px solid #d1d5db', fontSize: 13, background: 'white' }}
+            >
+              <option value="">Año…</option>
+              {Array.from({ length: new Date().getFullYear() - 2019 }, (_, i) => new Date().getFullYear() - i).map(a => <option key={a} value={a}>{a}</option>)}
+            </select>
+            {mesSel && <button onClick={() => setMesSel('')} style={{ padding: '5px 10px', background: '#e5e7eb', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}>✕</button>}
           </div>
         </div>
 
@@ -123,14 +160,14 @@ export default function Dashboard() {
         ) : (
           <>
             <div style={{ marginTop: 14, fontSize: 14, color: '#6b7280' }}>
-              {desglose.ventas} ventas · {desglose.lineas} renglones · {desglose.unidades} unidades
+              {desglose.ventas} ventas · {desglose.lineas} renglones{mesSel ? ` · ${mesLargo(mesSel)}` : ''}
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginTop: 12 }}>
               {[
                 { label: 'Costo (lo que salió)', valor: desglose.costo, color: '#6b7280', bg: '#f9fafb' },
-                { label: 'Utilidad % de venta', valor: desglose.aporteVenta, color: '#059669', bg: '#ecfdf5' },
                 { label: 'Utilidad % de crecimiento', valor: desglose.aporteCrecimiento, color: '#0284c7', bg: '#f0f9ff' },
+                { label: 'Utilidad % de venta', valor: desglose.aporteVenta, color: '#059669', bg: '#ecfdf5' },
               ].map(c => (
                 <div key={c.label} style={{ background: c.bg, padding: 12, borderRadius: 6 }}>
                   <small style={{ color: '#6b7280' }}>{c.label}</small>
@@ -145,24 +182,24 @@ export default function Dashboard() {
             <div style={{ display: 'flex', height: 26, borderRadius: 6, overflow: 'hidden', marginTop: 12, background: '#e5e7eb' }}>
               {[
                 { v: desglose.costo, c: '#6b7280' },
-                { v: desglose.aporteVenta, c: '#059669' },
                 { v: desglose.aporteCrecimiento, c: '#0284c7' },
+                { v: desglose.aporteVenta, c: '#059669' },
               ].map((s, i) => s.v > 0 ? <div key={i} title={`$${Number(s.v).toFixed(0)}`} style={{ width: `${(s.v / desglose.vendido) * 100}%`, background: s.c }} /> : null)}
             </div>
             <div style={{ fontSize: 14, fontWeight: 'bold', marginTop: 6 }}>Total vendido: ${Number(desglose.vendido).toFixed(0)}</div>
 
             <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 16, fontSize: 13 }}>
               <thead><tr style={{ borderBottom: '2px solid #e5e7eb', textAlign: 'left' }}>
-                <th style={{ padding: '6px 4px' }}>Producto</th><th>Unid</th><th>Costo</th><th>% Venta</th><th>% Crec.</th><th>Total vendido</th>
+                <th style={{ padding: '6px 4px' }}>Producto</th><th>Cant.</th><th>Costo</th><th>% Crec.</th><th>% Venta</th><th>Total vendido</th>
               </tr></thead>
               <tbody>
                 {desglose.porProducto.map((p: any) => (
                   <tr key={p.productoId} style={{ borderBottom: '1px solid #f3f4f6' }}>
                     <td style={{ padding: '6px 4px' }}>{p.nombre}</td>
-                    <td>{p.unidades}</td>
+                    <td>{cantTxt(p)}</td>
                     <td style={{ color: '#6b7280' }}>${Number(p.costo).toFixed(0)}</td>
-                    <td style={{ color: '#059669', fontWeight: 'bold' }}>${Number(p.aporteVenta).toFixed(0)}</td>
                     <td style={{ color: '#0284c7', fontWeight: 'bold' }}>${Number(p.aporteCrecimiento).toFixed(0)}</td>
+                    <td style={{ color: '#059669', fontWeight: 'bold' }}>${Number(p.aporteVenta).toFixed(0)}</td>
                     <td style={{ fontWeight: 'bold' }}>${Number(p.vendido).toFixed(0)}</td>
                   </tr>
                 ))}

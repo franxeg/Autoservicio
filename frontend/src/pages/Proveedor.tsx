@@ -272,7 +272,7 @@ export default function Proveedor() {
                       <span style={{ fontSize: 12, padding: '3px 8px', borderRadius: 999, color: 'white', background: e.configurada ? '#059669' : '#d97706' }}>{e.configurada ? 'Operativa' : 'Pendiente de config'}</span>
                     </div>
                     <div style={{ fontSize: 13, color: '#6b7280', marginTop: 6 }}>
-                      {e.cuit ? `CUIT ${e.cuit} · ` : ''}{e.sucursales} sucursal(es) · {e.usuarios} usuario(s)<br />
+                      {e.cuit ? `CUIT ${e.cuit} · ` : ''}{e.usuarios} usuario(s)<br />
                       Admin: <b style={{ color: '#111827' }}>{e.adminUsuario || 'sin admin (pendiente de config)'}</b> · Creada el {fechaCorta(e.createdAt)}
                     </div>
                     {passAdminResultado?.empresa?.id === e.id && (

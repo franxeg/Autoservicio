@@ -36,6 +36,8 @@ export default function Compras() {
   const [guardandoGasto, setGuardandoGasto] = useState(false);
   const [gastosCaja, setGastosCaja] = useState<any[]>([]);
   const [errorGasto, setErrorGasto] = useState('');
+  const [gastoMetodo, setGastoMetodo] = useState('EFECTIVO');
+  const [verGastos, setVerGastos] = useState(false);
 
   // Borrador en edición (id si viene de la lista de borradores del servidor)
   const inicial = (() => {
@@ -82,7 +84,8 @@ export default function Compras() {
   const fetchProductos = async (q: string) => {
     if (!q || q.length < 1) { setProductos([]); return; }
     const { data } = await api.get('/productos', { params: { search: q, limit: 5 } });
-    setProductos(data.data || data);
+    // No se pueden comprar elaborados: se cargan con "Elaborar" en la sección Elaborados
+    setProductos((data.data || data).filter((p: any) => !p.esElaborado));
   };
   useEffect(() => {
     const t = setTimeout(() => fetchProductos(busqueda), 300);
@@ -142,7 +145,7 @@ export default function Compras() {
     if (!cajaAbierta) { setErrorGasto('No hay caja abierta en esta sucursal. Abrí la caja para registrar el gasto.'); return; }
     setGuardandoGasto(true);
     try {
-      await api.post(`/caja/${cajaAbierta.id}/movimiento`, { tipo: 'GASTO', monto: importe, descripcion: gastoDesc.trim() });
+      await api.post(`/caja/${cajaAbierta.id}/movimiento`, { tipo: 'GASTO', monto: importe, descripcion: gastoDesc.trim(), metodoPago: gastoMetodo });
       setGastoDesc(''); setGastoImporte('');
       await fetchGastosCaja(cajaAbierta.id);
     } catch (err: any) { setErrorGasto(err.response?.data?.message || err.message); }
@@ -163,8 +166,8 @@ export default function Compras() {
     setBusqueda(''); setProductos([]);
   };
 
-  const calcPrecioVenta = (costo: number, pctVenta: number, pctCrec: number) =>
-    Math.round(costo * (1 + pctVenta / 100) * (1 + pctCrec / 100));
+  const calcPrecioVenta = (costo: number, pctCrec: number, pctVenta: number) =>
+    Math.round(costo * (1 + pctCrec / 100) * (1 + pctVenta / 100));
 
   const total = items.reduce((acc, i) => acc + Math.round(Math.round(parseFloat(i.precioCosto) || 0) * redondearCant(parseFloat(i.cantidad) || 0)), 0);
 
@@ -235,7 +238,8 @@ export default function Compras() {
         if (compraId) {
           await api.patch(`/compras/${compraId}`, { ...payload(), borrador: true });
         } else {
-          const { data } = await api.post('/compras', { ...payload(), borrador: false });
+          // Se crea como borrador y recién se confirma abajo (create con borrador:false ya deja CONFIRMADA)
+          const { data } = await api.post('/compras', { ...payload(), borrador: true });
           compraId = data.id;
         }
         if (compraId) await api.post(`/compras/${compraId}/confirmar`);
@@ -360,14 +364,14 @@ export default function Compras() {
         {items.length > 0 && (
           <table style={{ width: '100%', marginTop: 16, borderCollapse: 'collapse' }}>
             <thead><tr style={{ borderBottom: '2px solid #e5e7eb', textAlign: 'left' }}>
-              <th>Producto</th><th>Cant</th><th>Costo</th><th>% de venta</th><th>Crecimiento</th><th>Precio de venta</th><th>Subtotal</th><th></th>
+              <th>Producto</th><th>Cant</th><th>Costo</th><th>Crecimiento</th><th>% de venta</th><th>Precio de venta</th><th>Subtotal</th><th></th>
             </tr></thead>
             <tbody>
               {items.map((it, idx) => {
                 const costo = parseFloat(it.precioCosto) || 0;
                 const pctVenta = parseFloat(it.porcentajeVenta) || 0;
                 const pctCrec = parseFloat(it.porcentajeCrecimiento) || 0;
-                const precioVenta = calcPrecioVenta(costo, pctVenta, pctCrec);
+                const precioVenta = calcPrecioVenta(costo, pctCrec, pctVenta);
                 const subtotal = redondearCant(parseFloat(it.cantidad) || 0) * costo;
                 const upd = (patch: Partial<Item>) => { const copy = [...items]; copy[idx] = { ...copy[idx], ...patch }; setItems(copy); };
                 return (
@@ -375,8 +379,8 @@ export default function Compras() {
                     <td style={{ padding: '6px 4px' }}>{it.nombre}{esPesable(it.unidad) && <small style={{ color: '#6b7280' }}> (kg)</small>}</td>
                     <td><input type="number" min="0" step={esPesable(it.unidad) ? 'any' : '1'} value={it.cantidad} onChange={e => upd({ cantidad: e.target.value })} placeholder={esPesable(it.unidad) ? '0.000' : ''} style={{ width: 72, padding: 6, borderRadius: 6, border: '1px solid #d1d5db' }} /></td>
                     <td><input type="number" min="0" step="1" value={it.precioCosto} onChange={e => upd({ precioCosto: e.target.value })} style={{ width: 90, padding: 6, borderRadius: 6, border: '1px solid #d1d5db' }} /></td>
-                    <td style={{ position: 'relative' }}><input type="number" min="0" step="1" value={it.porcentajeVenta} onChange={e => upd({ porcentajeVenta: e.target.value })} style={{ width: 64, padding: '6px 18px 6px 6px', borderRadius: 6, border: '1px solid #d1d5db' }} /><span style={{ position: 'absolute', left: 46, top: 7, color: '#6b7280', fontSize: 12 }}>%</span></td>
                     <td style={{ position: 'relative' }}><input type="number" min="0" step="1" value={it.porcentajeCrecimiento} onChange={e => upd({ porcentajeCrecimiento: e.target.value })} style={{ width: 64, padding: '6px 18px 6px 6px', borderRadius: 6, border: '1px solid #d1d5db' }} /><span style={{ position: 'absolute', left: 46, top: 7, color: '#6b7280', fontSize: 12 }}>%</span></td>
+                    <td style={{ position: 'relative' }}><input type="number" min="0" step="1" value={it.porcentajeVenta} onChange={e => upd({ porcentajeVenta: e.target.value })} style={{ width: 64, padding: '6px 18px 6px 6px', borderRadius: 6, border: '1px solid #d1d5db' }} /><span style={{ position: 'absolute', left: 46, top: 7, color: '#6b7280', fontSize: 12 }}>%</span></td>
                     <td style={{ fontWeight: 'bold', color: '#059669', whiteSpace: 'nowrap' }}>${precioVenta.toFixed(0)}</td>
                     <td style={{ whiteSpace: 'nowrap' }}>${subtotal.toFixed(0)}</td>
                     <td><button onClick={() => setItems(items.filter(i => i.productoId !== it.productoId))} style={{ color: 'red', border: 'none', background: 'none', cursor: 'pointer' }}>✕</button></td>
@@ -431,6 +435,11 @@ export default function Compras() {
           <label style={{ width: 160, fontSize: 14 }}>Importe
             <input type="number" min="0" step="1" value={gastoImporte} onChange={e => setGastoImporte(e.target.value)} placeholder="0" style={{ width: '100%', padding: 8, marginTop: 4, borderRadius: 6, border: '1px solid #d1d5db', boxSizing: 'border-box' }} />
           </label>
+          <label style={{ width: 170, fontSize: 14 }}>Medio de pago
+            <select value={gastoMetodo} onChange={e => setGastoMetodo(e.target.value)} style={{ width: '100%', padding: 8, marginTop: 4, borderRadius: 6, border: '1px solid #d1d5db', boxSizing: 'border-box' }}>
+              {METODOS.filter(m => m.value !== 'CUENTA_CORRIENTE').map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+            </select>
+          </label>
           <button type="submit" disabled={guardandoGasto || !cajaAbierta} style={{ padding: '8px 16px', background: cajaAbierta ? '#dc2626' : '#9ca3af', color: 'white', border: 'none', borderRadius: 6, cursor: cajaAbierta ? 'pointer' : 'not-allowed' }}>
             {guardandoGasto ? 'Registrando...' : 'Registrar gasto'}
           </button>
@@ -444,17 +453,16 @@ export default function Compras() {
               <tbody>
                 {gastosCaja.slice(-3).reverse().map((m: any) => (
                   <tr key={m.id} style={{ borderBottom: '1px solid #ffedd5' }}>
-                    <td style={{ padding: '4px 0', color: '#7c2d12' }}>{m.descripcion || m.tipo}</td>
+                    <td style={{ padding: '4px 0', color: '#7c2d12' }}>{m.descripcion || m.tipo} <small style={{ color: '#9a3412' }}>· {labelMetodo(m.metodoPago || 'EFECTIVO')}</small></td>
                     <td style={{ textAlign: 'right', fontWeight: 'bold', color: '#7c2d12' }}>${Math.round(m.monto).toFixed(0)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            {gastosCaja.length > 3 && (
-              <small style={{ display: 'block', marginTop: 6, color: '#9a3412' }}>
-                y {gastosCaja.length - 3} más · total de la caja: ${gastosCaja.reduce((a, m) => a + Math.round(m.monto), 0).toFixed(0)}
-              </small>
-            )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, gap: 8, flexWrap: 'wrap' }}>
+              <button onClick={() => setVerGastos(true)} style={{ padding: '6px 12px', background: '#fff7ed', color: '#9a3412', border: '1px solid #fed7aa', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}>Ver todos ({gastosCaja.length})</button>
+              <small style={{ color: '#9a3412' }}>Total gastos de la caja: ${gastosCaja.reduce((a, m) => a + Math.round(m.monto), 0).toFixed(0)}</small>
+            </div>
           </div>
         )}
       </div>
@@ -508,12 +516,40 @@ export default function Compras() {
         </div>
       )}
 
+      {verGastos && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'grid', placeItems: 'center', zIndex: 60 }} onClick={() => setVerGastos(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'white', padding: 24, borderRadius: 12, width: 640, maxWidth: '94vw', maxHeight: '90vh', overflow: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <h3 style={{ margin: 0 }}>Gastos y retiros de la caja ({gastosCaja.length})</h3>
+              <button onClick={() => setVerGastos(false)} style={{ border: 'none', background: '#e5e7eb', padding: '6px 10px', borderRadius: 6, cursor: 'pointer' }}>✕</button>
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr style={{ borderBottom: '2px solid #e5e7eb', textAlign: 'left' }}><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Medio</th><th style={{ textAlign: 'right' }}>Monto</th></tr></thead>
+              <tbody>
+                {[...gastosCaja].reverse().map((m: any) => (
+                  <tr key={m.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                    <td style={{ padding: '6px 4px' }}>{fechaHora(m.createdAt)}</td>
+                    <td>{m.tipo}</td>
+                    <td>{m.descripcion || '-'}</td>
+                    <td>{labelMetodo(m.metodoPago || 'EFECTIVO')}</td>
+                    <td style={{ textAlign: 'right', fontWeight: 'bold' }}>${Math.round(m.monto).toFixed(0)}</td>
+                  </tr>
+                ))}
+                {gastosCaja.length === 0 && <tr><td colSpan={5} style={{ textAlign: 'center', padding: 20, color: '#9ca3af' }}>Sin gastos</td></tr>}
+              </tbody>
+              <tfoot>
+                <tr><td colSpan={4} style={{ textAlign: 'right', fontWeight: 'bold', paddingTop: 10 }}>Total</td><td style={{ textAlign: 'right', fontWeight: 'bold', paddingTop: 10 }}>${gastosCaja.reduce((a, m) => a + Math.round(m.monto), 0).toFixed(0)}</td></tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      )}
+
       {ticket && createPortal(
         <div className="ticket-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'grid', placeItems: 'center', zIndex: 50, overflow: 'auto' }} onClick={() => setTicket(null)}>
           <div id="ticket-print" onClick={e => e.stopPropagation()} style={{ background: 'white', padding: 24, borderRadius: 12, width: 640, maxWidth: '94vw', maxHeight: '90vh', overflow: 'auto' }}>
             <div style={{ textAlign: 'center', borderBottom: '2px solid #111827', paddingBottom: 10, marginBottom: 14 }}>
               <div style={{ fontSize: 18, fontWeight: 700 }}>{user?.empresa?.nombre || 'Autoservicio'}</div>
-              {user?.sucursal?.nombre && <div style={{ fontSize: 13, color: '#4b5563' }}>{user.sucursal.nombre}</div>}
               <div style={{ fontSize: 13, color: '#4b5563' }}>
                 {ticket.estado === 'CONFIRMADA' ? 'Comprobante de compra' : 'Pedido de compra'}
               </div>
@@ -552,7 +588,7 @@ export default function Compras() {
               </tr></thead>
               <tbody>
                 {ticket.detalles?.map((d: any, i: number) => {
-                  const pv = Math.round(Number(d.precioCosto) * (1 + (d.porcentajeVenta ?? 30) / 100) * (1 + (d.porcentajeCrecimiento ?? 10) / 100));
+                  const pv = Math.round(Number(d.precioCosto) * (1 + (d.porcentajeCrecimiento ?? 10) / 100) * (1 + (d.porcentajeVenta ?? 30) / 100));
                   return (
                     <tr key={i}>
                       <td style={td}>{d.producto?.nombre}</td>
@@ -571,6 +607,8 @@ export default function Compras() {
                 </tr>
               </tfoot>
             </table>
+
+            {error && <div className="no-print" style={{ marginTop: 12, background: '#fee2e2', color: '#b91c1c', padding: 10, borderRadius: 6, fontSize: 14 }}>{error}</div>}
 
             <div style={{ display: 'flex', gap: 8, marginTop: 20, flexWrap: 'wrap' }} className="no-print">
               <button onClick={Imprimir} style={{ padding: '10px 16px', background: '#111827', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Imprimir / PDF</button>

@@ -10,10 +10,9 @@ import { ProveedoresModule } from './proveedores/proveedores.module';
 import { ComprasModule } from './compras/compras.module';
 import { ClientesModule } from './clientes/clientes.module';
 import { ReportesModule } from './reportes/reportes.module';
-import { SucursalesModule } from './sucursales/sucursales.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, UsersModule, CategoriasModule, ProductosModule, CajaModule, VentasModule, ProveedoresModule, ComprasModule, ClientesModule, ReportesModule, SucursalesModule],
+  imports: [PrismaModule, AuthModule, UsersModule, CategoriasModule, ProductosModule, CajaModule, VentasModule, ProveedoresModule, ComprasModule, ClientesModule, ReportesModule],
   controllers: [],
   providers: [],
 })

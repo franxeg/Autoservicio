@@ -1,0 +1,38 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: autoservicio_prod_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: autoservicio_prod_app
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: "postgresql://${POSTGRES_APP_USER}:${POSTGRES_APP_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public"
+      MIGRATE_DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public"
+    ports:
+      - "4000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "DATABASE_URL=$$MIGRATE_DATABASE_URL npx prisma db push --accept-data-loss && npx prisma db execute --url \"$$MIGRATE_DATABASE_URL\" --file prisma/rls.sql && DATABASE_URL=$$MIGRATE_DATABASE_URL npx prisma db seed && node dist/main"
+
+volumes:
+  pgdata_prod:

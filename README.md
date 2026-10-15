@@ -1,4 +1,4 @@
-# Autoservicio - Sistema de Gestión Multi-Sucursal
+# Autoservicio - Sistema de Gestión
 
 Stack: **NestJS + React + PostgreSQL + Prisma + Docker**
 
@@ -10,9 +10,8 @@ Stack: **NestJS + React + PostgreSQL + Prisma + Docker**
 ```
 
 ## Módulos Planificados
-- [ ] Auth + Roles (ADMIN, GERENTE, CAJERO, REPOSITOR)
-- [ ] Sucursales
-- [ ] Categorías / Productos / Stock por Sucursal
+- [ ] Auth + Roles (ADMIN, CAJERO)
+- [ ] Categorías / Productos / Stock
 - [ ] Proveedores / Compras
 - [ ] Clientes / Cuenta Corriente
 - [ ] Ventas (POS con lector código de barras)

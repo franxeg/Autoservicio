@@ -13,6 +13,8 @@ interface Item {
 
 const esPeso = (x: { unidad?: string }) => x?.unidad === 'KG';
 const unidadLabel = (_unidad?: string) => 'kg';
+// El catálogo trae precioVenta; un ítem ya cargado trae precio. Sirve para ambos.
+const precioDe = (p: any) => Number(p?.precioVenta ?? p?.precio) || 0;
 
 const METODOS_PAGO = [
   { value: 'EFECTIVO', label: 'Efectivo' },
@@ -83,24 +85,17 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
     setPesoItem({ producto, code });
     if (kgExistente !== undefined && kgExistente > 0) {
       setPesoKg(String(kgExistente));
-      setPesoImporte(String(Math.round(Number(producto.precioVenta) * kgExistente)));
+      setPesoImporte(String(Math.round(precioDe(producto) * kgExistente)));
     } else {
       setPesoKg(''); setPesoImporte('');
     }
     setTimeout(() => pesoRef.current?.focus(), 80);
   };
 
-  const onPesoKg = (v: string) => {
-    setPesoKg(v);
-    const kg = parseFloat(v.replace(',', '.'));
-    if (!isNaN(kg) && pesoItem) setPesoImporte(String(Math.round(Number(pesoItem.producto.precioVenta) * kg)));
-    else setPesoImporte('');
-  };
-
   const onPesoImporte = (v: string) => {
     setPesoImporte(v);
     const imp = parseFloat(v.replace(',', '.'));
-    const precio = pesoItem ? Number(pesoItem.producto.precioVenta) : 0;
+    const precio = pesoItem ? precioDe(pesoItem.producto) : 0;
     if (!isNaN(imp) && precio > 0) setPesoKg((Math.round((imp / precio) * 1000) / 1000).toFixed(3));
     else setPesoKg('');
   };
@@ -108,8 +103,8 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
   const confirmarPeso = () => {
     if (!pesoItem) return;
     const kg = parseFloat(pesoKg.replace(',', '.'));
-    if (isNaN(kg) || kg <= 0) { setError('Ingresá un peso o importe válido'); return; }
-    const precio = Math.round(Number(pesoItem.producto.precioVenta));
+    if (isNaN(kg) || kg <= 0) { setError('Ingresá un importe válido'); return; }
+    const precio = Math.round(precioDe(pesoItem.producto));
     const code = pesoItem.code;
     setItems(prev => {
       const existe = prev.find(i => i.codigo === code);
@@ -337,13 +332,15 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
             <button onClick={() => { setPesoItem(null); setTimeout(() => inputRef.current?.focus(), 50); }} style={{ border: 'none', background: '#e5e7eb', padding: '6px 10px', borderRadius: 6, cursor: 'pointer' }}>✕</button>
           </div>
           <div style={{ color: '#6b7280', marginTop: 4 }}>
-            ${Number(pesoItem.producto.precioVenta).toFixed(0)} por {unidadLabel(pesoItem.producto.unidad)}
+            ${precioDe(pesoItem.producto).toFixed(0)} por {unidadLabel(pesoItem.producto.unidad)}
           </div>
-          <label style={{ display: 'block', marginTop: 16, fontSize: 14, color: '#374151' }}>Cantidad ({unidadLabel(pesoItem.producto.unidad)})</label>
-          <input ref={pesoRef} type="text" inputMode="decimal" value={pesoKg} onChange={e => onPesoKg(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') confirmarPeso(); if (e.key === 'Escape') { setPesoItem(null); setTimeout(() => inputRef.current?.focus(), 50); } }} placeholder="0.000" style={{ width: '100%', padding: 14, fontSize: 24, marginTop: 4, border: '2px solid #111827', borderRadius: 8, boxSizing: 'border-box', textAlign: 'right' }} />
-          <label style={{ display: 'block', marginTop: 12, fontSize: 14, color: '#374151' }}>Importe ($)</label>
-          <input type="text" inputMode="numeric" value={pesoImporte} onChange={e => onPesoImporte(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') confirmarPeso(); }} placeholder="0" style={{ width: '100%', padding: 14, fontSize: 24, marginTop: 4, border: '1px solid #d1d5db', borderRadius: 8, boxSizing: 'border-box', textAlign: 'right' }} />
-          <small style={{ color: '#6b7280' }}>Cargá el peso de la balanza o el importe: el otro se calcula solo.</small>
+          <label style={{ display: 'block', marginTop: 16, fontSize: 14, color: '#374151' }}>Importe ($)</label>
+          <input ref={pesoRef} type="text" inputMode="numeric" value={pesoImporte} onChange={e => onPesoImporte(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') confirmarPeso(); if (e.key === 'Escape') { setPesoItem(null); setTimeout(() => inputRef.current?.focus(), 50); } }} placeholder="0" style={{ width: '100%', padding: 14, fontSize: 24, marginTop: 4, border: '2px solid #111827', borderRadius: 8, boxSizing: 'border-box', textAlign: 'right' }} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, padding: '10px 12px', background: '#f3f4f6', borderRadius: 8 }}>
+            <span style={{ fontSize: 14, color: '#374151' }}>Peso ({unidadLabel(pesoItem.producto.unidad)})</span>
+            <strong style={{ fontSize: 22 }}>{pesoKg || '0.000'}</strong>
+          </div>
+          <small style={{ color: '#6b7280' }}>Cargá el importe: el peso se calcula solo.</small>
           <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
             <button onClick={confirmarPeso} style={{ flex: 1, padding: 14, background: '#111827', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 16, fontWeight: 600 }}>Agregar</button>
             <button onClick={() => { setPesoItem(null); setTimeout(() => inputRef.current?.focus(), 50); }} style={{ padding: '14px 18px', background: '#e5e7eb', border: 'none', borderRadius: 8, cursor: 'pointer' }}>Cancelar</button>

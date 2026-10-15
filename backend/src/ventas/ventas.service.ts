@@ -76,12 +76,12 @@ export class VentasService {
       const subtotal = Math.round(precio * cantidad);
       total += subtotal;
 
-      // Foto del precio al momento de vender: costo + %venta + %crecimiento
+      // Foto del precio al momento de vender: costo + %crecimiento + %venta
       const costo = Math.round(producto.precioCosto);
       const pctVenta = producto.porcentajeVenta ?? 30;
       const pctCrec = producto.porcentajeCrecimiento ?? 10;
-      const aporteVenta = Math.round((costo * pctVenta) / 100);
-      const aporteCrecimiento = Math.round(((costo + aporteVenta) * pctCrec) / 100);
+      const aporteCrecimiento = Math.round((costo * pctCrec) / 100);
+      const aporteVenta = Math.round(((costo + aporteCrecimiento) * pctVenta) / 100);
 
       // Los productos por peso (KG) no usan control de stock: no se valida ni descuenta
       if (producto.unidad !== 'KG') {

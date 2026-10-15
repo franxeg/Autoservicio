@@ -23,7 +23,7 @@ export class CreateUserDto {
   nombre: string;
 
   @ApiProperty({ enum: Rol, example: Rol.CAJERO })
-  @IsEnum(Rol, { message: 'Rol inválido. Use ADMIN, GERENTE, CAJERO o REPOSITOR' })
+  @IsEnum(Rol, { message: 'Rol inválido. Use ADMIN o CAJERO' })
   rol: Rol;
 
   @ApiPropertyOptional()

@@ -9,9 +9,7 @@ datasource db {
 
 enum Rol {
   ADMIN
-  GERENTE
   CAJERO
-  REPOSITOR
   SETUP
 }
 

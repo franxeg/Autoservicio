@@ -1,0 +1,29 @@
+# --- Etapa 1: build del frontend ---
+FROM node:20-alpine AS web
+WORKDIR /web
+COPY frontend/package*.json ./
+RUN npm install
+COPY frontend/ ./
+RUN npm run build
+
+# --- Etapa 2: build del backend ---
+FROM node:20-alpine AS api
+WORKDIR /app
+RUN apk add --no-cache openssl
+COPY backend/package*.json ./
+RUN npm install
+COPY backend/ ./
+RUN npx prisma generate && npm run build
+
+# --- Etapa final: un solo proceso sirve API + frontend ---
+FROM node:20-alpine
+WORKDIR /app
+RUN apk add --no-cache openssl
+COPY --from=api /app/node_modules ./node_modules
+COPY --from=api /app/dist ./dist
+COPY --from=api /app/package.json ./package.json
+COPY --from=api /app/tsconfig.json ./tsconfig.json
+COPY --from=api /app/prisma ./prisma
+COPY --from=web /web/dist ./public
+EXPOSE 3000
+CMD ["node", "dist/main"]

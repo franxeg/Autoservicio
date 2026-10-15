@@ -49,3 +49,14 @@ export function hoyISO() {
   const d = new Date();
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
+
+// Nombres de meses en español
+export const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+// "2026-10" -> "octubre 2026"
+export function mesLargo(ym?: string | null) {
+  if (!ym) return '';
+  const [y, m] = String(ym).split('-');
+  const nombre = MESES[Number(m) - 1];
+  return nombre ? `${nombre.toLowerCase()} ${y}` : String(ym);
+}

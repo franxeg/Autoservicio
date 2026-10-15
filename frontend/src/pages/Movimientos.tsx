@@ -129,10 +129,10 @@ export default function Movimientos() {
                   <h4 style={{ margin: '24px 0 8px', color: '#9a3412' }}>1. Gastos (movimientos de caja que no son compra ni venta)</h4>
                   {data.gastos.length === 0 ? <p style={{ color: '#9ca3af', fontSize: 13 }}>Sin gastos en el período.</p> : (
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                      <thead><tr><th style={th}>Fecha</th><th style={th}>Hora</th><th style={th}>Tipo</th><th style={th}>Descripción</th><th style={th}>Sucursal</th><th style={{ ...th, textAlign: 'right' }}>Importe</th></tr></thead>
+                      <thead><tr><th style={th}>Fecha</th><th style={th}>Hora</th><th style={th}>Tipo</th><th style={th}>Descripción</th><th style={{ ...th, textAlign: 'right' }}>Importe</th></tr></thead>
                       <tbody>
                         {data.gastos.map((g: any) => (
-                          <tr key={g.id}><td style={td}>{fechaCorta(g.fecha)}</td><td style={td}>{horaCorta(g.fecha)}</td><td style={td}>{g.tipo}</td><td style={td}>{g.descripcion || '-'}</td><td style={td}>{g.sucursal || '-'}</td><td style={{ ...td, textAlign: 'right', fontWeight: 'bold', color: '#dc2626' }}>${Math.round(g.monto).toFixed(0)}</td></tr>
+                          <tr key={g.id}><td style={td}>{fechaCorta(g.fecha)}</td><td style={td}>{horaCorta(g.fecha)}</td><td style={td}>{g.tipo}</td><td style={td}>{g.descripcion || '-'}</td><td style={{ ...td, textAlign: 'right', fontWeight: 'bold', color: '#dc2626' }}>${Math.round(g.monto).toFixed(0)}</td></tr>
                         ))}
                       </tbody>
                     </table>

@@ -39,6 +39,6 @@ export class CajaController {
 
   @Post(':id/movimiento')
   addMovimiento(@Param('id') id: string, @Body() dto: MovimientoCajaDto) {
-    return this.service.addMovimiento(id, dto.tipo, dto.monto, dto.descripcion);
+    return this.service.addMovimiento(id, dto.tipo, dto.monto, dto.descripcion, dto.metodoPago);
   }
 }

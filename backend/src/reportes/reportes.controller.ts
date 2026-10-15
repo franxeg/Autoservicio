@@ -21,8 +21,12 @@ export class ReportesController {
   }
 
   @Get('desglose')
-  desglose(@Query('sucursalId') sucursalId?: string, @Query('periodo') periodo?: string) {
-    return this.service.desglose(sucursalId, periodo);
+  desglose(
+    @Query('sucursalId') sucursalId?: string,
+    @Query('periodo') periodo?: string,
+    @Query('mes') mes?: string,
+  ) {
+    return this.service.desglose(sucursalId, periodo, mes);
   }
 
   @Get('movimientos')

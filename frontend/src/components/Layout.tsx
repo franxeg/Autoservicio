@@ -24,26 +24,23 @@ export default function Layout() {
     navigate('/login');
   };
 
-  const can = (roles: string[]) => !rol || roles.includes(rol) || rol === 'ADMIN' || rol === 'GERENTE';
-
-  // ADMIN y GERENTE ven todo
-  const isAdmin = rol === 'ADMIN' || rol === 'GERENTE';
+  // El ADMIN ve todo. El CAJERO ve todo menos Dashboard, Movimientos y Empleados.
+  const isAdmin = rol === 'ADMIN';
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', fontFamily: 'sans-serif' }}>
       <aside style={{ width: 240, background: '#111827', color: 'white', padding: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
         <h2 style={{ marginBottom: 20, fontSize: 18 }}>{user?.empresa?.nombre || 'Autoservicio'}</h2>
-        <Link to="/" style={linkStyle('/')}>📊 Dashboard</Link>
-        {(isAdmin || rol === 'CAJERO') && <Link to="/pos" style={linkStyle('/pos')}>🛒 POS / Ventas</Link>}
+        {isAdmin && <Link to="/" style={linkStyle('/')}>📊 Dashboard</Link>}
+        <Link to="/pos" style={linkStyle('/pos')}>🛒 POS / Ventas</Link>
         <Link to="/productos" style={linkStyle('/productos')}>📦 Productos</Link>
         <Link to="/stock" style={linkStyle('/stock')}>📋 Stock</Link>
-        {(isAdmin || rol === 'REPOSITOR') && <Link to="/compras" style={linkStyle('/compras')}>🚚 Compras/Gastos</Link>}
+        <Link to="/compras" style={linkStyle('/compras')}>🚚 Compras/Gastos</Link>
         {isAdmin && <Link to="/movimientos" style={linkStyle('/movimientos')}>📈 Movimientos</Link>}
-        {can(['ADMIN','GERENTE','CAJERO']) && <Link to="/clientes" style={linkStyle('/clientes')}>👥 Clientes</Link>}
-        {(isAdmin || rol === 'REPOSITOR') && <Link to="/proveedores" style={linkStyle('/proveedores')}>🏭 Proveedores</Link>}
-        {(isAdmin || rol === 'CAJERO') && <Link to="/caja" style={linkStyle('/caja')}>💰 Caja</Link>}
+        <Link to="/clientes" style={linkStyle('/clientes')}>👥 Clientes</Link>
+        <Link to="/proveedores" style={linkStyle('/proveedores')}>🏭 Proveedores</Link>
+        <Link to="/caja" style={linkStyle('/caja')}>💰 Caja</Link>
         {isAdmin && <Link to="/empleados" style={linkStyle('/empleados')}>👷 Empleados</Link>}
-        {isAdmin && <Link to="/sucursales" style={linkStyle('/sucursales')}>🏢 Sucursales</Link>}
         <div style={{ marginTop: 'auto', borderTop: '1px solid #374151', paddingTop: 12 }}>
           <small>{user?.nombre || 'Usuario'} - {user?.rol}</small><br />
           <button onClick={handleLogout} style={{ marginTop: 8, width: '100%', padding: 6, cursor: 'pointer' }}>Cerrar Sesión</button>

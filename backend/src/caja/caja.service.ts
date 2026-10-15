@@ -52,12 +52,14 @@ export class CajaService {
       const ventasVirtual = caja.ventas.filter(v => v.estado === 'COMPLETADA' && esVirtual(v.metodoPago)).reduce((a, v) => a + v.total, 0);
       const pagosVirtuales = caja.pagos.filter((p: any) => esVirtual(p.metodoPago)).reduce((a: number, p: any) => a + p.monto, 0);
       const pagosEfectivo = caja.pagos.filter((p: any) => esEfectivoCobrado(p.metodoPago)).reduce((a: number, p: any) => a + p.monto, 0);
-      const gastos = caja.movimientos
-        .filter(m => !['APERTURA', 'VENTA', 'CIERRE', 'PAGO_CUENTA'].includes(m.tipo))
-        .reduce((a, m) => a + m.monto, 0); // COMPRA, GASTO, RETIRO
-      // Por simplicidad, gastos se descuentan de efectivo. Virtual solo suma ventas virtuales + inicial virtual
-      if (calculado === undefined) calculado = (caja.montoInicial || 0) + ventasEfectivo + pagosEfectivo - gastos;
-      if (calculadoVirtual === undefined) calculadoVirtual = (caja.montoInicialVirtual || 0) + ventasVirtual + pagosVirtuales;
+      const gastosEfectivo = caja.movimientos
+        .filter(m => !['APERTURA', 'VENTA', 'CIERRE', 'PAGO_CUENTA'].includes(m.tipo) && esEfectivoCobrado(m.metodoPago || 'EFECTIVO'))
+        .reduce((a, m) => a + m.monto, 0); // COMPRA, GASTO, RETIRO en efectivo
+      const gastosVirtuales = caja.movimientos
+        .filter(m => !['APERTURA', 'VENTA', 'CIERRE', 'PAGO_CUENTA'].includes(m.tipo) && esVirtual(m.metodoPago || 'EFECTIVO'))
+        .reduce((a, m) => a + m.monto, 0); // gastos pagados por transferencia/tarjeta
+      if (calculado === undefined) calculado = (caja.montoInicial || 0) + ventasEfectivo + pagosEfectivo - gastosEfectivo;
+      if (calculadoVirtual === undefined) calculadoVirtual = (caja.montoInicialVirtual || 0) + ventasVirtual + pagosVirtuales - gastosVirtuales;
     }
 
     calculado = Math.round(calculado!);
@@ -73,14 +75,14 @@ export class CajaService {
     });
   }
 
-  async addMovimiento(cajaId: string, tipo: string, monto: number, descripcion?: string) {
+  async addMovimiento(cajaId: string, tipo: string, monto: number, descripcion?: string, metodoPago?: string) {
     const tx = this.prisma.tenant;
     const caja = await tx.caja.findUnique({ where: { id: cajaId } });
     if (!caja) throw new NotFoundException('Caja no encontrada');
     if (caja.estado === 'CERRADA') throw new BadRequestException('Caja cerrada');
     const tiposValidos = ['VENTA', 'COMPRA', 'GASTO', 'RETIRO', 'APERTURA', 'CIERRE'];
     if (!tiposValidos.includes(tipo)) throw new BadRequestException(`Tipo inválido: ${tipo}`);
-    return tx.movimientoCaja.create({ data: { cajaId, tipo: tipo as any, monto: Math.round(monto), descripcion, empresaId: this.prisma.empresaId! } });
+    return tx.movimientoCaja.create({ data: { cajaId, tipo: tipo as any, monto: Math.round(monto), descripcion, metodoPago: metodoPago || 'EFECTIVO', empresaId: this.prisma.empresaId! } });
   }
 
   async findBySucursal(sucursalId: string, limit = 10) {

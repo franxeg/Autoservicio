@@ -18,13 +18,23 @@ export default function Caja() {
     setLoading(true); setError('');
     try {
       const { data } = await api.get('/caja/abierta', { params: { sucursalId } });
-      setCaja(data);
+      let detalle = data;
       if (data) {
         const det = await api.get(`/caja/${data.id}`);
-        setCaja(det.data);
+        detalle = det.data;
       }
+      setCaja(detalle);
       const hist = await api.get(`/caja/sucursal/${sucursalId}`);
       setHistorial(hist.data);
+      // Prellenar el saldo inicial con lo que dejó el último cierre (editable)
+      if (!data) {
+        const cerradas = (hist.data || []).filter((c: any) => c.estado === 'CERRADA' && c.fechaCierre);
+        if (cerradas.length) {
+          const ultima = cerradas.reduce((a: any, b: any) => new Date(a.fechaCierre) > new Date(b.fechaCierre) ? a : b);
+          setMontoInicial(String(Math.round(Number(ultima.montoFinal) || 0)));
+          setMontoInicialVirtual(String(Math.round(Number(ultima.montoFinalVirtual) || 0)));
+        }
+      }
     } catch (e: any) {
       setError(e.response?.data?.message || '');
       setCaja(null);
@@ -55,7 +65,7 @@ export default function Caja() {
 
   return (
     <div>
-      <h2>Caja - {sucursalId}</h2>
+      <h2>Caja</h2>
       {error && <div style={{ background: '#fee2e2', color: '#b91c1c', padding: 10, borderRadius: 6, marginBottom: 12 }}>{error}</div>}
       {success && <div style={{ background: '#ecfdf5', color: '#065f46', padding: 10, borderRadius: 6, marginBottom: 12 }}>{success}</div>}
 

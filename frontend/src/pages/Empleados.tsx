@@ -3,8 +3,7 @@ import { api } from '../lib/api';
 
 export default function Empleados() {
   const [empleados, setEmpleados] = useState<any[]>([]);
-  const [sucursales, setSucursales] = useState<any[]>([]);
-  const [form, setForm] = useState({ username: '', password: '', nombre: '', rol: 'CAJERO', sucursalId: '' });
+  const [form, setForm] = useState({ username: '', password: '', nombre: '', rol: 'CAJERO' });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -13,20 +12,15 @@ export default function Empleados() {
     const { data } = await api.get('/usuarios');
     setEmpleados(data);
   };
-  const fetchSucursales = async () => {
-    const { data } = await api.get('/sucursales');
-    setSucursales(data);
-    if (data[0] && !form.sucursalId) setForm(f => ({ ...f, sucursalId: data[0].id }));
-  };
 
-  useEffect(() => { fetchEmpleados(); fetchSucursales(); }, []);
+  useEffect(() => { fetchEmpleados(); }, []);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault(); setError(''); setSuccess('');
     try {
       await api.post('/usuarios', form);
       setSuccess(`Empleado ${form.nombre} creado`);
-      setForm({ username: '', password: '', nombre: '', rol: 'CAJERO', sucursalId: sucursales[0]?.id || '' });
+      setForm({ username: '', password: '', nombre: '', rol: 'CAJERO' });
       fetchEmpleados();
     } catch (e: any) { setError(e.response?.data?.message || e.message); }
   };
@@ -58,7 +52,7 @@ export default function Empleados() {
 
   const hayAdmin = empleados.some(e => e.rol === 'ADMIN' && e.activo);
   const rolesDisponibles = (esAdmin: boolean) =>
-    ['ADMIN', 'GERENTE', 'CAJERO', 'REPOSITOR'].filter(r => esAdmin || r !== 'ADMIN' || !hayAdmin);
+    ['ADMIN', 'CAJERO'].filter(r => esAdmin || r !== 'ADMIN' || !hayAdmin);
 
   return (
     <div>
@@ -77,20 +71,15 @@ export default function Empleados() {
           </div>
           <select value={form.rol} onChange={e => setForm({ ...form, rol: e.target.value })} style={{ padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }}>
             <option value="ADMIN" disabled={hayAdmin}>ADMIN (todo){hayAdmin ? ' — ya existe uno' : ''}</option>
-            <option value="GERENTE">GERENTE</option>
             <option value="CAJERO">CAJERO (POS + ventas)</option>
-            <option value="REPOSITOR">REPOSITOR (stock + compras)</option>
-          </select>
-          <select value={form.sucursalId} onChange={e => setForm({ ...form, sucursalId: e.target.value })} style={{ padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }}>
-            {sucursales.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
           </select>
           <button type="submit" style={{ padding: 10, background: '#059669', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Crear empleado</button>
         </form>
-        <small style={{ color: '#6b7280' }}>El cajero podrá loguearse y usar el POS de su sucursal. El repositor no puede cobrar.</small>
+        <small style={{ color: '#6b7280' }}>El cajero puede vender y ver stock, pero no accede al Dashboard, Movimientos ni Empleados.</small>
       </div>
 
       <table style={{ width: '100%', background: 'white', borderRadius: 8, borderCollapse: 'collapse' }}>
-        <thead><tr style={{ borderBottom: '2px solid #e5e7eb', textAlign: 'left' }}><th style={{ padding: 10 }}>Nombre</th><th>Usuario</th><th>Rol</th><th>Sucursal</th><th>Estado</th><th>Acción</th></tr></thead>
+        <thead><tr style={{ borderBottom: '2px solid #e5e7eb', textAlign: 'left' }}><th style={{ padding: 10 }}>Nombre</th><th>Usuario</th><th>Rol</th><th>Estado</th><th>Acción</th></tr></thead>
         <tbody>
           {empleados.map(emp => (
             <tr key={emp.id} style={{ borderBottom: '1px solid #f3f4f6', opacity: emp.activo ? 1 : 0.5 }}>
@@ -106,7 +95,6 @@ export default function Empleados() {
                   {rolesDisponibles(emp.rol === 'ADMIN').map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
               </td>
-              <td>{emp.sucursal?.nombre || emp.sucursalId || '-'}</td>
               <td>{emp.activo ? '🟢 Activo' : '🔴 Inactivo'}</td>
               <td>
                 <div style={{ display: 'flex', gap: 8 }}>
@@ -118,7 +106,7 @@ export default function Empleados() {
               </td>
             </tr>
           ))}
-          {empleados.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', padding: 20, color: '#9ca3af' }}>Sin empleados</td></tr>}
+          {empleados.length === 0 && <tr><td colSpan={5} style={{ textAlign: 'center', padding: 20, color: '#9ca3af' }}>Sin empleados</td></tr>}
         </tbody>
       </table>
     </div>

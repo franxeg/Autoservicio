@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Rol } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class UsersService {
@@ -11,6 +11,12 @@ export class UsersService {
 
   private async countAdminsActivos() {
     return this.prisma.tenant.usuario.count({ where: { rol: Rol.ADMIN, activo: true } });
+  }
+
+  // Trabajamos con una sucursal única por empresa: si no se especifica, se asigna la existente.
+  private async sucursalIdDefault(): Promise<string | undefined> {
+    const s = await this.prisma.tenant.sucursal.findFirst({ orderBy: { createdAt: 'asc' }, select: { id: true } });
+    return s?.id;
   }
 
   private async verificarNombreDuplicado(nombre: string, ignorarId?: string) {
@@ -55,7 +61,7 @@ export class UsersService {
     if (dto.rol === Rol.ADMIN && (await this.countAdminsActivos()) > 0) {
       throw new ConflictException('La empresa ya tiene un ADMIN. El rol de administrador es único.');
     }
-    const data: any = { username: dto.username, password: hashed, nombre: dto.nombre, rol: dto.rol, sucursalId: dto.sucursalId, empresaId: this.prisma.empresaId! };
+    const data: any = { username: dto.username, password: hashed, nombre: dto.nombre, rol: dto.rol, sucursalId: dto.sucursalId || await this.sucursalIdDefault(), empresaId: this.prisma.empresaId! };
     if (dto.email) data.email = dto.email;
     try {
       const user = await this.prisma.tenant.usuario.create({

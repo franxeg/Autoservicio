@@ -1,0 +1,10 @@
+**/node_modules
+**/dist
+.git
+.gitignore
+backups
+.env
+backend/.env
+frontend/.env
+*.log
+backend/prisma/migrations

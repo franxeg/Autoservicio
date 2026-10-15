@@ -15,7 +15,7 @@ import { Rol } from '@prisma/client';
 export class UsersController {
   constructor(private usersService: UsersService) {}
 
-  @Roles(Rol.ADMIN, Rol.GERENTE)
+  @Roles(Rol.ADMIN)
   @Get()
   findAll(@Query('sucursalId') sucursalId?: string) {
     return this.usersService.findAll(sucursalId);
@@ -26,13 +26,13 @@ export class UsersController {
     return this.usersService.findOne(id);
   }
 
-  @Roles(Rol.ADMIN, Rol.GERENTE)
+  @Roles(Rol.ADMIN)
   @Post()
   create(@Body() dto: CreateUserDto) {
     return this.usersService.create(dto);
   }
 
-  @Roles(Rol.ADMIN, Rol.GERENTE)
+  @Roles(Rol.ADMIN)
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: UpdateUserDto) {
     return this.usersService.update(id, dto);

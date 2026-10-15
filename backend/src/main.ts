@@ -1,10 +1,13 @@
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { existsSync } from 'fs';
+import { join } from 'path';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   app.setGlobalPrefix('api');
 
@@ -42,12 +45,25 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('Autoservicio API')
-    .setDescription('API Multi-Sucursal - Compras, Ventas, Stock, Caja')
+    .setDescription('API - Compras, Ventas, Stock, Caja')
     .setVersion('1.0')
     .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
+
+  // Modo producción: servir el frontend ya compilado desde el mismo proceso.
+  // No afecta al modo dev (no existe la carpeta con index.html).
+  const webDir = process.env.WEB_DIR || join(process.cwd(), 'public');
+  if (existsSync(join(webDir, 'index.html'))) {
+    app.useStaticAssets(webDir, { index: false });
+    const server = app.getHttpAdapter().getInstance();
+    server.get(/^\/(?!api(?:\/|$)).*/, (req: any, res: any, next: any) => {
+      if (req.method !== 'GET') return next();
+      res.sendFile(join(webDir, 'index.html'));
+    });
+    console.log(`Frontend servido desde ${webDir}`);
+  }
 
   const port = process.env.PORT || 3000;
   await app.listen(port);

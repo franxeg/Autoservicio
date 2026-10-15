@@ -66,10 +66,17 @@ export class ReportesService {
     };
   }
 
-  // Rango de fechas para el desglose: hoy | 7d | mes (por defecto mes)
-  private rango(periodo?: string) {
+  // Rango de fechas para el desglose: hoy | 7d | mes (por defecto mes).
+  // Si se pasa un mes puntual "aaaa-mm" (param `mes`), se usa ese mes calendario.
+  private rango(periodo?: string, mes?: string) {
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
+    const m = /^(\d{4})-(\d{2})$/.exec(mes || '');
+    if (m) {
+      const y = Number(m[1]);
+      const mo = Number(m[2]);
+      if (mo >= 1 && mo <= 12) return { gte: new Date(y, mo - 1, 1), lt: new Date(y, mo, 1) };
+    }
     if (periodo === 'hoy') return { gte: hoy };
     if (periodo === '7d') {
       const desde = new Date(hoy);
@@ -79,16 +86,16 @@ export class ReportesService {
     return { gte: new Date(hoy.getFullYear(), hoy.getMonth(), 1) };
   }
 
-  // Desglose de cada precio vendido: costo + aporte del %venta + aporte del %crecimiento
-  async desglose(sucursalId?: string, periodo?: string) {
-    const where: any = { estado: 'COMPLETADA', fecha: this.rango(periodo) };
+  // Desglose de cada precio vendido: costo + aporte del %crecimiento + aporte del %venta
+  async desglose(sucursalId?: string, periodo?: string, mes?: string) {
+    const where: any = { estado: 'COMPLETADA', fecha: this.rango(periodo, mes) };
     if (sucursalId) where.sucursalId = sucursalId;
 
     const [ventas, detalles] = await Promise.all([
       this.prisma.tenant.venta.count({ where }),
       this.prisma.tenant.detalleVenta.findMany({
         where: { venta: where },
-        include: { producto: { select: { id: true, nombre: true, codigoBarras: true } } },
+        include: { producto: { select: { id: true, nombre: true, codigoBarras: true, unidad: true } } },
       }),
     ]);
 
@@ -97,11 +104,11 @@ export class ReportesService {
 
     for (const d of detalles) {
       const vendido = Math.round(d.subtotal);
-      const unidades = Math.round(d.cantidad);
+      const cant = Number(d.cantidad) || 0; // puede ser fraccionario (kg)
       const completo = d.precioCosto != null && d.aporteVenta != null && d.aporteCrecimiento != null;
-      const costo = completo ? Math.round(d.precioCosto) * unidades : 0;
-      const aporteVenta = completo ? Math.round(d.aporteVenta) * unidades : 0;
-      const aporteCrecimiento = completo ? Math.round(d.aporteCrecimiento) * unidades : 0;
+      const costo = completo ? Math.round(Math.round(d.precioCosto) * cant) : 0;
+      const aporteVenta = completo ? Math.round(Math.round(d.aporteVenta) * cant) : 0;
+      const aporteCrecimiento = completo ? Math.round(Math.round(d.aporteCrecimiento) * cant) : 0;
       const sinDato = completo ? Math.max(0, vendido - costo - aporteVenta - aporteCrecimiento) : vendido;
 
       total.vendido += vendido;
@@ -109,16 +116,17 @@ export class ReportesService {
       total.aporteVenta += aporteVenta;
       total.aporteCrecimiento += aporteCrecimiento;
       total.sinDato += sinDato;
-      total.unidades += unidades;
+      total.unidades += Math.round(cant);
       total.lineas += 1;
       if (!completo) total.lineasSinFoto += 1;
 
       let p = porProducto.get(d.productoId);
       if (!p) {
-        p = { productoId: d.productoId, nombre: d.producto?.nombre || 'Desconocido', codigoBarras: d.producto?.codigoBarras, unidades: 0, vendido: 0, costo: 0, aporteVenta: 0, aporteCrecimiento: 0, sinDato: 0 };
+        p = { productoId: d.productoId, nombre: d.producto?.nombre || 'Desconocido', codigoBarras: d.producto?.codigoBarras, unidad: d.producto?.unidad || 'UNIDAD', unidades: 0, cantidad: 0, vendido: 0, costo: 0, aporteVenta: 0, aporteCrecimiento: 0, sinDato: 0 };
         porProducto.set(d.productoId, p);
       }
-      p.unidades += unidades;
+      p.unidades += Math.round(cant);
+      p.cantidad += cant;
       p.vendido += vendido;
       p.costo += costo;
       p.aporteVenta += aporteVenta;
@@ -128,6 +136,7 @@ export class ReportesService {
 
     return {
       periodo: periodo || 'mes',
+      mes: mes || null,
       ventas,
       ...total,
       porProducto: [...porProducto.values()].sort((a, b) => b.vendido - a.vendido),

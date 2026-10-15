@@ -32,21 +32,33 @@ export default function Productos() {
   const [editForm, setEditForm] = useState({ codigoBarras: '', nombre: '', precioCosto: '', porcentajeVenta: '', porcentajeCrecimiento: '', categoriaId: '', stock: '', stockMinimo: '', unidad: 'UNIDAD' });
   const [newCategoria, setNewCategoria] = useState('');
   const [showCatModal, setShowCatModal] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
+  const [createPrecio, setCreatePrecio] = useState({ precioCosto: '', porcentajeCrecimiento: '10', porcentajeVenta: '30' });
   const [vista, setVista] = useState<'productos' | 'elaborados'>('productos');
+  const [catFiltro, setCatFiltro] = useState<string>('ALL');
   const searchRef = useRef<HTMLInputElement>(null);
+  const defaultCatSet = useRef(false);
 
   const fetchProductos = async (q?: string) => {
     setLoading(true);
     try {
-      const { data } = await api.get('/productos', { params: { search: q || undefined, limit: 100, sucursalId } });
+      const { data } = await api.get('/productos', { params: { search: q || undefined, limit: 500, sucursalId } });
       const list = data.data || data;
       setProductos(list);
-      setFiltered(list);
     } catch (e: any) { setError(e.response?.data?.message || e.message); }
     finally { setLoading(false); }
   };
   const fetchCategorias = async () => {
-    try { const { data } = await api.get('/categorias'); setCategorias(data); } catch {}
+    try {
+      const { data } = await api.get('/categorias');
+      setCategorias(data);
+      // Por defecto, mostrar la categoría "Elaborados" (categoría de sistema) si existe
+      if (!defaultCatSet.current) {
+        const sistema = data.find((c: any) => c.esSistema);
+        if (sistema) setCatFiltro(sistema.id);
+        defaultCatSet.current = true;
+      }
+    } catch {}
   };
   const handleAddCategoria = async () => {
     if (!newCategoria.trim()) return;
@@ -68,27 +80,55 @@ export default function Productos() {
   };
   useEffect(() => { fetchProductos(); fetchCategorias(); }, []);
 
-  // Filtra la tabla de abajo en vivo (sin dropdown arriba)
+  // Filtra la tabla: si hay búsqueda activa, mostramos solo las coincidencias (ignora la categoría).
+  // Si no, mostramos solo la categoría seleccionada en el desplegable.
   useEffect(() => {
-    if (!search) { setFiltered(productos); return; }
-    const f = productos.filter(p => p.nombre.toLowerCase().includes(search.toLowerCase()) || (p.codigoBarras || '').includes(search));
-    setFiltered(f);
-  }, [search, productos]);
+    const q = search.trim().toLowerCase();
+    if (q) {
+      setFiltered(productos.filter(p => p.nombre.toLowerCase().includes(q) || (p.codigoBarras || '').includes(search.trim())));
+      return;
+    }
+    if (catFiltro === 'ALL') setFiltered(productos);
+    else if (catFiltro === '') setFiltered(productos.filter(p => !p.categoriaId));
+    else setFiltered(productos.filter(p => p.categoriaId === catFiltro));
+  }, [search, productos, catFiltro]);
 
-  const handleSearch = (e: React.FormEvent) => { e.preventDefault(); fetchProductos(search); };
+  const sugerencias = search.trim()
+    ? productos.filter(p => p.nombre.toLowerCase().includes(search.trim().toLowerCase()) || (p.codigoBarras || '').includes(search.trim())).slice(0, 6)
+    : [];
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const handleSearch = (e: React.FormEvent) => { e.preventDefault(); setShowSug(false); };
+
+  const handleCreate = (e: React.FormEvent) => {
     e.preventDefault(); setError('');
+    if (!form.nombre.trim()) { setError('Poné un nombre al producto.'); return; }
+    setCreatePrecio({ precioCosto: '', porcentajeCrecimiento: '10', porcentajeVenta: '30' });
+    setShowCreate(true);
+  };
+
+  const precioVentaPreviewCreate = () => {
+    const costo = Math.round(parseFloat(createPrecio.precioCosto) || 0);
+    const v = isNaN(parseFloat(createPrecio.porcentajeVenta)) ? 30 : parseFloat(createPrecio.porcentajeVenta);
+    const c = isNaN(parseFloat(createPrecio.porcentajeCrecimiento)) ? 10 : parseFloat(createPrecio.porcentajeCrecimiento);
+    return Math.round(costo * (1 + v / 100) * (1 + c / 100));
+  };
+
+  const confirmarCreate = async () => {
+    setError('');
     try {
       await api.post('/productos', {
         codigoBarras: form.codigoBarras || undefined,
         nombre: form.nombre,
         unidad: form.unidad,
+        precioCosto: Math.round(parseFloat(createPrecio.precioCosto) || 0),
+        porcentajeCrecimiento: isNaN(parseFloat(createPrecio.porcentajeCrecimiento)) ? undefined : parseFloat(createPrecio.porcentajeCrecimiento),
+        porcentajeVenta: isNaN(parseFloat(createPrecio.porcentajeVenta)) ? undefined : parseFloat(createPrecio.porcentajeVenta),
         stockMinimo: form.unidad === 'KG' ? undefined : Math.round(parseFloat(form.stockMinimo) || 5),
         categoriaId: form.categoriaId || undefined,
         sucursalId,
       });
       setForm({ codigoBarras: '', nombre: '', stockMinimo: '5', categoriaId: '', unidad: 'UNIDAD' });
+      setShowCreate(false);
       fetchProductos(search);
     } catch (e: any) { setError(e.response?.data?.message || e.message); }
   };
@@ -191,10 +231,34 @@ export default function Productos() {
       {error && <div style={{ background: '#fee2e2', color: '#b91c1c', padding: 10, borderRadius: 6, marginBottom: 12 }}>{error}</div>}
 
       <form onSubmit={handleSearch} style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-        <input ref={searchRef} placeholder="Buscar por nombre o código... (filtra la tabla)" value={search} onChange={e => setSearch(e.target.value)} style={{ flex: 1, padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }} />
+        <div style={{ position: 'relative', flex: 1 }}>
+          <input ref={searchRef} placeholder="Buscar por nombre o código... (muestra solo ese producto)" value={search} onChange={e => { setSearch(e.target.value); setShowSug(true); }} onFocus={() => search && setShowSug(true)} onBlur={() => setTimeout(() => setShowSug(false), 200)} style={{ width: '100%', padding: 10, borderRadius: 6, border: '1px solid #d1d5db', boxSizing: 'border-box' }} />
+          {showSug && sugerencias.length > 0 && (
+            <div style={{ position: 'absolute', top: 44, left: 0, right: 0, background: 'white', border: '1px solid #e5e7eb', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 5, maxHeight: 280, overflow: 'auto' }}>
+              {sugerencias.map(p => (
+                <div key={p.id} onMouseDown={() => { setSearch(p.nombre); setShowSug(false); }} style={{ padding: '8px 12px', cursor: 'pointer', borderBottom: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between' }}>
+                  <span>{p.nombre} {p.codigoBarras && <code style={{ fontSize: 11, color: '#6b7280' }}>{p.codigoBarras}</code>}</span>
+                  <span style={{ color: '#6b7280' }}>${Number(p.precioVenta).toFixed(0)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
         <button type="submit" style={{ padding: '10px 16px', background: '#111827', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Buscar</button>
-        <button type="button" onClick={() => { setSearch(''); fetchProductos(''); }} style={{ padding: '10px 16px', background: '#e5e7eb', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Limpiar</button>
+        <button type="button" onClick={() => { setSearch(''); setCatFiltro('ALL'); fetchProductos(''); }} style={{ padding: '10px 16px', background: '#e5e7eb', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Limpiar</button>
       </form>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+        <label style={{ fontSize: 14, color: '#374151' }}>Ver categoría:</label>
+        <select value={catFiltro} onChange={e => setCatFiltro(e.target.value)} style={{ padding: '8px 10px', borderRadius: 6, border: '1px solid #d1d5db' }}>
+          <option value="ALL">Todas las categorías</option>
+          <option value="">Sin categoría</option>
+          {categorias.map(c => <option key={c.id} value={c.id}>{c.nombre}{c.esSistema ? ' (sistema)' : ''}</option>)}
+        </select>
+        {search.trim()
+          ? <small style={{ color: '#0ea5e9' }}>Mostrando la búsqueda "{search}" (ignora la categoría)</small>
+          : <small style={{ color: '#6b7280' }}>{filtered.length} producto{filtered.length === 1 ? '' : 's'}</small>}
+      </div>
 
       <div style={{ background: 'white', padding: 16, borderRadius: 8, marginBottom: 20 }}>
         <h4>Alta rápida (con lector: código en Código barras)</h4>
@@ -247,11 +311,11 @@ export default function Productos() {
                 <label style={{ display: 'block', marginTop: 8 }}>Unidad de venta<select value={editForm.unidad} onChange={e => setEditForm({ ...editForm, unidad: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }}><option value="UNIDAD">Unidad</option><option value="KG">Peso</option></select></label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginTop: 8 }}>
                   <label>Costo<input type="number" min="0" step="1" value={editForm.precioCosto} onChange={e => setEditForm({ ...editForm, precioCosto: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
-                  <label>% Venta<input type="number" min="0" step="1" value={editForm.porcentajeVenta} onChange={e => setEditForm({ ...editForm, porcentajeVenta: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
                   <label>% Crec.<input type="number" min="0" step="1" value={editForm.porcentajeCrecimiento} onChange={e => setEditForm({ ...editForm, porcentajeCrecimiento: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
+                  <label>% Venta<input type="number" min="0" step="1" value={editForm.porcentajeVenta} onChange={e => setEditForm({ ...editForm, porcentajeVenta: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, padding: '10px 12px', background: '#f3f4f6', borderRadius: 6, border: '1px solid #e5e7eb' }}>
-                  <span style={{ fontSize: 14, color: '#374151' }}>Precio de venta (calculado)</span>
+                  <span style={{ fontSize: 14, color: '#374151' }}>Precio de venta (costo + %crecimiento + %venta)</span>
                   <strong style={{ fontSize: 20 }}>${precioVentaPreview().toFixed(0)}</strong>
                 </div>
                 {editForm.unidad !== 'KG' && (
@@ -265,6 +329,36 @@ export default function Productos() {
             <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
               <button onClick={handleUpdate} style={{ flex: 1, padding: 10, background: '#111827', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Guardar</button>
               <button onClick={handleDelete} style={{ padding: 10, background: '#fee2e2', color: '#b91c1c', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Eliminar</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showCreate && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'grid', placeItems: 'center', zIndex: 60 }} onClick={() => setShowCreate(false)}>
+          <div style={{ background: 'white', padding: 20, borderRadius: 12, width: 460 }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0 }}>Precio del producto</h3>
+              <button onClick={() => setShowCreate(false)} style={{ border: 'none', background: '#e5e7eb', padding: '6px 10px', borderRadius: 6, cursor: 'pointer' }}>✕</button>
+            </div>
+            <div style={{ marginTop: 10, background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 6, padding: 10, fontSize: 13, color: '#374151' }}>
+              <div><b>{form.nombre || 'Sin nombre'}</b></div>
+              <div style={{ color: '#6b7280', marginTop: 2 }}>
+                {form.codigoBarras ? `Código ${form.codigoBarras} · ` : ''}{categorias.find(c => c.id === form.categoriaId)?.nombre || 'Sin categoría'} · {form.unidad === 'KG' ? 'Peso (kg)' : 'Unidad'}
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginTop: 12 }}>
+              <label style={{ fontSize: 13 }}>Costo<input autoFocus type="number" min="0" step="1" value={createPrecio.precioCosto} onChange={e => setCreatePrecio({ ...createPrecio, precioCosto: e.target.value })} style={{ width: '100%', padding: 8, marginTop: 4, borderRadius: 6, border: '1px solid #d1d5db', boxSizing: 'border-box' }} /></label>
+              <label style={{ fontSize: 13 }}>% Crec.<input type="number" min="0" step="1" value={createPrecio.porcentajeCrecimiento} onChange={e => setCreatePrecio({ ...createPrecio, porcentajeCrecimiento: e.target.value })} style={{ width: '100%', padding: 8, marginTop: 4, borderRadius: 6, border: '1px solid #d1d5db', boxSizing: 'border-box' }} /></label>
+              <label style={{ fontSize: 13 }}>% Venta<input type="number" min="0" step="1" value={createPrecio.porcentajeVenta} onChange={e => setCreatePrecio({ ...createPrecio, porcentajeVenta: e.target.value })} style={{ width: '100%', padding: 8, marginTop: 4, borderRadius: 6, border: '1px solid #d1d5db', boxSizing: 'border-box' }} /></label>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, padding: '10px 12px', background: '#f3f4f6', borderRadius: 6, border: '1px solid #e5e7eb' }}>
+              <span style={{ fontSize: 14, color: '#374151' }}>Precio de venta (costo + %crecimiento + %venta)</span>
+              <strong style={{ fontSize: 20 }}>${precioVentaPreviewCreate().toFixed(0)}</strong>
+            </div>
+            {error && <div style={{ background: '#fee2e2', color: '#b91c1c', padding: 8, borderRadius: 6, marginTop: 10, fontSize: 13 }}>{error}</div>}
+            <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+              <button onClick={confirmarCreate} style={{ flex: 1, padding: 10, background: '#059669', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Crear producto</button>
+              <button onClick={() => setShowCreate(false)} style={{ padding: 10, background: '#e5e7eb', color: '#111827', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Cancelar</button>
             </div>
           </div>
         </div>

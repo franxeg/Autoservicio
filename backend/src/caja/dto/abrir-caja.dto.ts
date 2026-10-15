@@ -43,4 +43,9 @@ export class MovimientoCajaDto {
   @IsOptional()
   @IsString()
   descripcion?: string;
+
+  @ApiPropertyOptional({ enum: ['EFECTIVO', 'TRANSFERENCIA', 'TARJETA'], example: 'EFECTIVO' })
+  @IsOptional()
+  @IsString()
+  metodoPago?: string;
 }
