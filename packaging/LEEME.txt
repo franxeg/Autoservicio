@@ -1,0 +1,67 @@
+========================================================================
+ AUTOSERVICIO - INSTRUCCIONES
+========================================================================
+
+ Este equipo tiene todo lo necesario para funcionar solo (no necesita
+ Internet ni Docker). La base de datos y el servidor corren localmente.
+
+
+-- INICIAR EL SISTEMA --------------------------------------------------
+
+ Doble clic en:  iniciar.bat
+
+ La primera vez tarda 1-2 minutos (prepara la base de datos).
+ El navegador se abre solo en:  http://localhost:3000
+
+ El sistema queda funcionando en SEGUNDO PLANO (sin ventana): se puede
+ cerrar la ventana o minimizarla, el sistema sigue andando.
+
+ Para detenerlo: doble clic en  detener.bat  
+
+
+-- PRIMERA PUESTA EN MARCHA (solo una vez) ----------------------------
+
+ 1. Abrir  http://localhost:3000/proveedor
+ 2. Ingresar con el usuario y contrasena de proveedor, que estan en el
+    archivo  config.env  (lineas PROVIDER_USER y PROVIDER_PASSWORD).
+ 3. Completar "Crear nueva empresa" con el nombre del negocio.
+    El sistema muestra un usuario y contrasena temporales.
+ 4. Entregar esas credenciales al comercio para que ingrese por
+    http://localhost:3000/login  y cree su administrador definitivo.
+
+
+-- QUE NO TOCAR --------------------------------------------------------
+
+ - La carpeta  data\        -> ahi vive la base de datos.
+ - El archivo  config.env   -> contrasenas del sistema.
+ - La carpeta  pgsql\ y node\-> motor de base de datos y runtime.
+
+ Para respaldar/restaurar/mover el sistema: copiar la carpeta completa.
+
+
+-- BACKUPS -------------------------------------------------------------
+
+ - Backup manual: doble clic en  backup.bat
+ - Los backups quedan en la carpeta  backups\
+ - Se conservan los ultimos 14 dias (los mas viejos se borran solos).
+ - Backup automatico diario a las 22:00 (si activaste el autoarranque).
+
+
+-- AUTOARRANQUE AL ENCENDER LA PC --------------------------------------
+
+ Clic derecho en  autoarranque.bat  >  Ejecutar como administrador.
+
+ Queda configurado para:
+   - Iniciar el sistema solo al iniciar sesion.
+   - Hacer backup todos los dias a las 22:00.
+
+ (Para quitarlo:  autoarranque.bat -Quitar )
+
+
+-- SI ALGO NO ANDA -----------------------------------------------------
+
+ - Revisar  logs\app.log  y  logs\postgres.log
+ - Si el puerto 3000 esta ocupado, cambiar  APP_PORT=3000  en config.env.
+ - Ante dudas, contactar al proveedor del sistema.
+
+========================================================================
