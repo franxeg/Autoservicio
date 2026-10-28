@@ -80,6 +80,9 @@ if (!(Test-Path (Join-Path $dataDir 'PG_VERSION'))) {
 
 # --- 2) arrancar PostgreSQL ---
 $pgctl = Join-Path $pgBin 'pg_ctl.exe'
+$pgLog = Join-Path $logsDir 'postgres.log'
+$pgOut = Join-Path $logsDir 'postgres.out'
+
 & $pgctl -D $dataDir status *> $null
 if ($LASTEXITCODE -ne 0) {
   # Si quedo un archivo de bloqueo de un arranque anterior (por corte o suspension),
@@ -90,15 +93,17 @@ if ($LASTEXITCODE -ne 0) {
     Log "Limpiando bloqueo anterior (postmaster.pid)..."
     Remove-Item $pidFile -Force -ErrorAction SilentlyContinue
   }
+
   Log "Iniciando PostgreSQL (puerto $($cfg.PGPORT))..."
-  # Lanzamos postgres.exe directo (sin -Wait) y redirigimos su salida a archivos,
-  # para que no herede la consola actual (si hereda el pipe, el shell queda colgado).
-  $argPg = '-D "' + $dataDir + '" -p ' + $cfg.PGPORT
-  Start-Process -FilePath (Join-Path $pgBin 'postgres.exe') -ArgumentList $argPg `
-    -WindowStyle Hidden `
-    -RedirectStandardOutput (Join-Path $logsDir 'postgres.out') `
-    -RedirectStandardError  (Join-Path $logsDir 'postgres.log') | Out-Null
+  # pg_ctl con -w espera a que el motor termine el arranque y no cae por el 'starting up'.
+  & $pgctl -D $dataDir -l $pgLog -o "-p $($cfg.PGPORT) -c listen_addresses=127.0.0.1" start -w -t 120
+  if ($LASTEXITCODE -ne 0) {
+    $err = if (Test-Path $pgLog) { ((Get-Content $pgLog -Tail 10) -join ' | ') } else { '' }
+    Fail "PostgreSQL no respondio. $err"
+  }
 }
+
+# Espera corta final para asegurar que responda a conexiones
 $ready = $false
 for ($i = 0; $i -lt 40; $i++) {
   & (Join-Path $pgBin 'pg_isready.exe') -h 127.0.0.1 -p $cfg.PGPORT -U $cfg.POSTGRES_USER *> $null
@@ -106,8 +111,7 @@ for ($i = 0; $i -lt 40; $i++) {
   Start-Sleep -Milliseconds 500
 }
 if (!$ready) {
-  $pglog = Join-Path $logsDir 'postgres.log'
-  $err = if (Test-Path $pglog) { ((Get-Content $pglog -Tail 5) -join ' | ') } else { '' }
+  $err = if (Test-Path $pgLog) { ((Get-Content $pgLog -Tail 10) -join ' | ') } else { '' }
   Fail "PostgreSQL no respondio. $err"
 }
 
