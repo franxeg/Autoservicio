@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { api } from '../lib/api';
 import { useAuthStore } from '../lib/store';
 import { fechaCorta, fechaHora } from '../lib/fecha';
+import { calcularPrecioVenta } from '../lib/precio';
 
 interface Item { productoId: string; nombre: string; cantidad: string; precioCosto: string; porcentajeVenta: string; porcentajeCrecimiento: string; unidad?: string; }
 
@@ -83,7 +84,7 @@ export default function Compras() {
   const fetchProveedores = async () => { const { data } = await api.get('/proveedores'); setProveedores(data); };
   const fetchProductos = async (q: string) => {
     if (!q || q.length < 1) { setProductos([]); return; }
-    const { data } = await api.get('/productos', { params: { search: q, limit: 5 } });
+    const { data } = await api.get('/productos', { params: { search: q, limit: 50 } });
     // No se pueden comprar elaborados: se cargan con "Elaborar" en la sección Elaborados
     setProductos((data.data || data).filter((p: any) => !p.esElaborado));
   };
@@ -167,7 +168,7 @@ export default function Compras() {
   };
 
   const calcPrecioVenta = (costo: number, pctCrec: number, pctVenta: number) =>
-    Math.round(costo * (1 + pctCrec / 100) * (1 + pctVenta / 100));
+    calcularPrecioVenta(costo, pctVenta, pctCrec);
 
   const total = items.reduce((acc, i) => acc + Math.round(Math.round(parseFloat(i.precioCosto) || 0) * redondearCant(parseFloat(i.cantidad) || 0)), 0);
 
@@ -588,7 +589,7 @@ export default function Compras() {
               </tr></thead>
               <tbody>
                 {ticket.detalles?.map((d: any, i: number) => {
-                  const pv = Math.round(Number(d.precioCosto) * (1 + (d.porcentajeCrecimiento ?? 10) / 100) * (1 + (d.porcentajeVenta ?? 30) / 100));
+                  const pv = calcularPrecioVenta(Number(d.precioCosto), d.porcentajeVenta ?? 30, d.porcentajeCrecimiento ?? 10);
                   return (
                     <tr key={i}>
                       <td style={td}>{d.producto?.nombre}</td>

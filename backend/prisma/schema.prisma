@@ -66,6 +66,7 @@ model Empresa {
   movimientosCaja MovimientoCaja[]
   movimientosStock MovimientoStock[]
   recetas        RecetaItem[]
+  comboItems     ComboItem[]
 }
 
 model Sucursal {
@@ -144,6 +145,7 @@ model Producto {
   porcentajeCrecimiento Float   @default(10)
   unidad       UnidadVenta @default(UNIDAD)
   esElaborado  Boolean  @default(false)
+  esCombo      Boolean  @default(false)
   margen       Float?
   iva          Float    @default(21)
   activo       Boolean  @default(true)
@@ -159,6 +161,8 @@ model Producto {
   movimientosStock MovimientoStock[]
   receta        RecetaItem[] @relation("Elaborado")
   usadoEnReceta RecetaItem[] @relation("Insumo")
+  comboItems    ComboItem[] @relation("Combo")
+  usadoEnCombo  ComboItem[] @relation("ComboProducto")
 
   @@unique([empresaId, codigoBarras])
   @@unique([empresaId, codigoInterno])
@@ -274,7 +278,8 @@ model PagoCliente {
   id         String   @id @default(cuid())
   fecha      DateTime @default(now())
   monto      Float
-  metodoPago String // EFECTIVO, TARJETA, TRANSFERENCIA
+  metodoPago String // EFECTIVO, TARJETA, TRANSFERENCIA, AJUSTE
+  tipo       String   @default("PAGO") // PAGO, AJUSTE_POSITIVO, AJUSTE_NEGATIVO
   descripcion String?
 
   empresaId String
@@ -339,6 +344,10 @@ model DetalleVenta {
   porcentajeCrecimiento Float?
   aporteVenta           Float?
   aporteCrecimiento     Float?
+
+  comboId      String?
+  precioLista  Float?
+  esComboItem  Boolean @default(false)
 
   empresaId String
   empresa   Empresa @relation(fields: [empresaId], references: [id])
@@ -427,5 +436,20 @@ model MovimientoCaja {
   empresaId String
   empresa   Empresa @relation(fields: [empresaId], references: [id])
 
+  @@index([empresaId])
+}
+
+model ComboItem {
+  id         String   @id @default(cuid())
+  comboId    String
+  combo      Producto @relation("Combo", fields: [comboId], references: [id], onDelete: Cascade)
+  productoId String
+  producto   Producto @relation("ComboProducto", fields: [productoId], references: [id])
+  cantidad   Float    @default(1)
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+
+  @@unique([comboId, productoId])
   @@index([empresaId])
 }

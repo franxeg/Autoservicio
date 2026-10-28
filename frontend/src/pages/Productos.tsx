@@ -1,7 +1,9 @@
 import { useEffect, useState, useRef } from 'react';
 import { api } from '../lib/api';
 import { useAuthStore } from '../lib/store';
+import { calcularPrecioVenta } from '../lib/precio';
 import Elaborados from './Elaborados';
+import Combos from './Combos';
 
 interface Producto {
   id: string;
@@ -34,7 +36,7 @@ export default function Productos() {
   const [showCatModal, setShowCatModal] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [createPrecio, setCreatePrecio] = useState({ precioCosto: '', porcentajeCrecimiento: '10', porcentajeVenta: '30' });
-  const [vista, setVista] = useState<'productos' | 'elaborados'>('productos');
+  const [vista, setVista] = useState<'productos' | 'elaborados' | 'combos'>('productos');
   const [catFiltro, setCatFiltro] = useState<string>('ALL');
   const searchRef = useRef<HTMLInputElement>(null);
   const defaultCatSet = useRef(false);
@@ -42,9 +44,22 @@ export default function Productos() {
   const fetchProductos = async (q?: string) => {
     setLoading(true);
     try {
-      const { data } = await api.get('/productos', { params: { search: q || undefined, limit: 500, sucursalId } });
-      const list = data.data || data;
-      setProductos(list);
+      const all: Producto[] = [];
+      let page = 1;
+      const limit = 500;
+      while (true) {
+        const { data } = await api.get('/productos', { params: { search: q || undefined, limit, page, sucursalId } });
+        const list = Array.isArray(data) ? data : (data.data || []);
+        if (list.length === 0) break;
+        all.push(...list);
+        if (Array.isArray(data)) break;
+        const total = data.total;
+        if (total && all.length >= total) break;
+        if (list.length < limit) break;
+        page += 1;
+        if (page > 100) break;
+      }
+      setProductos(all);
     } catch (e: any) { setError(e.response?.data?.message || e.message); }
     finally { setLoading(false); }
   };
@@ -52,12 +67,7 @@ export default function Productos() {
     try {
       const { data } = await api.get('/categorias');
       setCategorias(data);
-      // Por defecto, mostrar la categoría "Elaborados" (categoría de sistema) si existe
-      if (!defaultCatSet.current) {
-        const sistema = data.find((c: any) => c.esSistema);
-        if (sistema) setCatFiltro(sistema.id);
-        defaultCatSet.current = true;
-      }
+      // Mostrar todas las categorías por defecto
     } catch {}
   };
   const handleAddCategoria = async () => {
@@ -110,7 +120,7 @@ export default function Productos() {
     const costo = Math.round(parseFloat(createPrecio.precioCosto) || 0);
     const v = isNaN(parseFloat(createPrecio.porcentajeVenta)) ? 30 : parseFloat(createPrecio.porcentajeVenta);
     const c = isNaN(parseFloat(createPrecio.porcentajeCrecimiento)) ? 10 : parseFloat(createPrecio.porcentajeCrecimiento);
-    return Math.round(costo * (1 + v / 100) * (1 + c / 100));
+    return calcularPrecioVenta(costo, v, c);
   };
 
   const confirmarCreate = async () => {
@@ -163,7 +173,7 @@ export default function Productos() {
     const costo = Math.round(parseFloat(editForm.precioCosto) || 0);
     const v = isNaN(parseFloat(editForm.porcentajeVenta)) ? 30 : parseFloat(editForm.porcentajeVenta);
     const c = isNaN(parseFloat(editForm.porcentajeCrecimiento)) ? 10 : parseFloat(editForm.porcentajeCrecimiento);
-    return Math.round(costo * (1 + v / 100) * (1 + c / 100));
+    return calcularPrecioVenta(costo, v, c);
   };
 
   const handleUpdate = async () => {
@@ -211,6 +221,7 @@ export default function Productos() {
     <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
       <button onClick={() => setVista('productos')} style={{ padding: '8px 16px', borderRadius: 6, cursor: 'pointer', fontWeight: 600, border: vista === 'productos' ? '2px solid #111827' : '1px solid #d1d5db', background: vista === 'productos' ? '#111827' : 'white', color: vista === 'productos' ? 'white' : '#111827' }}>Productos</button>
       <button onClick={() => setVista('elaborados')} style={{ padding: '8px 16px', borderRadius: 6, cursor: 'pointer', fontWeight: 600, border: vista === 'elaborados' ? '2px solid #111827' : '1px solid #d1d5db', background: vista === 'elaborados' ? '#111827' : 'white', color: vista === 'elaborados' ? 'white' : '#111827' }}>Elaborados</button>
+      <button onClick={() => setVista('combos')} style={{ padding: '8px 16px', borderRadius: 6, cursor: 'pointer', fontWeight: 600, border: vista === 'combos' ? '2px solid #111827' : '1px solid #d1d5db', background: vista === 'combos' ? '#111827' : 'white', color: vista === 'combos' ? 'white' : '#111827' }}>Combos</button>
     </div>
   );
 
@@ -220,6 +231,16 @@ export default function Productos() {
         <h2>Productos</h2>
         {tabs}
         <Elaborados sucursalId={sucursalId} />
+      </div>
+    );
+  }
+
+  if (vista === 'combos') {
+    return (
+      <div>
+        <h2>Productos</h2>
+        {tabs}
+        <Combos sucursalId={sucursalId} />
       </div>
     );
   }

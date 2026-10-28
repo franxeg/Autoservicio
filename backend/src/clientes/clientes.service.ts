@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateClienteDto, PagoDto } from './dto/create-cliente.dto';
+import { CreateClienteDto, PagoDto, AjusteSaldoDto } from './dto/create-cliente.dto';
 
 @Injectable()
 export class ClientesService {
@@ -53,6 +53,35 @@ export class ClientesService {
     return this.prisma.tenant.cliente.update({ where: { id }, data });
   }
 
+  // Ajuste manual de la deuda (para migrar clientes que ya venían debiendo).
+  // No pasa por caja: es un dato histórico que se carga una sola vez.
+  async ajustarSaldo(id: string, dto: AjusteSaldoDto) {
+    const cliente = await this.findOne(id);
+    const monto = Math.round(Number(dto.monto));
+    if (!monto) throw new BadRequestException('El monto debe ser distinto de cero');
+    if (monto < 0 && monto > cliente.saldoCuenta) {
+      throw new BadRequestException(`El monto a restar no puede superar la deuda actual: $${Math.round(Number(cliente.saldoCuenta))}`);
+    }
+    const empresaId = this.prisma.empresaId!;
+    const nuevo = Math.round(Number(cliente.saldoCuenta)) + monto;
+    if (nuevo < 0) throw new BadRequestException('El saldo no puede quedar negativo');
+
+    const tx = this.prisma.tenant;
+    const pago = await tx.pagoCliente.create({
+      data: {
+        monto: Math.abs(monto),
+        metodoPago: dto.metodoPago || 'AJUSTE',
+        descripcion: monto > 0 ? (dto.descripcion || 'Saldo inicial / deuda anterior') : (dto.descripcion || 'Ajuste de deuda'),
+        tipo: monto > 0 ? 'AJUSTE_POSITIVO' : 'AJUSTE_NEGATIVO',
+        empresaId,
+        clienteId: id,
+      },
+    });
+    await tx.cliente.update({ where: { id }, data: { saldoCuenta: { increment: monto } } });
+
+    return { pago, saldo: nuevo };
+  }
+
   async remove(id: string) {
     await this.findOne(id);
     // Borrado lógico: no hay campo activo, así que eliminamos solo si saldo 0
@@ -81,6 +110,7 @@ export class ClientesService {
       data: {
         monto,
         metodoPago,
+        tipo: 'PAGO',
         descripcion: dto.descripcion || null,
         empresaId,
         clienteId: id,
@@ -121,7 +151,9 @@ await tx.movimientoCaja.create({
     ]);
 
     const totalDeuda = ventas.filter((v) => v.estado !== 'CANCELADA').reduce((a, v) => a + v.total, 0);
-    const totalPagado = pagos.reduce((a, p) => a + p.monto, 0);
+    const totalPagado = pagos.filter((p) => p.tipo === 'PAGO').reduce((a, p) => a + p.monto, 0);
+    const totalAjustes = pagos.filter((p) => p.tipo === 'AJUSTE_POSITIVO').reduce((a, p) => a + p.monto, 0)
+      - pagos.filter((p) => p.tipo === 'AJUSTE_NEGATIVO').reduce((a, p) => a + p.monto, 0);
     const detalleVentas = ventas.map((v) => ({
       ...v,
       estado: v.estado,
@@ -135,6 +167,7 @@ await tx.movimientoCaja.create({
       saldo: cliente.saldoCuenta,
       totalDeuda,
       totalPagado,
+      totalAjustes,
       ventas: detalleVentas,
       pagos,
     };

@@ -202,7 +202,8 @@ export class ComprasService {
       const pctVenta = det.porcentajeVenta ?? 30;
       const pctCrec = det.porcentajeCrecimiento ?? 10;
       const costo = Math.round(det.precioCosto);
-      const precioVenta = Math.round(costo * (1 + pctVenta / 100) * (1 + pctCrec / 100));
+      // Mismo criterio que productos.service.calcularVenta: múltiplo de 100 redondeado hacia arriba.
+      const precioVenta = Math.ceil((costo * (1 + pctVenta / 100) * (1 + pctCrec / 100) - 1e-6) / 100) * 100;
       await tx.producto.update({
         where: { id: det.productoId },
         data: {

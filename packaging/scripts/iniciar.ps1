@@ -23,6 +23,8 @@ $dataDir    = Join-Path $root 'data'
 $logsDir    = Join-Path $root 'logs'
 $appDir     = Join-Path $root 'app'
 $configPath = Join-Path $root 'config.env'
+$versionFile = Join-Path $root 'app-version.txt'
+$backupsDir = Join-Path $root 'backups'
 
 if (!(Test-Path $logsDir))   { New-Item -ItemType Directory -Path $logsDir | Out-Null }
 if (!(Test-Path $node))      { Fail "No se encontro node\node.exe. Bundle incompleto." }
@@ -48,11 +50,30 @@ if (!$cfg.ContainsKey('POSTGRES_APP_USER'))     { $cfg.POSTGRES_APP_USER = 'auto
 if (!$cfg.ContainsKey('POSTGRES_APP_PASSWORD')) { $cfg.POSTGRES_APP_PASSWORD = 'autoservicioapp123' } # debe coincidir con prisma\rls.sql
 if (!$cfg.ContainsKey('PGPORT'))                { $cfg.PGPORT = '5433' }
 if (!$cfg.ContainsKey('APP_PORT'))              { $cfg.APP_PORT = '3000' }
+if (!$cfg.ContainsKey('APP_VERSION'))           { $cfg.APP_VERSION = '1.1.0' }
 if (!$cfg.ContainsKey('JWT_SECRET'))            { $cfg.JWT_SECRET = (New-Secret 48) }
 if (!$cfg.ContainsKey('JWT_EXPIRES_IN'))        { $cfg.JWT_EXPIRES_IN = '30d' }
 if (!$cfg.ContainsKey('PROVIDER_USER'))         { $cfg.PROVIDER_USER = 'Jupiter' }
 if (!$cfg.ContainsKey('PROVIDER_PASSWORD'))     { $cfg.PROVIDER_PASSWORD = 'Proveedor21' }
 ($cfg.GetEnumerator() | Sort-Object Name | ForEach-Object { "$($_.Key)=$($_.Value)" }) | Set-Content -Path $configPath -Encoding ASCII
+
+$versionActual = $cfg.APP_VERSION
+$versionAnterior = if (Test-Path $versionFile) { (Get-Content $versionFile -TotalCount 1).Trim() } else { '' }
+if (-not (Test-Path $versionFile) -or $versionAnterior -ne $versionActual) {
+  $backupStamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+  $dumpPath = Join-Path $backupsDir "autoservicio-upgrade-$backupStamp.dump"
+
+  if (Test-Path (Join-Path $root 'data\PG_VERSION')) {
+    Log "Actualizacion detectada ($versionAnterior -> $versionActual). Generando backup de seguridad antes de aplicar cambios..."
+    if (!(Test-Path $backupsDir)) { New-Item -ItemType Directory -Path $backupsDir | Out-Null }
+    $env:PGPASSWORD = $cfg.POSTGRES_PASSWORD
+    & (Join-Path $pgBin 'pg_dump.exe') -h 127.0.0.1 -p $cfg.PGPORT -U $cfg.POSTGRES_USER -d $cfg.POSTGRES_DB -F c -f $dumpPath
+    if ($LASTEXITCODE -ne 0) { Fail "No se pudo crear el backup previo a la actualizacion. Revisa la DB y vuelve a intentar." }
+    Log "Backup de seguridad listo: $dumpPath"
+  }
+
+  $versionActual | Set-Content -Path $versionFile -Encoding ASCII
+}
 
 $env:PGPASSWORD = $cfg.POSTGRES_PASSWORD
 $host_ = "127.0.0.1:$($cfg.PGPORT)"
@@ -77,6 +98,14 @@ if (!(Test-Path (Join-Path $dataDir 'PG_VERSION'))) {
 $pgctl = Join-Path $pgBin 'pg_ctl.exe'
 & $pgctl -D $dataDir status *> $null
 if ($LASTEXITCODE -ne 0) {
+  # Si quedo un archivo de bloqueo de un arranque anterior (por corte o suspension),
+  # borralo solo si no hay ningun postgres corriendo. Los datos no se tocan.
+  $pidFile = Join-Path $dataDir 'postmaster.pid'
+  $pgProc  = Get-Process -Name 'postgres' -ErrorAction SilentlyContinue
+  if ((Test-Path $pidFile) -and (-not $pgProc)) {
+    Log "Limpiando bloqueo anterior (postmaster.pid)..."
+    Remove-Item $pidFile -Force -ErrorAction SilentlyContinue
+  }
   Log "Iniciando PostgreSQL (puerto $($cfg.PGPORT))..."
   # Lanzamos postgres.exe directo (sin -Wait) y redirigimos su salida a archivos,
   # para que no herede la consola actual (si hereda el pipe, el shell queda colgado).
@@ -92,7 +121,11 @@ for ($i = 0; $i -lt 40; $i++) {
   if ($LASTEXITCODE -eq 0) { $ready = $true; break }
   Start-Sleep -Milliseconds 500
 }
-if (!$ready) { Fail "PostgreSQL no respondio. Revisa logs\postgres.log" }
+if (!$ready) {
+  $pglog = Join-Path $logsDir 'postgres.log'
+  $err = if (Test-Path $pglog) { ((Get-Content $pglog -Tail 5) -join ' | ') } else { '' }
+  Fail "PostgreSQL no respondio. $err"
+}
 
 # --- 3) crear la base si no existe ---
 $psql = Join-Path $pgBin 'psql.exe'

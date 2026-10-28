@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductoDto } from './dto/create-producto.dto';
 import { UpdateProductoDto } from './dto/update-producto.dto';
 import { GuardarRecetaDto } from './dto/guardar-receta.dto';
+import { CreateComboDto, UpdateComboDto } from './dto/combo.dto';
 import { redondearCantidad } from '../common/numeros';
 
 @Injectable()
@@ -51,8 +52,12 @@ export class ProductosService {
 
   // precioVenta nunca se edita a mano: se calcula con costo + %crecimiento + %venta
   // (el producto es el mismo sin importar el orden, pero se mantiene este orden por consistencia)
+  // El resultado se redondea HACIA ARRIBA al próximo múltiplo de 100, para trabajar
+  // sin moneda chica en la caja.
   private calcularVenta(costo: number, pctVenta: number | null | undefined, pctCrec: number | null | undefined) {
-    return Math.round(costo * (1 + (pctVenta ?? 30) / 100) * (1 + (pctCrec ?? 10) / 100));
+    const base = costo * (1 + (pctVenta ?? 30) / 100) * (1 + (pctCrec ?? 10) / 100);
+    // (base - 1e-6) evita que el ruido de coma flotante empuje un múltiplo exacto al siguiente.
+    return Math.ceil((base - 1e-6) / 100) * 100;
   }
 
   private static readonly CATEGORIA_ELABORADOS = 'Elaborados';
@@ -437,5 +442,181 @@ export class ProductosService {
         })),
       };
     });
+  }
+
+  // ---------- Combos ----------
+  private comboInclude() {
+    return {
+      comboItems: {
+        include: {
+          producto: {
+            include: {
+              categoria: true,
+              stocks: true,
+            },
+          },
+        },
+      },
+      categoria: true,
+      stocks: true,
+    };
+  }
+
+  async getCombos(sucursalId?: string) {
+    const combos = await this.prisma.tenant.producto.findMany({
+      where: { empresaId: this.prisma.empresaId, esCombo: true, activo: true },
+      include: this.comboInclude(),
+      orderBy: { nombre: 'asc' },
+    });
+    return combos.map(c => this.armarCombo(c, sucursalId));
+  }
+
+  async getCombo(id: string, sucursalId?: string) {
+    const combo = await this.prisma.tenant.producto.findUnique({
+      where: { id },
+      include: this.comboInclude(),
+    });
+    if (!combo || !combo.esCombo) throw new NotFoundException('Combo no encontrado');
+    return this.armarCombo(combo, sucursalId);
+  }
+
+  private armarCombo(combo: any, sucursalId?: string) {
+    const items = (combo.comboItems || []).map((it: any) => {
+      const p = it.producto;
+      const precioUnitario = Math.round(p.precioVenta || 0);
+      const precioCosto = Math.round(p.precioCosto || 0);
+      const cantidad = Number(it.cantidad) || 1;
+      const stock = sucursalId ? (p.stocks?.find((s: any) => s.sucursalId === sucursalId)?.cantidad ?? 0) : (p.stocks?.[0]?.cantidad ?? 0);
+      return {
+        productoId: p.id,
+        nombre: p.nombre,
+        codigoBarras: p.codigoBarras,
+        unidad: p.unidad,
+        precioUnitario,
+        precioCosto,
+        cantidad,
+        subtotal: Math.round(precioUnitario * cantidad),
+        costoSubtotal: Math.round(precioCosto * cantidad),
+        stock,
+      };
+    });
+    const total = items.reduce((a: number, it: any) => a + it.subtotal, 0);
+    const costoTotal = items.reduce((a: number, it: any) => a + it.costoSubtotal, 0);
+    return {
+      id: combo.id,
+      nombre: combo.nombre,
+      codigoBarras: combo.codigoBarras,
+      categoriaId: combo.categoriaId,
+      categoria: combo.categoria,
+      precioVenta: Math.round(combo.precioVenta || total),
+      totalLista: total,
+      costoTotal,
+      ahorro: total - Math.round(combo.precioVenta || total),
+      esCombo: true,
+      activo: combo.activo,
+      items,
+      stocks: combo.stocks,
+    };
+  }
+
+  async createCombo(dto: CreateComboDto) {
+    const empresaId = this.prisma.empresaId!;
+    if (dto.nombre) {
+      const dup = await this.prisma.tenant.producto.findFirst({ where: { empresaId, nombre: { equals: dto.nombre.trim(), mode: 'insensitive' }, esCombo: true } });
+      if (dup) throw new ConflictException(`Ya existe un combo con el nombre "${dto.nombre.trim()}"`);
+    }
+    if (dto.codigoBarras) {
+      const exists = await this.prisma.tenant.producto.findFirst({ where: { empresaId, codigoBarras: dto.codigoBarras } });
+      if (exists) throw new ConflictException('Código de barras ya existe');
+    }
+    if (!dto.items || dto.items.length === 0) throw new BadRequestException('El combo debe tener al menos un producto');
+
+    const items = [];
+    let totalLista = 0;
+    for (const it of dto.items) {
+      const p = await this.prisma.tenant.producto.findUnique({ where: { id: it.productoId } });
+      if (!p || !p.activo) throw new BadRequestException('Producto inválido en el combo');
+      if (p.esCombo) throw new BadRequestException('No se puede incluir otro combo dentro de un combo');
+      const precio = Math.round(p.precioVenta || 0);
+      const cant = Number(it.cantidad) || 1;
+      totalLista += precio * cant;
+      items.push({ productoId: p.id, cantidad: cant });
+    }
+
+    const precioVenta = dto.precioVenta !== undefined && dto.precioVenta !== null ? Math.round(dto.precioVenta) : Math.round(totalLista);
+
+    const combo = await this.prisma.tenant.producto.create({
+      data: {
+        nombre: dto.nombre.trim(),
+        codigoBarras: dto.codigoBarras || undefined,
+        categoriaId: dto.categoriaId || undefined,
+        precioCosto: 0,
+        precioVenta,
+        porcentajeVenta: 0,
+        porcentajeCrecimiento: 0,
+        unidad: 'UNIDAD',
+        esCombo: true,
+        esElaborado: false,
+        empresaId,
+        comboItems: {
+          create: items.map(it => ({ productoId: it.productoId, cantidad: it.cantidad, empresaId })),
+        },
+      },
+    });
+    return this.getCombo(combo.id);
+  }
+
+  async updateCombo(id: string, dto: UpdateComboDto) {
+    const actual = await this.prisma.tenant.producto.findUnique({ where: { id }, include: { comboItems: true } });
+    if (!actual || !actual.esCombo) throw new NotFoundException('Combo no encontrado');
+    const empresaId = this.prisma.empresaId!;
+
+    if (dto.nombre) {
+      const dup = await this.prisma.tenant.producto.findFirst({ where: { empresaId, nombre: { equals: dto.nombre.trim(), mode: 'insensitive' }, esCombo: true, NOT: { id } } });
+      if (dup) throw new ConflictException(`Ya existe un combo con el nombre "${dto.nombre.trim()}"`);
+    }
+    if (dto.codigoBarras) {
+      const exists = await this.prisma.tenant.producto.findFirst({ where: { empresaId, codigoBarras: dto.codigoBarras, NOT: { id } } });
+      if (exists) throw new ConflictException('Código de barras ya existe');
+    }
+
+    const data: any = {};
+    if (dto.nombre !== undefined) data.nombre = dto.nombre.trim();
+    if (dto.codigoBarras !== undefined) data.codigoBarras = dto.codigoBarras || null;
+    if (dto.categoriaId !== undefined) data.categoriaId = dto.categoriaId || null;
+    if (dto.activo !== undefined) data.activo = dto.activo;
+
+    if (dto.items) {
+      if (dto.items.length === 0) throw new BadRequestException('El combo debe tener al menos un producto');
+      await this.prisma.tenant.comboItem.deleteMany({ where: { comboId: id } });
+      const items = [];
+      let totalLista = 0;
+      for (const it of dto.items) {
+        const p = await this.prisma.tenant.producto.findUnique({ where: { id: it.productoId } });
+        if (!p || !p.activo) throw new BadRequestException('Producto inválido en el combo');
+        if (p.esCombo) throw new BadRequestException('No se puede incluir otro combo dentro de un combo');
+        const precio = Math.round(p.precioVenta || 0);
+        const cant = Number(it.cantidad) || 1;
+        totalLista += precio * cant;
+        items.push({ productoId: p.id, cantidad: cant });
+      }
+      await this.prisma.tenant.comboItem.createMany({ data: items.map(it => ({ comboId: id, productoId: it.productoId, cantidad: it.cantidad, empresaId })) });
+      if (dto.precioVenta === undefined || dto.precioVenta === null) {
+        data.precioVenta = Math.round(totalLista);
+      }
+    }
+
+    if (dto.precioVenta !== undefined && dto.precioVenta !== null) {
+      data.precioVenta = Math.round(dto.precioVenta);
+    }
+
+    await this.prisma.tenant.producto.update({ where: { id }, data });
+    return this.getCombo(id);
+  }
+
+  async removeCombo(id: string) {
+    const combo = await this.prisma.tenant.producto.findUnique({ where: { id } });
+    if (!combo || !combo.esCombo) throw new NotFoundException('Combo no encontrado');
+    return this.prisma.tenant.producto.update({ where: { id }, data: { activo: false } });
   }
 }

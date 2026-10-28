@@ -1,0 +1,69 @@
+name: Build Windows Installer
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-release:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Inno Setup
+        shell: powershell
+        run: |
+          choco install innosetup -y --no-progress
+
+      - name: Prepare portable runtime files
+        shell: powershell
+        run: |
+          $tmp = Join-Path $env:USERPROFILE 'AppData\Local\Temp\opencode'
+          New-Item -ItemType Directory -Force -Path $tmp | Out-Null
+
+          $nodeZip = Join-Path $tmp 'node-v20.20.2-win-x64.zip'
+          $pgZip = Join-Path $tmp 'postgresql-16.15-5-windows-x64-binaries.zip'
+
+          Invoke-WebRequest -Uri 'https://nodejs.org/dist/v20.20.2/node-v20.20.2-win-x64.zip' -OutFile $nodeZip
+          Invoke-WebRequest -Uri 'https://get.enterprisedb.com/postgresql/postgresql-16.15-5-windows-x64-binaries.zip' -OutFile $pgZip
+
+      - name: Build portable release bundle
+        shell: powershell
+        run: |
+          Set-Location "${{ github.workspace }}"
+          powershell -ExecutionPolicy Bypass -File .\scripts\construir-release.ps1
+
+      - name: Compile installer
+        shell: powershell
+        run: |
+          $iscc = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
+          if (-not (Test-Path $iscc)) {
+            throw "ISCC.exe no encontrado en $iscc"
+          }
+
+          & $iscc ".\packaging\instalador.iss"
+
+      - name: Upload installer as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: autoservicio-installer
+          path: dist/*.exe
+          if-no-files-found: error
+
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.exe
+          generate_release_notes: true

@@ -18,6 +18,7 @@
 #define SourceDir "..\release"
 
 [Setup]
+AppId={{8E89A3C2-1ACC-41B5-9007-BF9E4DFE0D5C}}
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppPublisher=Autoservicio
@@ -34,6 +35,10 @@ ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequired=admin
 UninstallDisplayName={#AppName}
 DisableDirPage=no
+UsePreviousAppDir=yes
+CreateAppDir=yes
+AppendDefaultDirName=no
+AlwaysRestart=yes
 
 [Languages]
 Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"

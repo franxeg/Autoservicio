@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { ClientesService } from './clientes.service';
-import { CreateClienteDto, PagoDto } from './dto/create-cliente.dto';
+import { CreateClienteDto, PagoDto, AjusteSaldoDto } from './dto/create-cliente.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
@@ -32,6 +32,11 @@ export class ClientesController {
   @Post(':id/pago')
   pago(@Param('id') id: string, @Body() dto: PagoDto, @CurrentUser() user: any) {
     return this.service.registrarPago(id, dto, user?.id);
+  }
+
+  @Post(':id/ajuste')
+  ajuste(@Param('id') id: string, @Body() dto: AjusteSaldoDto) {
+    return this.service.ajustarSaldo(id, dto);
   }
 
   @Delete(':id')

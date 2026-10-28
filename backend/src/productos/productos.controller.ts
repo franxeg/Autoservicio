@@ -4,6 +4,7 @@ import { ProductosService } from './productos.service';
 import { CreateProductoDto } from './dto/create-producto.dto';
 import { UpdateProductoDto } from './dto/update-producto.dto';
 import { GuardarRecetaDto } from './dto/guardar-receta.dto';
+import { CreateComboDto, UpdateComboDto } from './dto/combo.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
@@ -43,6 +44,31 @@ export class ProductosController {
   @Get('elaborados')
   getElaborados(@Query('sucursalId') sucursalId?: string) {
     return this.service.getElaborados(sucursalId);
+  }
+
+  @Get('combos')
+  getCombos(@Query('sucursalId') sucursalId?: string) {
+    return this.service.getCombos(sucursalId);
+  }
+
+  @Post('combos')
+  createCombo(@Body() dto: CreateComboDto) {
+    return this.service.createCombo(dto);
+  }
+
+  @Get('combos/:id')
+  getCombo(@Param('id') id: string) {
+    return this.service.getCombo(id);
+  }
+
+  @Patch('combos/:id')
+  updateCombo(@Param('id') id: string, @Body() dto: UpdateComboDto) {
+    return this.service.updateCombo(id, dto);
+  }
+
+  @Delete('combos/:id')
+  removeCombo(@Param('id') id: string) {
+    return this.service.removeCombo(id);
   }
 
   @Get('codigo/:codigo')

@@ -9,6 +9,30 @@ interface Item {
   precio: number;
   cantidad: number;
   unidad?: string;
+  comboGroupId?: string;
+}
+
+interface ComboItem {
+  productoId: string;
+  nombre: string;
+  cantidad: number;
+  precioUnitario: number;
+  precioCosto?: number;
+}
+
+interface Combo {
+  id: string;
+  nombre: string;
+  precioVenta: number;
+  totalLista: number;
+  items: ComboItem[];
+}
+
+interface ComboGroup {
+  id: string;
+  combo: Combo;
+  aplicadoEn: number;
+  itemsAsignados: Array<{ productoId: string; cantidad: number; precioUnitarioLista: number }>;
 }
 
 const esPeso = (x: { unidad?: string }) => x?.unidad === 'KG';
@@ -51,6 +75,8 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
   const [pesoItem, setPesoItem] = useState<{ producto: any; code: string } | null>(null);
   const [pesoKg, setPesoKg] = useState('');
   const [pesoImporte, setPesoImporte] = useState('');
+  const [combos, setCombos] = useState<Combo[]>([]);
+  const [comboGroups, setComboGroups] = useState<ComboGroup[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const pesoRef = useRef<HTMLInputElement>(null);
   const user = useAuthStore(s => s.user);
@@ -59,17 +85,45 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
   useEffect(() => {
     checkCaja();
     fetchCatalog();
+    fetchCombos();
   }, []);
+
+  const fetchCombos = async () => {
+    try {
+      const { data } = await api.get('/productos/combos', { params: { sucursalId } });
+      setCombos(data || []);
+    } catch {}
+  };
 
   // Cuando este POS pasa a estar visible, el foco va a su buscador
   useEffect(() => {
     if (activo) setTimeout(() => inputRef.current?.focus(), 80);
   }, [activo]);
 
-  useEffect(() => { onItemsChange?.(items.length); }, [items.length]);
+  useEffect(() => {
+    onItemsChange?.(items.length);
+    setComboGroups(prev => recomputarComboGroups(items, combos, prev));
+  }, [items, combos]);
 
   const fetchCatalog = async () => {
-    try { const { data } = await api.get('/productos', { params: { limit: 100, sucursalId } }); setCatalog(data.data || data); } catch {}
+    try {
+      const all: any[] = [];
+      let page = 1;
+      const limit = 500;
+      while (true) {
+        const { data } = await api.get('/productos', { params: { limit, page, sucursalId } });
+        const list = Array.isArray(data) ? data : (data.data || []);
+        if (list.length === 0) break;
+        all.push(...list);
+        if (Array.isArray(data)) break;
+        const total = data.total;
+        if (total && all.length >= total) break;
+        if (list.length < limit) break;
+        page += 1;
+        if (page > 100) break;
+      }
+      setCatalog(all);
+    } catch {}
   };
 
   const checkCaja = async () => {
@@ -80,6 +134,63 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
   };
 
   const filteredSug = codigo ? catalog.filter(p => p.nombre.toLowerCase().includes(codigo.toLowerCase()) || (p.codigoBarras || '').includes(codigo)).slice(0, 6) : [];
+
+  const recomputarComboGroups = (currentItems: Item[], combosDisponibles: Combo[], existing: ComboGroup[] = []): ComboGroup[] => {
+    if (combosDisponibles.length === 0) return [];
+
+    const disponibles = new Map<string, number>();
+    for (const item of currentItems) {
+      const key = item.id;
+      const qty = Number(item.cantidad) || 0;
+      if (qty <= 0 || !key) continue;
+      disponibles.set(key, (disponibles.get(key) ?? 0) + qty);
+    }
+
+    const prioridad = [...existing, ...combosDisponibles.filter(c => !existing.some(e => e.combo.id === c.id)).map(combo => ({
+      id: `${combo.id}-auto-${Date.now()}`,
+      combo,
+      aplicadoEn: Date.now(),
+      itemsAsignados: [] as Array<{ productoId: string; cantidad: number; precioUnitarioLista: number }>,
+    }))];
+
+    const grupos: ComboGroup[] = [];
+    const restantes = new Map(disponibles);
+
+    for (const entry of prioridad) {
+      const combo = entry.combo;
+      if (!combo?.items?.length) continue;
+
+      let maxCantidad = Number.POSITIVE_INFINITY;
+      for (const ci of combo.items) {
+        const requerido = Math.max(1, Number(ci.cantidad) || 1);
+        const disponible = restantes.get(ci.productoId) ?? 0;
+        if (disponible < requerido) {
+          maxCantidad = 0;
+          break;
+        }
+        maxCantidad = Math.min(maxCantidad, Math.floor(disponible / requerido));
+      }
+
+      if (maxCantidad <= 0) continue;
+
+      const itemsAsignados = combo.items.map(ci => {
+        const requerido = Math.max(1, Number(ci.cantidad) || 1);
+        const cantidad = requerido * maxCantidad;
+        const disponibleActual = restantes.get(ci.productoId) ?? 0;
+        restantes.set(ci.productoId, Math.max(0, disponibleActual - cantidad));
+        return { productoId: ci.productoId, cantidad, precioUnitarioLista: Number(ci.precioUnitario) || 0 };
+      });
+
+      grupos.push({
+        id: `${combo.id}-${grupos.length}-${Date.now()}`,
+        combo,
+        aplicadoEn: Date.now() + grupos.length,
+        itemsAsignados,
+      });
+    }
+
+    return grupos;
+  };
 
   const abrirPeso = (producto: any, code: string, kgExistente?: number) => {
     setPesoItem({ producto, code });
@@ -164,8 +275,23 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
   };
   const removeItem = (codigo: string) => setItems(prev => prev.filter(p => p.codigo !== codigo));
 
+  const freeAmountByProduct = new Map<string, number>();
+  for (const item of items) {
+    freeAmountByProduct.set(item.id, (freeAmountByProduct.get(item.id) ?? 0) + Number(item.cantidad || 0));
+  }
+  for (const group of comboGroups) {
+    for (const assigned of group.itemsAsignados) {
+      const actual = freeAmountByProduct.get(assigned.productoId) ?? 0;
+      freeAmountByProduct.set(assigned.productoId, Math.max(0, actual - assigned.cantidad));
+    }
+  }
+
+  const productosSueltos = items.filter(item => (freeAmountByProduct.get(item.id) ?? 0) > 0);
   const totalBruto = items.reduce((acc, i) => acc + Math.round(i.precio * i.cantidad), 0);
-  const total = Math.max(0, totalBruto);
+  const totalListaCombo = comboGroups.reduce((acc, group) => acc + Math.round(group.combo.totalLista || 0), 0);
+  const totalCombo = comboGroups.reduce((acc, group) => acc + Math.round(group.combo.precioVenta || group.combo.totalLista || 0), 0);
+  const totalSueltos = productosSueltos.reduce((acc, item) => acc + Math.round(item.precio * (freeAmountByProduct.get(item.id) ?? 0)), 0);
+  const total = Math.max(0, totalCombo + totalSueltos);
 
   useEffect(() => {
     if (metodoPago !== 'CUENTA_CORRIENTE') return;
@@ -181,6 +307,7 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
   const limpiar = () => {
     setItems([]); setCodigo(''); setError(''); setAviso(''); setSuccess('');
     setMetodoPago('EFECTIVO'); setClienteId(''); setClienteSearch(''); setClientes([]);
+    setComboGroups([]);
   };
 
   // El padre puede vaciar este POS (botón "Limpiar" de la ventana flotante)
@@ -188,17 +315,76 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
 
   const handleCobrar = async () => {
     if (!cajaAbierta) { setError('No hay caja abierta. Abrí la caja primero en la sección Caja.'); return; }
-    if (items.length === 0) return;
+    const hayItems = items.length > 0 || comboGroups.length > 0;
+    if (!hayItems) return;
     if (metodoPago === 'CUENTA_CORRIENTE' && !clienteId) { setError('Seleccioná cliente para cuenta corriente'); return; }
     setCobrando(true); setError(''); setSuccess('');
     try {
+      const ventaItems: any[] = [];
+
+      for (const group of comboGroups) {
+        const lista = group.combo.totalLista || group.combo.items.reduce((acc, ci) => acc + Math.round((ci.precioUnitario || 0) * (Number(ci.cantidad) || 1)), 0);
+        const precioCombo = Math.round(group.combo.precioVenta || lista);
+        const factor = lista > 0 ? precioCombo / lista : 1;
+
+        for (const ci of group.combo.items) {
+          const cantidad = Number(ci.cantidad) || 1;
+          const precioLista = Math.round((ci.precioUnitario || 0) * cantidad);
+          const subtotal = Math.round(precioLista * factor);
+          const precioUnitario = Math.round(subtotal / cantidad);
+          ventaItems.push({
+            productoId: ci.productoId,
+            cantidad,
+            precioUnitario,
+            subtotal,
+            comboId: group.id,
+            precioLista: Math.round(ci.precioUnitario || 0),
+            esComboItem: true,
+          });
+        }
+      }
+
+      const restantes = new Map<string, number>();
+      for (const item of items) {
+        restantes.set(item.id, (restantes.get(item.id) ?? 0) + Number(item.cantidad || 0));
+      }
+      for (const group of comboGroups) {
+        for (const assigned of group.itemsAsignados) {
+          const actual = restantes.get(assigned.productoId) ?? 0;
+          restantes.set(assigned.productoId, Math.max(0, actual - assigned.cantidad));
+        }
+      }
+
+      for (const item of items) {
+        const disponible = Math.max(0, (restantes.get(item.id) ?? 0));
+        if (disponible <= 0) continue;
+        const cantidadIndividual = Math.min(Number(item.cantidad || 0), disponible);
+        if (cantidadIndividual <= 0) continue;
+        ventaItems.push({
+          productoId: item.id,
+          cantidad: cantidadIndividual,
+          precioUnitario: item.precio,
+          subtotal: Math.round(item.precio * cantidadIndividual),
+          esComboItem: false,
+        });
+      }
+
+      console.log('Payload venta a enviar', JSON.stringify({
+        sucursalId,
+        metodoPago,
+        descuento: 0,
+        cajaId: cajaAbierta.id,
+        clienteId: metodoPago === 'CUENTA_CORRIENTE' ? clienteId : undefined,
+        items: ventaItems,
+      }, null, 2));
+
       const { data } = await api.post('/ventas', {
         sucursalId,
         metodoPago,
         descuento: 0,
         cajaId: cajaAbierta.id,
         clienteId: metodoPago === 'CUENTA_CORRIENTE' ? clienteId : undefined,
-        items: items.map(i => ({ productoId: i.id, cantidad: i.cantidad, precioUnitario: i.precio })),
+        items: ventaItems,
       });
       setSuccess(`Venta #${data.nroComprobante} por $${Number(data.total).toFixed(0)} registrada`);
       limpiar();
@@ -275,7 +461,26 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
 
       <div style={{ background: 'white', padding: 20, borderRadius: 8, height: 'fit-content', border: borde ? `2px solid ${borde}` : 'none' }}>
         <h3 style={{ marginTop: 0 }}>Resumen</h3>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}><span>Subtotal</span><span>${totalBruto.toFixed(0)}</span></div>
+        {comboGroups.length > 0 ? (
+          <>
+            <div style={{ background: '#ecfdf5', color: '#065f46', padding: 10, borderRadius: 6, marginBottom: 10, fontSize: 13 }}>
+              <div style={{ fontWeight: 700 }}>Combos aplicados</div>
+              {comboGroups.map((group) => (
+                <div key={group.id} style={{ marginTop: 6 }}>
+                  • {group.combo.nombre} · ${Math.round(group.combo.precioVenta || group.combo.totalLista || 0).toFixed(0)}
+                </div>
+              ))}
+              <div style={{ marginTop: 8 }}>Total combos: ${totalCombo.toFixed(0)}</div>
+              <div>Ahorro estimado: ${Math.max(0, totalListaCombo - totalCombo).toFixed(0)}</div>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}><span>Total combos</span><span>${totalCombo.toFixed(0)}</span></div>
+          </>
+        ) : (
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}><span>Subtotal</span><span>${totalBruto.toFixed(0)}</span></div>
+        )}
+        {productosSueltos.length > 0 && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}><span>Productos sueltos</span><span>${totalSueltos.toFixed(0)}</span></div>
+        )}
         <div style={{ fontSize: 36, fontWeight: 'bold', margin: '16px 0' }}>${total.toFixed(0)}</div>
         <div style={{ marginTop: 12 }}>
           <div style={{ fontWeight: 'bold', marginBottom: 8 }}>Tipo de cobro</div>

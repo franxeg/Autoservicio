@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber, IsArray, ValidateNested, Min, IsEnum } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsArray, ValidateNested, Min, IsBoolean } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -16,6 +16,26 @@ export class VentaItemDto {
   @IsOptional()
   @IsNumber()
   precioUnitario?: number;
+
+  @ApiPropertyOptional({ example: 3200, description: 'Subtotal calculado en el frontend para combos o sueltos' })
+  @IsOptional()
+  @IsNumber()
+  subtotal?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  comboId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  precioLista?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  esComboItem?: boolean;
 }
 
 export class CreateVentaDto {

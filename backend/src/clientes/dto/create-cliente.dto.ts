@@ -51,3 +51,19 @@ export class PagoDto {
   @IsString()
   descripcion?: string;
 }
+
+export class AjusteSaldoDto {
+  @ApiProperty({ example: 15000, description: 'Positivo = suma deuda (saldo anterior), negativo = resta deuda' })
+  @IsNumber()
+  monto: number;
+
+  @ApiPropertyOptional({ example: 'AJUSTE', enum: ['EFECTIVO', 'TARJETA', 'TRANSFERENCIA', 'AJUSTE'] })
+  @IsOptional()
+  @IsIn(['EFECTIVO', 'TARJETA', 'TRANSFERENCIA', 'AJUSTE'])
+  metodoPago?: string;
+
+  @ApiPropertyOptional({ example: 'Deuda anterior al sistema' })
+  @IsOptional()
+  @IsString()
+  descripcion?: string;
+}

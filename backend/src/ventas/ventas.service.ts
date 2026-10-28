@@ -68,49 +68,103 @@ export class VentasService {
     let total = 0;
     const detallesData: any[] = [];
 
-    for (const item of dto.items) {
-      const producto = await tx.producto.findUnique({ where: { id: item.productoId } });
-      if (!producto || !producto.activo) throw new NotFoundException(`Producto ${item.productoId} no encontrado`);
-      const precio = Math.round(item.precioUnitario ?? producto.precioVenta);
-      const cantidad = redondearCantidad(item.cantidad);
-      const subtotal = Math.round(precio * cantidad);
-      total += subtotal;
+    // Detectar si viene con items ya armados para combo (reparto hecho por frontend o backend)
+    const hasComboItems = dto.items.some((it: any) => it.comboId || it.esComboItem);
 
-      // Foto del precio al momento de vender: costo + %crecimiento + %venta
-      const costo = Math.round(producto.precioCosto);
-      const pctVenta = producto.porcentajeVenta ?? 30;
-      const pctCrec = producto.porcentajeCrecimiento ?? 10;
-      const aporteCrecimiento = Math.round((costo * pctCrec) / 100);
-      const aporteVenta = Math.round(((costo + aporteCrecimiento) * pctVenta) / 100);
+    if (hasComboItems) {
+      // Armar detalles tal como vienen pero validando y descontando stock
+      for (const item of dto.items as any[]) {
+        const producto = await tx.producto.findUnique({ where: { id: item.productoId } });
+        if (!producto || !producto.activo) throw new NotFoundException(`Producto ${item.productoId} no encontrado`);
+        const precio = Math.round(item.precioUnitario ?? producto.precioVenta);
+        const cantidad = redondearCantidad(item.cantidad);
+        const subtotal = Math.round(item.subtotal ?? precio * cantidad);
+        total += subtotal;
 
-      // Los productos por peso (KG) no usan control de stock: no se valida ni descuenta
-      if (producto.unidad !== 'KG') {
-        const stock = await tx.stock.findUnique({
-          where: { productoId_sucursalId: { productoId: item.productoId, sucursalId: dto.sucursalId } },
-        });
-        const cantidadActual = redondearCantidad(stock?.cantidad ?? 0);
-        if (cantidadActual + 0.0001 < cantidad) {
-          throw new BadRequestException(`Stock insuficiente para ${producto.nombre}. Disponible: ${cantidadActual}, solicitado: ${cantidad}`);
+        const costo = Math.round(producto.precioCosto);
+        const pctVenta = producto.porcentajeVenta ?? 30;
+        const pctCrec = producto.porcentajeCrecimiento ?? 10;
+        const aporteCrecimiento = Math.round((costo * pctCrec) / 100);
+        const aporteVenta = Math.round(((costo + aporteCrecimiento) * pctVenta) / 100);
+
+        if (producto.unidad !== 'KG') {
+          const stock = await tx.stock.findUnique({
+            where: { productoId_sucursalId: { productoId: item.productoId, sucursalId: dto.sucursalId } },
+          });
+          const cantidadActual = redondearCantidad(stock?.cantidad ?? 0);
+          if (cantidadActual + 0.0001 < cantidad) {
+            throw new BadRequestException(`Stock insuficiente para ${producto.nombre}. Disponible: ${cantidadActual}, solicitado: ${cantidad}`);
+          }
+          await tx.stock.upsert({
+            where: { productoId_sucursalId: { productoId: item.productoId, sucursalId: dto.sucursalId } },
+            update: { cantidad: redondearCantidad(cantidadActual - cantidad) },
+            create: { productoId: item.productoId, sucursalId: dto.sucursalId, cantidad: redondearCantidad(-cantidad), empresaId },
+          });
         }
-        await tx.stock.upsert({
-          where: { productoId_sucursalId: { productoId: item.productoId, sucursalId: dto.sucursalId } },
-          update: { cantidad: redondearCantidad(cantidadActual - cantidad) },
-          create: { productoId: item.productoId, sucursalId: dto.sucursalId, cantidad: redondearCantidad(-cantidad), empresaId },
+
+        detallesData.push({
+          productoId: item.productoId,
+          cantidad,
+          precioUnitario: precio,
+          subtotal,
+          precioCosto: costo,
+          porcentajeVenta: pctVenta,
+          porcentajeCrecimiento: pctCrec,
+          aporteVenta,
+          aporteCrecimiento,
+          comboId: item.comboId || null,
+          precioLista: item.precioLista != null ? Math.round(item.precioLista) : null,
+          esComboItem: !!item.esComboItem,
+          empresaId,
         });
       }
+    } else {
+      for (const item of dto.items) {
+        const producto = await tx.producto.findUnique({ where: { id: item.productoId } });
+        if (!producto || !producto.activo) throw new NotFoundException(`Producto ${item.productoId} no encontrado`);
+        // No vender combos directamente por este path, deben armarse con componentes
+        if ((producto as any).esCombo) throw new BadRequestException(`El combo ${producto.nombre} debe aplicarse desde el POS con sus componentes`);
+        const precio = Math.round(item.precioUnitario ?? producto.precioVenta);
+        const cantidad = redondearCantidad(item.cantidad);
+        const subtotal = Math.round(precio * cantidad);
+        total += subtotal;
 
-      detallesData.push({
-        productoId: item.productoId,
-        cantidad,
-        precioUnitario: precio,
-        subtotal,
-        precioCosto: costo,
-        porcentajeVenta: pctVenta,
-        porcentajeCrecimiento: pctCrec,
-        aporteVenta,
-        aporteCrecimiento,
-        empresaId,
-      });
+        // Foto del precio al momento de vender: costo + %crecimiento + %venta
+        const costo = Math.round(producto.precioCosto);
+        const pctVenta = producto.porcentajeVenta ?? 30;
+        const pctCrec = producto.porcentajeCrecimiento ?? 10;
+        const aporteCrecimiento = Math.round((costo * pctCrec) / 100);
+        const aporteVenta = Math.round(((costo + aporteCrecimiento) * pctVenta) / 100);
+
+        // Los productos por peso (KG) no usan control de stock: no se valida ni descuenta
+        if (producto.unidad !== 'KG') {
+          const stock = await tx.stock.findUnique({
+            where: { productoId_sucursalId: { productoId: item.productoId, sucursalId: dto.sucursalId } },
+          });
+          const cantidadActual = redondearCantidad(stock?.cantidad ?? 0);
+          if (cantidadActual + 0.0001 < cantidad) {
+            throw new BadRequestException(`Stock insuficiente para ${producto.nombre}. Disponible: ${cantidadActual}, solicitado: ${cantidad}`);
+          }
+          await tx.stock.upsert({
+            where: { productoId_sucursalId: { productoId: item.productoId, sucursalId: dto.sucursalId } },
+            update: { cantidad: redondearCantidad(cantidadActual - cantidad) },
+            create: { productoId: item.productoId, sucursalId: dto.sucursalId, cantidad: redondearCantidad(-cantidad), empresaId },
+          });
+        }
+
+        detallesData.push({
+          productoId: item.productoId,
+          cantidad,
+          precioUnitario: precio,
+          subtotal,
+          precioCosto: costo,
+          porcentajeVenta: pctVenta,
+          porcentajeCrecimiento: pctCrec,
+          aporteVenta,
+          aporteCrecimiento,
+          empresaId,
+        });
+      }
     }
 
     const descuento = Math.round(dto.descuento ?? 0);

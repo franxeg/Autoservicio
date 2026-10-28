@@ -16,6 +16,13 @@ export default function Clientes() {
   const [pagoMetodo, setPagoMetodo] = useState('EFECTIVO');
   const [pagoOk, setPagoOk] = useState('');
 
+  // Edición de datos + ajuste de la deuda (para migrar saldos anteriores)
+  const [editForm, setEditForm] = useState<any>(null);
+  const [guardandoEdit, setGuardandoEdit] = useState(false);
+  const [ajusteMonto, setAjusteMonto] = useState('');
+  const [ajusteDesc, setAjusteDesc] = useState('');
+  const [guardandoAjuste, setGuardandoAjuste] = useState(false);
+
   const METODOS_PAGO = [
     { value: 'EFECTIVO', label: 'Efectivo' },
     { value: 'TRANSFERENCIA', label: 'Transferencia' },
@@ -56,6 +63,35 @@ export default function Clientes() {
   const verCuenta = async (id: string) => {
     const { data } = await api.get(`/clientes/${id}/cuenta`);
     setCuenta(data); setSelected(data.cliente);
+    setEditForm({ nombre: data.cliente.nombre, dni: data.cliente.dni || '', telefono: data.cliente.telefono || '', email: data.cliente.email || '', direccion: data.cliente.direccion || '' });
+    setAjusteMonto(''); setAjusteDesc(''); setPagoOk(''); setError('');
+  };
+
+  const guardarEdit = async (e: React.FormEvent) => {
+    e.preventDefault(); setError('');
+    if (!editForm.nombre.trim()) { setError('El nombre no puede quedar vacío.'); return; }
+    setGuardandoEdit(true);
+    try {
+      await api.patch(`/clientes/${selected.id}`, editForm);
+      fetch(); verCuenta(selected.id);
+    } catch (e: any) { setError(e.response?.data?.message || e.message); }
+    finally { setGuardandoEdit(false); }
+  };
+
+  const aplicarAjuste = async (signo: 1 | -1) => {
+    setError('');
+    const monto = Math.round(parseFloat(ajusteMonto) || 0) * signo;
+    if (!monto) { setError('Poné un monto distinto de cero.'); return; }
+    setGuardandoAjuste(true);
+    try {
+      await api.post(`/clientes/${selected.id}/ajuste`, {
+        monto,
+        descripcion: ajusteDesc.trim() || (monto > 0 ? 'Deuda anterior al sistema' : 'Ajuste de deuda'),
+      });
+      setAjusteMonto(''); setAjusteDesc('');
+      verCuenta(selected.id); fetch();
+    } catch (e: any) { setError(e.response?.data?.message || e.message); }
+    finally { setGuardandoAjuste(false); }
   };
 
   const handlePago = async () => {
@@ -127,6 +163,35 @@ export default function Clientes() {
                 <p style={{ fontSize: 26, fontWeight: 'bold', margin: 0, color: saldo > 0 ? '#dc2626' : '#059669' }}>${saldo.toFixed(0)}</p>
               </div>
 
+              {editForm && (
+                <form onSubmit={guardarEdit} style={{ marginTop: 12, border: '1px solid #e5e7eb', borderRadius: 8, padding: 12 }}>
+                  <h5 style={{ margin: '0 0 8px' }}>Datos del cliente</h5>
+                  <div style={{ display: 'grid', gap: 6 }}>
+                    <input required placeholder="Nombre*" value={editForm.nombre} onChange={e => setEditForm({ ...editForm, nombre: e.target.value })} style={{ padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} />
+                    <input placeholder="Teléfono" inputMode="numeric" value={editForm.telefono} onChange={e => setEditForm({ ...editForm, telefono: e.target.value.replace(/\D/g, '') })} style={{ padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} />
+                    <input placeholder="Dirección" value={editForm.direccion} onChange={e => setEditForm({ ...editForm, direccion: e.target.value })} style={{ padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} />
+                    <button type="submit" disabled={guardandoEdit} style={{ padding: '8px 12px', background: guardandoEdit ? '#9ca3af' : '#111827', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>
+                      {guardandoEdit ? 'Guardando...' : 'Guardar cambios'}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {cuenta && (
+                <div style={{ marginTop: 12, border: '1px dashed #fbbf24', background: '#fffbeb', borderRadius: 8, padding: 12 }}>
+                  <h5 style={{ margin: '0 0 4px' }}>Ajustar deuda</h5>
+                  <small style={{ color: '#92400e' }}>Para cargar la deuda que el cliente ya traía antes del sistema (o corregirla). No afecta la caja.</small>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 8 }}>
+                    <input type="number" min="0" step="1" placeholder="Monto" value={ajusteMonto} onChange={e => setAjusteMonto(e.target.value)} style={{ padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} />
+                    <input placeholder="Motivo (opcional)" value={ajusteDesc} onChange={e => setAjusteDesc(e.target.value)} style={{ padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} />
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                    <button type="button" disabled={guardandoAjuste || !ajusteMonto} onClick={() => aplicarAjuste(1)} style={{ flex: 1, padding: '8px 12px', background: guardandoAjuste || !ajusteMonto ? '#9ca3af' : '#dc2626', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>+ Sumar deuda</button>
+                    <button type="button" disabled={guardandoAjuste || !ajusteMonto || saldo <= 0} onClick={() => aplicarAjuste(-1)} style={{ flex: 1, padding: '8px 12px', background: guardandoAjuste || !ajusteMonto || saldo <= 0 ? '#9ca3af' : '#059669', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>− Restar deuda</button>
+                  </div>
+                </div>
+              )}
+
               {cuenta && (
                 <>
                   <div style={{ marginTop: 12 }}>
@@ -167,8 +232,14 @@ export default function Clientes() {
                       <span>Deuda ({cuenta.ventas?.filter((v: any) => v.estado !== 'CANCELADA').length || 0} ventas)</span>
                       <span>${Number(cuenta.totalDeuda || 0).toFixed(0)}</span>
                     </div>
+                    {Number(cuenta.totalAjustes || 0) !== 0 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#b45309' }}>
+                        <span>Ajustes de deuda</span>
+                        <span>{Number(cuenta.totalAjustes) > 0 ? '+' : '-'}${Math.abs(Number(cuenta.totalAjustes)).toFixed(0)}</span>
+                      </div>
+                    )}
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#6b7280' }}>
-                      <span>Pagos ({cuenta.pagos?.length || 0})</span>
+                      <span>Pagos ({cuenta.pagos?.filter((p: any) => (p.tipo || 'PAGO') === 'PAGO').length || 0})</span>
                       <span>-${Number(cuenta.totalPagado || 0).toFixed(0)}</span>
                     </div>
 
@@ -188,17 +259,22 @@ export default function Clientes() {
 
                     {cuenta.pagos?.length > 0 && (
                       <>
-                        <h6 style={{ margin: '12px 0 4px' }}>Pagos recibidos</h6>
+                        <h6 style={{ margin: '12px 0 4px' }}>Movimientos de cuenta</h6>
                         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                           <thead><tr style={{ borderBottom: '1px solid #e5e7eb', textAlign: 'left' }}><th>Fecha</th><th>Monto</th><th>Medio</th></tr></thead>
                           <tbody>
-                            {cuenta.pagos.map((p: any) => (
-                              <tr key={p.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                                <td>{fechaCorta(p.fecha)}</td>
-                                <td style={{ color: '#059669', fontWeight: 'bold' }}>${Number(p.monto).toFixed(0)}</td>
-                                <td>{p.metodoPago}</td>
-                              </tr>
-                            ))}
+                            {cuenta.pagos.map((p: any) => {
+                              const esAjuste = (p.tipo || 'PAGO') !== 'PAGO';
+                              return (
+                                <tr key={p.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                                  <td>{fechaCorta(p.fecha)}</td>
+                                  <td style={{ color: esAjuste ? '#b45309' : '#059669', fontWeight: 'bold' }}>
+                                    {esAjuste ? (p.tipo === 'AJUSTE_POSITIVO' ? '+' : '-') + '$' : '-$'}{Number(p.monto).toFixed(0)}
+                                  </td>
+                                  <td>{esAjuste ? 'Ajuste' : p.metodoPago}</td>
+                                </tr>
+                              );
+                            })}
                           </tbody>
                         </table>
                       </>

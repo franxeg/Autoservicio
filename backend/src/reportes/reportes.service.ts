@@ -13,7 +13,7 @@ export class ReportesService {
     const whereHoy = { ...whereSucursal, fecha: { gte: today }, estado: 'COMPLETADA' as const };
     const whereMes = { ...whereSucursal, fecha: { gte: firstDayMonth }, estado: 'COMPLETADA' as const };
 
-    const [ventasHoyAgg, ventasMesAgg, ventasTotalAgg, totalProductos, clientesDeudores, cajaAbierta, stockCritico] = await Promise.all([
+    const [ventasHoyAgg, ventasMesAgg, ventasTotalAgg, totalProductos, clientesDeudores, cajaAbierta, stockCriticoAll] = await Promise.all([
       this.prisma.tenant.venta.aggregate({ where: whereHoy, _sum: { total: true }, _count: true }),
       this.prisma.tenant.venta.aggregate({ where: whereMes, _sum: { total: true }, _count: true }),
       this.prisma.tenant.venta.aggregate({ where: { ...whereSucursal, estado: 'COMPLETADA' }, _sum: { total: true }, _count: true }),
@@ -21,12 +21,12 @@ export class ReportesService {
       this.prisma.tenant.cliente.aggregate({ where: { saldoCuenta: { gt: 0 } }, _sum: { saldoCuenta: true }, _count: true }),
       this.prisma.tenant.caja.findFirst({ where: { ...whereSucursal, estado: 'ABIERTA' } }),
       this.prisma.tenant.stock.findMany({
-        where: { ...(sucursalId ? { sucursalId } : {}), cantidad: { lte: 5 }, producto: { unidad: { not: 'KG' } } },
+        where: { ...(sucursalId ? { sucursalId } : {}), producto: { unidad: { not: 'KG' }, activo: true } },
         include: { producto: { select: { nombre: true, codigoBarras: true } }, sucursal: { select: { nombre: true } } },
-        take: 10,
         orderBy: { cantidad: 'asc' },
-      }).then(stocks => stocks.filter(s => s.cantidad <= s.stockMinimo)),
+      }),
     ]);
+    const stockCritico = stockCriticoAll.filter(s => s.cantidad <= s.stockMinimo);
 
     // Ticket promedio (sobre total histórico) y del mes
     const ticketPromedio = ventasTotalAgg._count > 0 ? Math.round((ventasTotalAgg._sum.total || 0) / ventasTotalAgg._count) : 0;
@@ -58,7 +58,7 @@ export class ReportesService {
       productos: { total: totalProductos },
       clientesDeudores: { total: clientesDeudores._sum.saldoCuenta || 0, cantidad: clientesDeudores._count },
       cajaAbierta: cajaAbierta ? { id: cajaAbierta.id, montoInicial: cajaAbierta.montoInicial, estado: cajaAbierta.estado } : null,
-      stockCritico: stockCritico.map(s => ({ producto: s.producto.nombre, codigo: s.producto.codigoBarras, sucursal: s.sucursal.nombre, cantidad: s.cantidad, minimo: s.stockMinimo })),
+      stockCritico: stockCritico.slice(0, 20).map(s => ({ producto: s.producto.nombre, codigo: s.producto.codigoBarras, sucursal: s.sucursal.nombre, cantidad: s.cantidad, minimo: s.stockMinimo })),
       stockCriticoCount: stockCritico.length,
       ventasPorDia,
       ventasMesPorDia,
@@ -107,9 +107,17 @@ export class ReportesService {
       const cant = Number(d.cantidad) || 0; // puede ser fraccionario (kg)
       const completo = d.precioCosto != null && d.aporteVenta != null && d.aporteCrecimiento != null;
       const costo = completo ? Math.round(Math.round(d.precioCosto) * cant) : 0;
-      const aporteVenta = completo ? Math.round(Math.round(d.aporteVenta) * cant) : 0;
       const aporteCrecimiento = completo ? Math.round(Math.round(d.aporteCrecimiento) * cant) : 0;
-      const sinDato = completo ? Math.max(0, vendido - costo - aporteVenta - aporteCrecimiento) : vendido;
+      // El precio de venta se redondea al múltiplo de 100, por lo que puede sobrar unos pesos
+      // sobre costo + %crecimiento + %venta. Ese sobrante lo absorbemos en "utilidad % de venta"
+      // para que costo + %crec + %venta siempre dé el total vendido.
+      const aporteBase = completo ? Math.round(Math.round(d.aporteVenta) * cant) : 0;
+      let aporteVenta = aporteBase + (completo ? Math.max(0, vendido - costo - aporteBase - aporteCrecimiento) : 0);
+      // Si viene repartido por combo, respetamos lo guardado (ya viene calculado proporcionalmente)
+      if ((d as any).esComboItem || (d as any).comboId) {
+        aporteVenta = aporteBase;
+      }
+      const sinDato = completo ? 0 : vendido;
 
       total.vendido += vendido;
       total.costo += costo;

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
+import { calcularPrecioVenta } from '../lib/precio';
 
 const redondear = (n: number) => Math.round(n * 1000) / 1000;
 const reqInsumo = (cantidad: number, merma: number) => cantidad / (1 - Math.min(99.99, Math.max(0, merma || 0)) / 100);
@@ -83,7 +84,7 @@ export default function Elaborados({ sucursalId }: { sucursalId: string }) {
 
   const costoPreview = items.reduce((acc, it) => acc + (Number(it.precioCosto) || 0) * reqInsumo(parseFloat(it.cantidad) || 0, parseFloat(it.merma) || 0), 0);
   const costoRedondeado = Math.round(costoPreview);
-  const ventaPreview = Math.round(costoRedondeado * (1 + (parseFloat(pctVenta) || 0) / 100) * (1 + (parseFloat(pctCrec) || 0) / 100));
+  const ventaPreview = calcularPrecioVenta(costoRedondeado, parseFloat(pctVenta) || 0, parseFloat(pctCrec) || 0);
 
   const guardar = async () => {
     if (!edit) return;

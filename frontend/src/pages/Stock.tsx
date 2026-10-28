@@ -22,9 +22,24 @@ export default function Stock() {
   const [okMsg, setOkMsg] = useState('');
 
   const fetch = async () => {
-    const { data } = await api.get('/productos', { params: { sucursalId, limit: 100 } });
-    const list = (data.data || data).filter((p: any) => p.unidad !== 'KG');
-    setAll(list); setProductos(list);
+    try {
+      let page = 1;
+      const allProducts: any[] = [];
+      while (true) {
+        const { data } = await api.get('/productos', { params: { sucursalId, page, limit: 200 } });
+        const pageItems = Array.isArray(data) ? data : (data.data || []);
+        if (!pageItems.length) break;
+        allProducts.push(...pageItems);
+        if (Array.isArray(data) || allProducts.length >= Number(data.total || 0)) break;
+        page += 1;
+        if (page > 20) break;
+      }
+      const list = allProducts.filter((p: any) => p.unidad !== 'KG');
+      setAll(list); setProductos(list);
+    } catch (err) {
+      setAll([]); setProductos([]);
+      console.error('Error cargando stock:', err);
+    }
   };
   useEffect(() => { fetch(); }, []);
 
