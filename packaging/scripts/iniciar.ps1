@@ -59,22 +59,6 @@ if (!$cfg.ContainsKey('PROVIDER_PASSWORD'))     { $cfg.PROVIDER_PASSWORD = 'Prov
 
 $versionActual = $cfg.APP_VERSION
 $versionAnterior = if (Test-Path $versionFile) { (Get-Content $versionFile -TotalCount 1).Trim() } else { '' }
-if (-not (Test-Path $versionFile) -or $versionAnterior -ne $versionActual) {
-  $backupStamp = Get-Date -Format 'yyyyMMdd-HHmmss'
-  $dumpPath = Join-Path $backupsDir "autoservicio-upgrade-$backupStamp.dump"
-
-  if (Test-Path (Join-Path $root 'data\PG_VERSION')) {
-    Log "Actualizacion detectada ($versionAnterior -> $versionActual). Generando backup de seguridad antes de aplicar cambios..."
-    if (!(Test-Path $backupsDir)) { New-Item -ItemType Directory -Path $backupsDir | Out-Null }
-    $env:PGPASSWORD = $cfg.POSTGRES_PASSWORD
-    & (Join-Path $pgBin 'pg_dump.exe') -h 127.0.0.1 -p $cfg.PGPORT -U $cfg.POSTGRES_USER -d $cfg.POSTGRES_DB -F c -f $dumpPath
-    if ($LASTEXITCODE -ne 0) { Fail "No se pudo crear el backup previo a la actualizacion. Revisa la DB y vuelve a intentar." }
-    Log "Backup de seguridad listo: $dumpPath"
-  }
-
-  $versionActual | Set-Content -Path $versionFile -Encoding ASCII
-}
-
 $env:PGPASSWORD = $cfg.POSTGRES_PASSWORD
 $host_ = "127.0.0.1:$($cfg.PGPORT)"
 
@@ -127,7 +111,23 @@ if (!$ready) {
   Fail "PostgreSQL no respondio. $err"
 }
 
-# --- 3) crear la base si no existe ---
+# --- 3) backup previo si hay actualizacion detectada ---
+if (-not (Test-Path $versionFile) -or $versionAnterior -ne $versionActual) {
+  $backupStamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+  $dumpPath = Join-Path $backupsDir "autoservicio-upgrade-$backupStamp.dump"
+
+  if (Test-Path (Join-Path $root 'data\PG_VERSION')) {
+    Log "Actualizacion detectada ($versionAnterior -> $versionActual). Generando backup de seguridad antes de aplicar cambios..."
+    if (!(Test-Path $backupsDir)) { New-Item -ItemType Directory -Path $backupsDir | Out-Null }
+    & (Join-Path $pgBin 'pg_dump.exe') -h 127.0.0.1 -p $cfg.PGPORT -U $cfg.POSTGRES_USER -d $cfg.POSTGRES_DB -F c -f $dumpPath
+    if ($LASTEXITCODE -ne 0) { Fail "No se pudo crear el backup previo a la actualizacion. Revisa la DB y vuelve a intentar." }
+    Log "Backup de seguridad listo: $dumpPath"
+  }
+
+  $versionActual | Set-Content -Path $versionFile -Encoding ASCII
+}
+
+# --- 4) crear la base si no existe ---
 $psql = Join-Path $pgBin 'psql.exe'
 $exists = "$(& $psql -h 127.0.0.1 -p $cfg.PGPORT -U $cfg.POSTGRES_USER -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='$($cfg.POSTGRES_DB)'")".Trim()
 if ($exists -ne '1') {
@@ -135,7 +135,7 @@ if ($exists -ne '1') {
   & (Join-Path $pgBin 'createdb.exe') -h 127.0.0.1 -p $cfg.PGPORT -U $cfg.POSTGRES_USER $cfg.POSTGRES_DB
 }
 
-# --- 4) esquema + RLS ---
+# --- 5) esquema + RLS ---
 $prismaCli = Join-Path $appDir 'node_modules\prisma\build\index.js'
 $appUrl    = "postgresql://$($cfg.POSTGRES_APP_USER):$($cfg.POSTGRES_APP_PASSWORD)@$host_/$($cfg.POSTGRES_DB)?schema=public"
 $migUrl    = "postgresql://$($cfg.POSTGRES_USER):$($cfg.POSTGRES_PASSWORD)@$host_/$($cfg.POSTGRES_DB)?schema=public"
@@ -150,7 +150,7 @@ Log "Aplicando seguridad por fila (RLS)..."
 if ($LASTEXITCODE -ne 0) { Pop-Location; Fail "Fallo RLS." }
 Pop-Location
 
-# --- 5) arrancar la aplicacion (en segundo plano, sin ventana) ---
+# --- 6) arrancar la aplicacion (en segundo plano, sin ventana) ---
 $env:DATABASE_URL    = $appUrl
 $env:JWT_SECRET      = $cfg.JWT_SECRET
 $env:JWT_EXPIRES_IN  = $cfg.JWT_EXPIRES_IN
