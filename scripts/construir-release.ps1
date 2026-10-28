@@ -31,6 +31,11 @@ if (!(Test-Path $PgZip))   { throw "No existe el zip de PostgreSQL: $PgZip" }
 
 # --- 1) builds ---
 if (!$SkipBuild) {
+  Log "Instalando dependencias del frontend..."
+  Push-Location (Join-Path $repo 'frontend')
+  npm.cmd install --no-audit --no-fund
+  Pop-Location
+
   Log "Build del frontend..."
   Push-Location (Join-Path $repo 'frontend'); npm.cmd run build; Pop-Location
 

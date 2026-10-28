@@ -38,6 +38,12 @@ jobs:
           Invoke-WebRequest -Uri 'https://nodejs.org/dist/v20.20.2/node-v20.20.2-win-x64.zip' -OutFile $nodeZip
           Invoke-WebRequest -Uri 'https://get.enterprisedb.com/postgresql/postgresql-16.15-5-windows-x64-binaries.zip' -OutFile $pgZip
 
+      - name: Install frontend dependencies
+        shell: powershell
+        run: |
+          Set-Location "${{ github.workspace }}\frontend"
+          npm install --no-audit --no-fund
+
       - name: Build portable release bundle
         shell: powershell
         run: |
