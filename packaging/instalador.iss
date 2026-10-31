@@ -54,6 +54,9 @@ Name: "{app}\data";     Permissions: users-modify
 Name: "{app}\logs";     Permissions: users-modify
 Name: "{app}\backups";  Permissions: users-modify
 
+[Tasks]
+Name: "desktopicon"; Description: "Crear icono en el escritorio"; GroupDescription: "Iconos adicionales:"
+
 [Icons]
 Name: "{group}\Iniciar Autoservicio"; Filename: "{app}\iniciar.bat"; WorkingDir: "{app}"
 Name: "{commondesktop}\Autoservicio"; Filename: "{app}\iniciar.bat"; WorkingDir: "{app}"; Tasks: desktopicon
