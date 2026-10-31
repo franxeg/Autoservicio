@@ -3,6 +3,7 @@ import { api } from '../lib/api';
 import { useAuthStore } from '../lib/store';
 import { calcularPrecioVenta } from '../lib/precio';
 import Elaborados from './Elaborados';
+import JsBarcode from 'jsbarcode';
 import Combos from './Combos';
 
 interface Producto {
@@ -318,7 +319,19 @@ export default function Productos() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'grid', placeItems: 'center', zIndex: 50 }} onClick={() => setEditing(null)}>
           <div style={{ background: 'white', padding: 20, borderRadius: 12, width: 500 }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}><h3>Editar producto</h3><button onClick={() => setEditing(null)} style={{ border: 'none', background: '#e5e7eb', padding: '6px 10px', borderRadius: 6, cursor: 'pointer' }}>✕</button></div>
-            <label style={{ display: 'block', marginTop: 10 }}>Código barras<input value={editForm.codigoBarras} onChange={e => setEditForm({ ...editForm, codigoBarras: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
+            <label style={{ display: 'block', marginTop: 10 }}>Código barras<div style={{ display: 'flex', gap: 8 }}><input value={editForm.codigoBarras} onChange={e => setEditForm({ ...editForm, codigoBarras: e.target.value })} style={{ flex: 1, padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} /><button type="button" onClick={() => {
+              if (!editForm.codigoBarras) return;
+              const canvas = document.createElement('canvas');
+              try {
+                JsBarcode(canvas, editForm.codigoBarras, { format: 'CODE128', width: 2, height: 60, displayValue: true });
+                const url = canvas.toDataURL('image/png');
+                const win = window.open('', '_blank');
+                if (win) {
+                  win.document.write(`<html><head><title>Código de barras - ${editing?.nombre || ''}</title></head><body style="text-align:center;font-family:sans-serif"><h3>${editing?.nombre || ''}</h3><img src="${url}"/><br/><button onclick="window.print()">Imprimir</button></body></html>`);
+                  win.document.close();
+                }
+              } catch(e) {}
+            }} style={{ padding: '8px 12px', background: '#e5e7eb', border: 'none', borderRadius: 6, cursor: 'pointer', whiteSpace: 'nowrap' }}>Imprimir código</button></div></label>
             <label style={{ display: 'block', marginTop: 8 }}>Nombre<input value={editForm.nombre} onChange={e => setEditForm({ ...editForm, nombre: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
             {editing.esElaborado ? (
               <div style={{ marginTop: 12, background: '#eff6ff', color: '#1d4ed8', padding: 12, borderRadius: 6, fontSize: 13 }}>
