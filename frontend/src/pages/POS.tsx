@@ -58,25 +58,45 @@ interface VentaPanelProps {
 }
 
 function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta', borde, limpiarSignal = 0, onVentaCompletada, onItemsChange }: VentaPanelProps) {
+  const storageKey = `pos_cart_canal_${canal}`;
   const [codigo, setCodigo] = useState('');
-  const [items, setItems] = useState<Item[]>([]);
+  const [items, setItems] = useState<Item[]>(() => {
+    try {
+      const saved = localStorage.getItem(`pos_cart_canal_${canal}`);
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return [];
+  });
   const [error, setError] = useState('');
   const [aviso, setAviso] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [cobrando, setCobrando] = useState(false);
-  const [metodoPago, setMetodoPago] = useState('EFECTIVO');
+  const [metodoPago, setMetodoPago] = useState(() => {
+    try { return localStorage.getItem(`pos_metodo_${canal}`) || 'EFECTIVO'; } catch { return 'EFECTIVO'; }
+  });
   const [cajaAbierta, setCajaAbierta] = useState<any>(null);
-  const [clienteSearch, setClienteSearch] = useState('');
+  const [clienteSearch, setClienteSearch] = useState(() => {
+    try { return localStorage.getItem(`pos_cliente_search_${canal}`) || ''; } catch { return ''; }
+  });
   const [clientes, setClientes] = useState<any[]>([]);
-  const [clienteId, setClienteId] = useState('');
+  const [clienteId, setClienteId] = useState(() => {
+    try { return localStorage.getItem(`pos_cliente_id_${canal}`) || ''; } catch { return ''; }
+  });
   const [catalog, setCatalog] = useState<any[]>([]);
   const [showSug, setShowSug] = useState(false);
   const [pesoItem, setPesoItem] = useState<{ producto: any; code: string } | null>(null);
   const [pesoKg, setPesoKg] = useState('');
   const [pesoImporte, setPesoImporte] = useState('');
   const [combos, setCombos] = useState<Combo[]>([]);
-  const [comboGroups, setComboGroups] = useState<ComboGroup[]>([]);
+  const [comboGroups, setComboGroups] = useState<ComboGroup[]>(() => {
+    try {
+      const saved = localStorage.getItem(`pos_combo_${canal}`);
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return [];
+  });
+  const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const pesoRef = useRef<HTMLInputElement>(null);
   const user = useAuthStore(s => s.user);
@@ -99,6 +119,24 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
   useEffect(() => {
     if (activo) setTimeout(() => inputRef.current?.focus(), 80);
   }, [activo]);
+
+  useEffect(() => {
+    onItemsChange?.(items.length);
+    try { localStorage.setItem(storageKey, JSON.stringify(items)); } catch {}
+  }, [items]);
+
+  useEffect(() => {
+    try { localStorage.setItem(`pos_combo_${canal}`, JSON.stringify(comboGroups)); } catch {}
+  }, [comboGroups]);
+
+  useEffect(() => {
+    try { localStorage.setItem(`pos_metodo_${canal}`, metodoPago); } catch {}
+  }, [metodoPago]);
+
+  useEffect(() => {
+    try { localStorage.setItem(`pos_cliente_id_${canal}`, clienteId); } catch {}
+    try { localStorage.setItem(`pos_cliente_search_${canal}`, clienteSearch); } catch {}
+  }, [clienteId, clienteSearch]);
 
   useEffect(() => {
     onItemsChange?.(items.length);
@@ -146,13 +184,21 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
       disponibles.set(key, (disponibles.get(key) ?? 0) + qty);
     }
 
-    const prioridad = [...existing, ...combosDisponibles.filter(c => !existing.some(e => e.combo.id === c.id)).map(combo => ({
-      id: `${combo.id}-auto-${Date.now()}`,
-      combo,
-      aplicadoEn: Date.now(),
-      itemsAsignados: [] as Array<{ productoId: string; cantidad: number; precioUnitarioLista: number }>,
-    }))];
+    const base = existing
+      .filter(e => combosDisponibles.some(c => c.id === e.combo.id))
+      .sort((a, b) => a.aplicadoEn - b.aplicadoEn);
 
+    const yaUsados = new Set(base.map(b => b.combo.id));
+    const nuevos = combosDisponibles
+      .filter(c => !yaUsados.has(c.id))
+      .map((combo, idx) => ({
+        id: `${combo.id}-auto-${Date.now()}-${idx}`,
+        combo,
+        aplicadoEn: Date.now() + base.length + idx,
+        itemsAsignados: [] as Array<{ productoId: string; cantidad: number; precioUnitarioLista: number }>,
+      }));
+
+    const prioridad = [...base, ...nuevos];
     const grupos: ComboGroup[] = [];
     const restantes = new Map(disponibles);
 
@@ -182,9 +228,9 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
       });
 
       grupos.push({
-        id: `${combo.id}-${grupos.length}-${Date.now()}`,
+        id: entry.id,
         combo,
-        aplicadoEn: Date.now() + grupos.length,
+        aplicadoEn: entry.aplicadoEn,
         itemsAsignados,
       });
     }
@@ -238,7 +284,7 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
     }
     const ya = items.find((p) => p.id === producto.id);
     if (ya) {
-      setAviso(`Producto ya cargado: ${producto.nombre}`);
+      setItems((prev) => prev.map(p => p.id === producto.id ? { ...p, cantidad: p.cantidad + 1 } : p));
       setCodigo(''); setShowSug(false);
       setTimeout(() => inputRef.current?.focus(), 50);
       return;
@@ -308,37 +354,60 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
     setItems([]); setCodigo(''); setError(''); setAviso(''); setSuccess('');
     setMetodoPago('EFECTIVO'); setClienteId(''); setClienteSearch(''); setClientes([]);
     setComboGroups([]);
+    try {
+      localStorage.removeItem(storageKey);
+      localStorage.removeItem(`pos_combo_${canal}`);
+      localStorage.removeItem(`pos_metodo_${canal}`);
+      localStorage.removeItem(`pos_cliente_id_${canal}`);
+      localStorage.removeItem(`pos_cliente_search_${canal}`);
+    } catch {}
   };
 
   // El padre puede vaciar este POS (botón "Limpiar" de la ventana flotante)
   useEffect(() => { if (limpiarSignal > 0) limpiar(); }, [limpiarSignal]);
 
-  const handleCobrar = async () => {
+  const iniciarCobro = () => {
     if (!cajaAbierta) { setError('No hay caja abierta. Abrí la caja primero en la sección Caja.'); return; }
     const hayItems = items.length > 0 || comboGroups.length > 0;
     if (!hayItems) return;
     if (metodoPago === 'CUENTA_CORRIENTE' && !clienteId) { setError('Seleccioná cliente para cuenta corriente'); return; }
+    setError(''); setAviso(''); setSuccess('');
+    setMostrarConfirmacion(true);
+  };
+
+  const handleCobrar = async () => {
+    setMostrarConfirmacion(false);
     setCobrando(true); setError(''); setSuccess('');
     try {
       const ventaItems: any[] = [];
 
       for (const group of comboGroups) {
-        const lista = group.combo.totalLista || group.combo.items.reduce((acc, ci) => acc + Math.round((ci.precioUnitario || 0) * (Number(ci.cantidad) || 1)), 0);
-        const precioCombo = Math.round(group.combo.precioVenta || lista);
-        const factor = lista > 0 ? precioCombo / lista : 1;
+        const itemsAsignados = group.itemsAsignados || [];
+        if (itemsAsignados.length === 0) continue;
 
-        for (const ci of group.combo.items) {
-          const cantidad = Number(ci.cantidad) || 1;
-          const precioLista = Math.round((ci.precioUnitario || 0) * cantidad);
-          const subtotal = Math.round(precioLista * factor);
-          const precioUnitario = Math.round(subtotal / cantidad);
+        const totalLista = itemsAsignados.reduce((acc, ia) => {
+          const ci = group.combo.items.find(c => c.productoId === ia.productoId);
+          const precioListaUnit = Number(ci?.precioUnitario ?? ia.precioUnitarioLista) || 0;
+          return acc + Math.round(precioListaUnit * ia.cantidad);
+        }, 0);
+
+        const precioCombo = Math.round(group.combo.precioVenta || totalLista);
+        const factor = totalLista > 0 ? precioCombo / totalLista : 1;
+
+        for (const ia of itemsAsignados) {
+          const ci = group.combo.items.find(c => c.productoId === ia.productoId);
+          const precioListaUnit = Number(ci?.precioUnitario ?? ia.precioUnitarioLista) || 0;
+          const precioListaPorGrupo = Math.round(precioListaUnit * ia.cantidad);
+          const subtotal = Math.round(precioListaPorGrupo * factor);
+          const precioUnitario = Math.round(subtotal / ia.cantidad);
+
           ventaItems.push({
-            productoId: ci.productoId,
-            cantidad,
+            productoId: ia.productoId,
+            cantidad: ia.cantidad,
             precioUnitario,
             subtotal,
-            comboId: group.id,
-            precioLista: Math.round(ci.precioUnitario || 0),
+            comboId: group.combo.id,
+            precioLista: precioListaUnit,
             esComboItem: true,
           });
         }
@@ -369,15 +438,6 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
         });
       }
 
-      console.log('Payload venta a enviar', JSON.stringify({
-        sucursalId,
-        metodoPago,
-        descuento: 0,
-        cajaId: cajaAbierta.id,
-        clienteId: metodoPago === 'CUENTA_CORRIENTE' ? clienteId : undefined,
-        items: ventaItems,
-      }, null, 2));
-
       const { data } = await api.post('/ventas', {
         sucursalId,
         metodoPago,
@@ -396,31 +456,72 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
     } finally { setCobrando(false); }
   };
 
-  // Atajo F12: solo responde el POS que está activo (visible)
+  // Atajo F12 / Enter en confirmación
   useEffect(() => {
     if (!activo) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === 'F12') { e.preventDefault(); handleCobrar(); } };
+    const handler = (e: KeyboardEvent) => { 
+      if (mostrarConfirmacion && e.key === 'Enter') { e.preventDefault(); handleCobrar(); return; }
+      if (e.key === 'F12') { e.preventDefault(); iniciarCobro(); } 
+    };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [items, cajaAbierta, metodoPago, clienteId, activo]);
+  }, [items, cajaAbierta, metodoPago, clienteId, activo, mostrarConfirmacion]);
 
   return (
     <>
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 20 }}>
       <div style={{ background: 'white', padding: 20, borderRadius: 8, border: borde ? `2px solid ${borde}` : 'none' }}>
         <h2 style={{ marginTop: 0 }}>{titulo}</h2>
-        {!cajaAbierta ? (
-          <div style={{ background: '#fef2f2', color: '#dc2626', padding: 12, borderRadius: 6, marginTop: 8 }}>
-            ⚠️ No hay caja abierta para esta sucursal. <a href="/caja" style={{ color: '#dc2626', fontWeight: 'bold' }}>Abrir caja</a> para poder cobrar.
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, gap: 12 }}>
+          {!cajaAbierta ? (
+            <div style={{ background: '#fef2f2', color: '#dc2626', padding: 10, borderRadius: 6, flex: 1 }}>
+              ⚠️ No hay caja abierta para esta sucursal. <a href="/caja" style={{ color: '#dc2626', fontWeight: 'bold' }}>Abrir caja</a> para poder cobrar.
+            </div>
+          ) : (
+            <small style={{ color: '#059669' }}>✓ Caja abierta - Inicial: ${Number(cajaAbierta.montoInicial).toFixed(0)}</small>
+          )}
+          <div style={{ position: 'relative' }}>
+            <button onClick={(e) => { e.stopPropagation(); setShowSug(s => !s); }} onBlur={() => setTimeout(() => setShowSug(false), 200)} style={{ padding: '6px 10px', background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: 6, cursor: 'pointer', fontSize: 13, whiteSpace: 'nowrap' }}>
+              Cargar oferta o combo ▾
+            </button>
+            {showSug && (
+              <div style={{ position: 'absolute', right: 0, top: 30, background: 'white', border: '1px solid #e5e7eb', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 30, minWidth: 260, maxHeight: 240, overflow: 'auto' }}>
+                {combos.length === 0 && <div style={{ padding: 10, color: '#9ca3af', fontSize: 13 }}>Sin ofertas/combo cargados</div>}
+                {combos.map(c => (
+                  <div key={c.id} onMouseDown={(e) => {
+                    e.preventDefault();
+                    for (const ci of c.items || []) {
+                      const prod = catalog.find(p => p.id === ci.productoId);
+                      if (!prod) continue;
+                      const existente = items.find(i => i.id === ci.productoId);
+                      const requerido = Math.max(1, Number(ci.cantidad) || 1);
+                      if (existente) {
+                        if (existente.cantidad < requerido) {
+                          setItems(prev => prev.map(p => p.id === ci.productoId ? { ...p, cantidad: requerido } : p));
+                        }
+                      } else {
+                        if (esPeso(prod)) {
+                          abrirPeso(prod, prod.codigoBarras || prod.nombre);
+                        } else {
+                          setItems(prev => [...prev, { id: prod.id, codigo: prod.codigoBarras || prod.nombre, nombre: prod.nombre, precio: Number(prod.precioVenta), cantidad: requerido }]);
+                        }
+                      }
+                    }
+                    setShowSug(false);
+                  }} style={{ padding: '8px 10px', cursor: 'pointer', borderBottom: '1px solid #f3f4f6', fontSize: 13 }}>
+                    <div style={{ fontWeight: 600 }}>{c.nombre}</div>
+                    <div style={{ color: '#065f46', fontSize: 12 }}>${Number(c.precioVenta).toFixed(0)} (lista ${Number(c.totalLista).toFixed(0)})</div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        ) : (
-          <small style={{ color: '#059669' }}>✓ Caja abierta - Inicial: ${Number(cajaAbierta.montoInicial).toFixed(0)}</small>
-        )}
+        </div>
         <div style={{ position: 'relative' }}>
-          <input ref={inputRef} value={codigo} onChange={(e) => { setCodigo(e.target.value); setShowSug(true); }} onKeyDown={handleScan} onFocus={() => setShowSug(true)} onBlur={() => setTimeout(() => setShowSug(false), 200)}
+          <input ref={inputRef} value={codigo} onChange={(e) => { setCodigo(e.target.value); setShowSug(false); }} onKeyDown={handleScan} onFocus={() => setShowSug(false)}
             placeholder="Escaneá código o escribí nombre... (ej: Yerba o 7790000000011)" style={{ width: '100%', padding: 16, fontSize: 18, marginTop: 12, border: '2px solid #111827', borderRadius: 8, boxSizing: 'border-box' }} />
-          {showSug && filteredSug.length > 0 && (
-            <div style={{ position: 'absolute', top: 58, left: 0, right: 0, background: 'white', border: '1px solid #e5e7eb', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 20 }}>
+          {codigo && filteredSug.length > 0 && (
+            <div style={{ position: 'absolute', top: 90, left: 0, right: 0, background: 'white', border: '1px solid #e5e7eb', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 20 }}>
               {filteredSug.map(p => (
                 <div key={p.id} onMouseDown={() => addProducto(p)} style={{ padding: '10px 12px', cursor: 'pointer', borderBottom: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between' }}>
                   <span>{p.nombre} <code style={{ fontSize: 11, color: '#6b7280' }}>{p.codigoBarras || ''}</code></span><span style={{ fontWeight: 'bold' }}>${Number(p.precioVenta).toFixed(0)}</span>
@@ -464,16 +565,16 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
         {comboGroups.length > 0 ? (
           <>
             <div style={{ background: '#ecfdf5', color: '#065f46', padding: 10, borderRadius: 6, marginBottom: 10, fontSize: 13 }}>
-              <div style={{ fontWeight: 700 }}>Combos aplicados</div>
+              <div style={{ fontWeight: 700 }}>Ofertas aplicadas</div>
               {comboGroups.map((group) => (
                 <div key={group.id} style={{ marginTop: 6 }}>
                   • {group.combo.nombre} · ${Math.round(group.combo.precioVenta || group.combo.totalLista || 0).toFixed(0)}
                 </div>
               ))}
-              <div style={{ marginTop: 8 }}>Total combos: ${totalCombo.toFixed(0)}</div>
+              <div style={{ marginTop: 8 }}>Total ofertas: ${totalCombo.toFixed(0)}</div>
               <div>Ahorro estimado: ${Math.max(0, totalListaCombo - totalCombo).toFixed(0)}</div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}><span>Total combos</span><span>${totalCombo.toFixed(0)}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}><span>Total ofertas</span><span>${totalCombo.toFixed(0)}</span></div>
           </>
         ) : (
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}><span>Subtotal</span><span>${totalBruto.toFixed(0)}</span></div>
@@ -519,7 +620,7 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
             )}
           </div>
         )}
-        <button onClick={handleCobrar} disabled={items.length === 0 || cobrando || !cajaAbierta} style={{ width: '100%', padding: 14, marginTop: 20, background: !cajaAbierta ? '#9ca3af' : '#111827', color: 'white', border: 'none', borderRadius: 8, fontSize: 16, cursor: cobrando ? 'wait' : 'pointer', opacity: cobrando ? 0.7 : 1 }}>
+        <button onClick={iniciarCobro} disabled={(items.length === 0 && comboGroups.length === 0) || cobrando || !cajaAbierta} style={{ width: '100%', padding: 14, marginTop: 20, background: !cajaAbierta ? '#9ca3af' : '#111827', color: 'white', border: 'none', borderRadius: 8, fontSize: 16, cursor: cobrando ? 'wait' : 'pointer', opacity: cobrando ? 0.7 : 1 }}>
           {cobrando ? 'Cobrando...' : `COBRAR ${canal === 1 ? '(F12)' : ''}`.trim()}
         </button>
         {!cajaAbierta && <small style={{ color: '#dc2626' }}>Abrí la caja para cobrar</small>}
@@ -549,6 +650,111 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
           <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
             <button onClick={confirmarPeso} style={{ flex: 1, padding: 14, background: '#111827', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 16, fontWeight: 600 }}>Agregar</button>
             <button onClick={() => { setPesoItem(null); setTimeout(() => inputRef.current?.focus(), 50); }} style={{ padding: '14px 18px', background: '#e5e7eb', border: 'none', borderRadius: 8, cursor: 'pointer' }}>Cancelar</button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {mostrarConfirmacion && (
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'grid', placeItems: 'center', zIndex: 95 }} onClick={() => setMostrarConfirmacion(false)}>
+        <div style={{ background: 'white', padding: 24, borderRadius: 12, width: 520, maxHeight: '90vh', overflow: 'auto' }} onClick={e => e.stopPropagation()}>
+          <h3 style={{ margin: 0 }}>Confirmar venta</h3>
+          <p style={{ margin: '6px 0 16px', color: '#6b7280' }}>Revisá el detalle antes de cobrar. Presioná Enter para confirmar.</p>
+          
+          {comboGroups.length > 0 && (
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontWeight: 700, marginBottom: 6 }}>Combos</div>
+              {comboGroups.map(group => (
+                <div key={group.id} style={{ background: '#ecfdf5', padding: 10, borderRadius: 6, marginBottom: 6 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <strong>{group.combo.nombre}</strong>
+                    <strong>${Math.round(group.combo.precioVenta || group.combo.totalLista || 0).toFixed(0)}</strong>
+                  </div>
+                  {group.itemsAsignados.map(ia => {
+                    const ci = group.combo.items.find(c => c.productoId === ia.productoId);
+                    const prod = catalog.find(p => p.id === ia.productoId) || items.find(i => i.id === ia.productoId);
+                    return (
+                      <div key={ia.productoId} style={{ fontSize: 13, color: '#065f46', marginTop: 2 }}>
+                        {ia.cantidad} x {prod?.nombre || ci?.nombre}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {productosSueltos.length > 0 && (
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontWeight: 700, marginBottom: 6 }}>Productos sueltos</div>
+              {productosSueltos.map(item => {
+                const cant = Math.max(0, freeAmountByProduct.get(item.id) ?? 0);
+                return (
+                  <div key={item.codigo} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f3f4f6' }}>
+                    <span>{cant} x {item.nombre}</span>
+                    <span>${Math.round(item.precio * cant).toFixed(0)}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          
+          <div style={{ borderTop: '2px solid #e5e7eb', paddingTop: 12, marginTop: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 18, fontWeight: 700 }}>
+              <span>Total</span>
+              <span>${total.toFixed(0)}</span>
+            </div>
+            <div style={{ marginTop: 6, color: '#6b7280' }}>
+              Método: {METODOS_PAGO.find(m => m.value === metodoPago)?.label}
+              {metodoPago === 'CUENTA_CORRIENTE' && clienteSearch && <div>Cliente: {clienteSearch}</div>}
+            </div>
+          </div>
+          
+          {(() => {
+            const avisosStock: string[] = [];
+            // check combos
+            for (const group of comboGroups) {
+              for (const ia of group.itemsAsignados || []) {
+                const prod = catalog.find(p => p.id === ia.productoId);
+                if (!prod || prod.unidad === 'KG') continue;
+                const stock = prod.stocks?.[0];
+                const cant = Number(stock?.cantidad ?? 0);
+                if (cant + 0.0001 < ia.cantidad) {
+                  avisosStock.push(`Sin stock de ${prod.nombre}, se permite la venta pero no se descontará`);
+                }
+              }
+            }
+            // check sueltos
+            for (const item of productosSueltos) {
+              const prod = catalog.find(p => p.id === item.id);
+              if (!prod || prod.unidad === 'KG') continue;
+              const stock = prod.stocks?.[0];
+              const cant = Number(stock?.cantidad ?? 0);
+              const need = Math.max(0, freeAmountByProduct.get(item.id) ?? 0);
+              if (cant + 0.0001 < need) {
+                avisosStock.push(`Sin stock de ${prod.nombre}, se permite la venta pero no se descontará`);
+              }
+            }
+            const unique = Array.from(new Set(avisosStock));
+            if (unique.length === 0) return null;
+            return (
+              <div style={{ marginTop: 12 }}>
+                {unique.map((av, idx) => (
+                  <div key={idx} style={{ background: '#fffbeb', border: '1px solid #fde68a', padding: 10, borderRadius: 6, marginTop: 6, fontSize: 13, color: '#92400e' }}>
+                    ⚠️ {av}
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+          
+          <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+            <button onClick={handleCobrar} disabled={cobrando} style={{ flex: 1, padding: 14, background: '#111827', color: 'white', border: 'none', borderRadius: 8, cursor: cobrando ? 'wait' : 'pointer', fontSize: 16, fontWeight: 600 }}>
+              {cobrando ? 'Cobrando...' : 'Confirmar y cobrar (Enter)'}
+            </button>
+            <button onClick={() => setMostrarConfirmacion(false)} style={{ padding: '14px 18px', background: '#e5e7eb', border: 'none', borderRadius: 8, cursor: 'pointer' }}>
+              Cancelar
+            </button>
           </div>
         </div>
       </div>

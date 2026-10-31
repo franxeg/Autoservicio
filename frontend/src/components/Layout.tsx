@@ -24,22 +24,28 @@ export default function Layout() {
     navigate('/login');
   };
 
-  // El ADMIN ve todo. El CAJERO ve todo menos Dashboard, Movimientos y Empleados.
+  // ADMIN ve todo.
+  // CAJERO ve POS, productos, stock, clientes, proveedores y caja.
+  // REPOSITOR ve productos, stock; no ve dashboard, POS, compras, movimientos, proveedores, clientes, caja ni empleados.
+  // ELABORACION ve productos, stock; no ve dashboard, POS, compras, movimientos, proveedores, clientes, caja ni empleados.
   const isAdmin = rol === 'ADMIN';
+  const isRestricted = rol === 'REPOSITOR' || rol === 'ELABORACION';
+  const isRepositor = rol === 'REPOSITOR';
+  const isElaboracion = rol === 'ELABORACION';
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', fontFamily: 'sans-serif' }}>
       <aside style={{ width: 240, background: '#111827', color: 'white', padding: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
         <h2 style={{ marginBottom: 20, fontSize: 18 }}>{user?.empresa?.nombre || 'Autoservicio'}</h2>
         {isAdmin && <Link to="/" style={linkStyle('/')}>📊 Dashboard</Link>}
-        <Link to="/pos" style={linkStyle('/pos')}>🛒 POS / Ventas</Link>
+        {!isRestricted && <Link to="/pos" style={linkStyle('/pos')}>🛒 POS / Ventas</Link>}
         <Link to="/productos" style={linkStyle('/productos')}>📦 Productos</Link>
         <Link to="/stock" style={linkStyle('/stock')}>📋 Stock</Link>
-        <Link to="/compras" style={linkStyle('/compras')}>🚚 Compras/Gastos</Link>
+        {isAdmin && <Link to="/compras" style={linkStyle('/compras')}>🚚 Compras/Gastos</Link>}
         {isAdmin && <Link to="/movimientos" style={linkStyle('/movimientos')}>📈 Movimientos</Link>}
-        <Link to="/clientes" style={linkStyle('/clientes')}>👥 Clientes</Link>
-        <Link to="/proveedores" style={linkStyle('/proveedores')}>🏭 Proveedores</Link>
-        <Link to="/caja" style={linkStyle('/caja')}>💰 Caja</Link>
+        {!isRestricted && <Link to="/clientes" style={linkStyle('/clientes')}>👥 Clientes</Link>}
+        {!isRestricted && <Link to="/proveedores" style={linkStyle('/proveedores')}>🏭 Proveedores</Link>}
+        {!isElaboracion && <Link to="/caja" style={linkStyle('/caja')}>💰 Caja</Link>}
         {isAdmin && <Link to="/empleados" style={linkStyle('/empleados')}>👷 Empleados</Link>}
         <div style={{ marginTop: 'auto', borderTop: '1px solid #374151', paddingTop: 12 }}>
           <small>{user?.nombre || 'Usuario'} - {user?.rol}</small><br />

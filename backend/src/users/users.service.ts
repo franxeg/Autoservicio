@@ -50,19 +50,14 @@ export class UsersService {
   }
 
   async create(dto: CreateUserDto) {
-    const exists = await this.prisma.tenant.usuario.findFirst({ where: { OR: [{ username: dto.username }, { email: dto.username }] } });
+    const exists = await this.prisma.tenant.usuario.findFirst({ where: { username: dto.username } });
     if (exists) throw new ConflictException('Usuario ya registrado');
-    if (dto.email) {
-      const emailExists = await this.prisma.tenant.usuario.findUnique({ where: { email: dto.email } });
-      if (emailExists) throw new ConflictException('Email ya registrado');
-    }
     await this.verificarNombreDuplicado(dto.nombre);
     const hashed = await bcrypt.hash(dto.password, 10);
     if (dto.rol === Rol.ADMIN && (await this.countAdminsActivos()) > 0) {
       throw new ConflictException('La empresa ya tiene un ADMIN. El rol de administrador es único.');
     }
     const data: any = { username: dto.username, password: hashed, nombre: dto.nombre, rol: dto.rol, sucursalId: dto.sucursalId || await this.sucursalIdDefault(), empresaId: this.prisma.empresaId! };
-    if (dto.email) data.email = dto.email;
     try {
       const user = await this.prisma.tenant.usuario.create({
         data,
@@ -70,7 +65,7 @@ export class UsersService {
       });
       return user;
     } catch (e: any) {
-      if (e?.code === 'P2002') throw new ConflictException('Usuario o email ya registrado');
+      if (e?.code === 'P2002') throw new ConflictException('Usuario ya registrado');
       throw e;
     }
   }

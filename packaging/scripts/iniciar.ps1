@@ -115,28 +115,33 @@ if (!$ready) {
   Fail "PostgreSQL no respondio. $err"
 }
 
-# --- 3) backup previo si hay actualizacion detectada ---
-if (-not (Test-Path $versionFile) -or $versionAnterior -ne $versionActual) {
-  $backupStamp = Get-Date -Format 'yyyyMMdd-HHmmss'
-  $dumpPath = Join-Path $backupsDir "autoservicio-upgrade-$backupStamp.dump"
-
-  if (Test-Path (Join-Path $root 'data\PG_VERSION')) {
-    Log "Actualizacion detectada ($versionAnterior -> $versionActual). Generando backup de seguridad antes de aplicar cambios..."
-    if (!(Test-Path $backupsDir)) { New-Item -ItemType Directory -Path $backupsDir | Out-Null }
-    & (Join-Path $pgBin 'pg_dump.exe') -h 127.0.0.1 -p $cfg.PGPORT -U $cfg.POSTGRES_USER -d $cfg.POSTGRES_DB -F c -f $dumpPath
-    if ($LASTEXITCODE -ne 0) { Fail "No se pudo crear el backup previo a la actualizacion. Revisa la DB y vuelve a intentar." }
-    Log "Backup de seguridad listo: $dumpPath"
-  }
-
-  $versionActual | Set-Content -Path $versionFile -Encoding ASCII
-}
-
-# --- 4) crear la base si no existe ---
+# --- 3) crear la base si no existe ---
 $psql = Join-Path $pgBin 'psql.exe'
 $exists = "$(& $psql -h 127.0.0.1 -p $cfg.PGPORT -U $cfg.POSTGRES_USER -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='$($cfg.POSTGRES_DB)'")".Trim()
 if ($exists -ne '1') {
   Log "Creando base de datos $($cfg.POSTGRES_DB)..."
   & (Join-Path $pgBin 'createdb.exe') -h 127.0.0.1 -p $cfg.PGPORT -U $cfg.POSTGRES_USER $cfg.POSTGRES_DB
+}
+
+# --- 4) backup previo si hay actualizacion detectada y la DB ya existia ---
+if (-not (Test-Path $versionFile) -or $versionAnterior -ne $versionActual) {
+  $backupStamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+  $dumpPath = Join-Path $backupsDir "autoservicio-upgrade-$backupStamp.dump"
+
+  if (Test-Path (Join-Path $root 'data\PG_VERSION')) {
+    $actualDbExists = "$(& $psql -h 127.0.0.1 -p $cfg.PGPORT -U $cfg.POSTGRES_USER -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='$($cfg.POSTGRES_DB)'")".Trim()
+    if ($actualDbExists -eq '1') {
+      Log "Actualizacion detectada ($versionAnterior -> $versionActual). Generando backup de seguridad antes de aplicar cambios..."
+      if (!(Test-Path $backupsDir)) { New-Item -ItemType Directory -Path $backupsDir | Out-Null }
+      & (Join-Path $pgBin 'pg_dump.exe') -h 127.0.0.1 -p $cfg.PGPORT -U $cfg.POSTGRES_USER -d $cfg.POSTGRES_DB -F c -f $dumpPath
+      if ($LASTEXITCODE -ne 0) { Fail "No se pudo crear el backup previo a la actualizacion. Revisa la DB y vuelve a intentar." }
+      Log "Backup de seguridad listo: $dumpPath"
+    } else {
+      Log "No hay una base previa para respaldar; se inicializa desde cero."
+    }
+  }
+
+  $versionActual | Set-Content -Path $versionFile -Encoding ASCII
 }
 
 # --- 5) esquema + RLS ---

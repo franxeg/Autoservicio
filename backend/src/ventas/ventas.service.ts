@@ -92,14 +92,14 @@ export class VentasService {
             where: { productoId_sucursalId: { productoId: item.productoId, sucursalId: dto.sucursalId } },
           });
           const cantidadActual = redondearCantidad(stock?.cantidad ?? 0);
-          if (cantidadActual + 0.0001 < cantidad) {
-            throw new BadRequestException(`Stock insuficiente para ${producto.nombre}. Disponible: ${cantidadActual}, solicitado: ${cantidad}`);
+          if (cantidadActual + 0.0001 >= cantidad) {
+            await tx.stock.upsert({
+              where: { productoId_sucursalId: { productoId: item.productoId, sucursalId: dto.sucursalId } },
+              update: { cantidad: redondearCantidad(cantidadActual - cantidad) },
+              create: { productoId: item.productoId, sucursalId: dto.sucursalId, cantidad: redondearCantidad(-cantidad), empresaId },
+            });
           }
-          await tx.stock.upsert({
-            where: { productoId_sucursalId: { productoId: item.productoId, sucursalId: dto.sucursalId } },
-            update: { cantidad: redondearCantidad(cantidadActual - cantidad) },
-            create: { productoId: item.productoId, sucursalId: dto.sucursalId, cantidad: redondearCantidad(-cantidad), empresaId },
-          });
+          // Si no hay stock suficiente, permitir venta pero no descontar
         }
 
         detallesData.push({
@@ -142,14 +142,14 @@ export class VentasService {
             where: { productoId_sucursalId: { productoId: item.productoId, sucursalId: dto.sucursalId } },
           });
           const cantidadActual = redondearCantidad(stock?.cantidad ?? 0);
-          if (cantidadActual + 0.0001 < cantidad) {
-            throw new BadRequestException(`Stock insuficiente para ${producto.nombre}. Disponible: ${cantidadActual}, solicitado: ${cantidad}`);
+          if (cantidadActual + 0.0001 >= cantidad) {
+            await tx.stock.upsert({
+              where: { productoId_sucursalId: { productoId: item.productoId, sucursalId: dto.sucursalId } },
+              update: { cantidad: redondearCantidad(cantidadActual - cantidad) },
+              create: { productoId: item.productoId, sucursalId: dto.sucursalId, cantidad: redondearCantidad(-cantidad), empresaId },
+            });
           }
-          await tx.stock.upsert({
-            where: { productoId_sucursalId: { productoId: item.productoId, sucursalId: dto.sucursalId } },
-            update: { cantidad: redondearCantidad(cantidadActual - cantidad) },
-            create: { productoId: item.productoId, sucursalId: dto.sucursalId, cantidad: redondearCantidad(-cantidad), empresaId },
-          });
+          // Si no hay stock suficiente, permitir venta pero no descontar
         }
 
         detallesData.push({

@@ -221,7 +221,7 @@ export default function Productos() {
     <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
       <button onClick={() => setVista('productos')} style={{ padding: '8px 16px', borderRadius: 6, cursor: 'pointer', fontWeight: 600, border: vista === 'productos' ? '2px solid #111827' : '1px solid #d1d5db', background: vista === 'productos' ? '#111827' : 'white', color: vista === 'productos' ? 'white' : '#111827' }}>Productos</button>
       <button onClick={() => setVista('elaborados')} style={{ padding: '8px 16px', borderRadius: 6, cursor: 'pointer', fontWeight: 600, border: vista === 'elaborados' ? '2px solid #111827' : '1px solid #d1d5db', background: vista === 'elaborados' ? '#111827' : 'white', color: vista === 'elaborados' ? 'white' : '#111827' }}>Elaborados</button>
-      <button onClick={() => setVista('combos')} style={{ padding: '8px 16px', borderRadius: 6, cursor: 'pointer', fontWeight: 600, border: vista === 'combos' ? '2px solid #111827' : '1px solid #d1d5db', background: vista === 'combos' ? '#111827' : 'white', color: vista === 'combos' ? 'white' : '#111827' }}>Combos</button>
+      <button onClick={() => setVista('combos')} style={{ padding: '8px 16px', borderRadius: 6, cursor: 'pointer', fontWeight: 600, border: vista === 'combos' ? '2px solid #111827' : '1px solid #d1d5db', background: vista === 'combos' ? '#111827' : 'white', color: vista === 'combos' ? 'white' : '#111827' }}>Ofertas y Combos</button>
     </div>
   );
 

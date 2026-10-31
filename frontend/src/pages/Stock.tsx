@@ -89,7 +89,7 @@ export default function Stock() {
       )}
       {bajoStock.length > 0 && (
         <div style={{ background: '#fef2f2', color: '#b91c1c', padding: 12, borderRadius: 6, marginBottom: 12 }}>
-          ⚠️ {bajoStock.length} productos con stock crítico: {bajoStock.map(p => p.nombre).join(', ')}
+          ⚠️ {bajoStock.length} productos con stock crítico: {bajoStock.slice(0, 10).map(p => p.nombre).join(', ')}{bajoStock.length > 10 ? ` y ${bajoStock.length - 10} más...` : ''}
         </div>
       )}
       <div style={{ background: '#eff6ff', color: '#1d4ed8', padding: 10, borderRadius: 6, marginBottom: 12, fontSize: 14 }}>
