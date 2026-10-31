@@ -56,6 +56,7 @@ Name: "{app}\backups";  Permissions: users-modify
 
 [Icons]
 Name: "{group}\Iniciar Autoservicio"; Filename: "{app}\iniciar.bat"; WorkingDir: "{app}"
+Name: "{commondesktop}\Autoservicio"; Filename: "{app}\iniciar.bat"; WorkingDir: "{app}"; Tasks: desktopicon
 Name: "{group}\Detener";              Filename: "{app}\detener.bat"; WorkingDir: "{app}"
 Name: "{group}\Backup ahora";         Filename: "{app}\backup.bat";  WorkingDir: "{app}"
 Name: "{group}\Instrucciones (LEEME)"; Filename: "{app}\LEEME.txt"
