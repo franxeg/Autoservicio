@@ -41,6 +41,8 @@ AppendDefaultDirName=no
 AlwaysRestart=yes
 SetupIconFile=icon.ico
 UninstallIconFile=icon.ico
+WizardImageFile=installer-wizard.bmp
+WizardSmallImageFile=installer-wizard-small.bmp
 
 [Languages]
 Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
