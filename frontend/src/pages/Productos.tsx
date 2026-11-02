@@ -324,22 +324,42 @@ export default function Productos() {
               const canvas = document.createElement('canvas');
               try {
                 JsBarcode(canvas, editForm.codigoBarras, { format: 'CODE128', width: 2, height: 60, displayValue: true });
-                const url = canvas.toDataURL('image/png');
+                canvas.toBlob((blob) => {
+                  if (!blob) return;
+                  const url = URL.createObjectURL(blob);
+                  const win = window.open('', '_blank');
+                  if (win) {
+                    win.document.write(`<html><head><title>Código de barras - ${editing?.nombre || ''}</title></head><body style="text-align:center;font-family:sans-serif"><h3 style="margin:10px">${(editing?.nombre || '').substring(0,40)}</h3><img src="${url}" style="max-width:100%"/><br/><a download="codigo-barras-${(editing?.nombre||'producto').replace(/[^a-z0-9]/gi,'_')}.png" href="${url}">Descargar PNG</a></body></html>`);
+                    win.document.close();
+                  }
+                }, 'image/png');
+              } catch(e) {}
+            }} style={{ padding: '8px 10px', background: '#e5e7eb', border: 'none', borderRadius: 6, cursor: 'pointer', whiteSpace: 'nowrap', fontSize: 12 }}>Imprimir/Descargar código</button><button type="button" onClick={() => {
+              const precio = editing ? editing.precioVenta : 0;
+              const nombre = editing?.nombre || '';
+              const canvas = document.createElement('canvas');
+              canvas.width = 400;
+              canvas.height = 200;
+              const ctx = canvas.getContext('2d');
+              if (!ctx) return;
+              ctx.fillStyle = '#ffffff';
+              ctx.fillRect(0,0,400,200);
+              ctx.fillStyle = '#000000';
+              ctx.font = 'bold 16px Arial';
+              ctx.textAlign = 'center';
+              ctx.fillText(nombre.substring(0,30), 200, 40);
+              ctx.font = 'bold 72px Arial';
+              ctx.fillText('$' + Number(precio).toFixed(0), 200, 130);
+              canvas.toBlob((blob) => {
+                if (!blob) return;
+                const url = URL.createObjectURL(blob);
                 const win = window.open('', '_blank');
                 if (win) {
-                  win.document.write(`<html><head><title>Código de barras - ${editing?.nombre || ''}</title></head><body style="text-align:center;font-family:sans-serif"><h3 style="margin:10px">${(editing?.nombre || '').substring(0,40)}</h3><img src="${url}"/><br/><button onclick="window.print()">Imprimir</button></body></html>`);
+                  win.document.write(`<html><head><title>Etiqueta precio - ${nombre}</title></head><body style="text-align:center;font-family:sans-serif"><img src="${url}" style="max-width:100%"/><br/><a download="etiqueta-precio-${nombre.replace(/[^a-z0-9]/gi,'_')}.png" href="${url}">Descargar PNG</a></body></html>`);
                   win.document.close();
                 }
-              } catch(e) {}
-            }} style={{ padding: '8px 10px', background: '#e5e7eb', border: 'none', borderRadius: 6, cursor: 'pointer', whiteSpace: 'nowrap', fontSize: 12 }}>Imprimir código</button><button type="button" onClick={() => {
-              const precio = editing ? (editing.unidad === 'KG' ? editing.precioVenta : editing.precioVenta) : 0;
-              const nombre = editing?.nombre || '';
-              const win = window.open('', '_blank');
-              if (win) {
-                win.document.write(`<html><head><title>Etiqueta precio - ${nombre}</title><style>body{font-family:sans-serif;text-align:center;margin:0;padding:10px}h4{margin:4px;font-size:12px;font-weight:normal}h1{margin:4px;font-size:36px;font-weight:bold}</style></head><body><h4>${nombre.substring(0,30)}</h4><h1>$${Number(precio).toFixed(0)}</h1><button onclick="window.print()">Imprimir</button></body></html>`);
-                win.document.close();
-              }
-            }} style={{ padding: '8px 10px', background: '#e5e7eb', border: 'none', borderRadius: 6, cursor: 'pointer', whiteSpace: 'nowrap', fontSize: 12 }}>Imprimir precio</button></div></label>
+              }, 'image/png');
+            }} style={{ padding: '8px 10px', background: '#e5e7eb', border: 'none', borderRadius: 6, cursor: 'pointer', whiteSpace: 'nowrap', fontSize: 12 }}>Descargar etiqueta PNG</button></div></label>
             <label style={{ display: 'block', marginTop: 8 }}>Nombre<input value={editForm.nombre} onChange={e => setEditForm({ ...editForm, nombre: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
             {editing.esElaborado ? (
               <div style={{ marginTop: 12, background: '#eff6ff', color: '#1d4ed8', padding: 12, borderRadius: 6, fontSize: 13 }}>

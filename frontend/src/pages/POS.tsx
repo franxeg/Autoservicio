@@ -257,20 +257,26 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
     setPesoImporte(v);
     const imp = parseFloat(v.replace(',', '.'));
     const precio = pesoItem ? precioDe(pesoItem.producto) : 0;
-    if (!isNaN(imp) && precio > 0) setPesoKg((Math.round((imp / precio) * 1000) / 1000).toFixed(3));
-    else setPesoKg('');
+    if (!isNaN(imp) && precio > 0) {
+      setPesoKg((Math.round((imp / precio) * 1000) / 1000).toFixed(3));
+    } else {
+      setPesoKg('');
+    }
   };
 
   const confirmarPeso = () => {
     if (!pesoItem) return;
     const kg = parseFloat(pesoKg.replace(',', '.'));
-    if (isNaN(kg) || kg <= 0) { setError('Ingresá un importe válido'); return; }
-    const precio = Math.round(precioDe(pesoItem.producto));
-    const code = pesoItem.code;
+    const imp = parseFloat(pesoImporte.replace(',', '.'));
+    if (isNaN(kg) || kg <= 0 || isNaN(imp) || imp < 0) { setError('Ingresá un importe válido'); return; }
+    const precioPorKg = precioDe(pesoItem.producto);
+    // Mantener el importe exactamente como lo ingresó el cajero
+    const precioUnitario = kg > 0 ? imp / kg : precioPorKg;
+    const code = pesoItem.code || pesoItem.producto.codigoBarras || pesoItem.producto.nombre;
     setItems(prev => {
-      const existe = prev.find(i => i.codigo === code);
-      if (existe) return prev.map(i => (i.codigo === code ? { ...i, cantidad: kg } : i));
-      return [...prev, { id: pesoItem.producto.id, codigo: code, nombre: pesoItem.producto.nombre, precio, cantidad: kg, unidad: pesoItem.producto.unidad }];
+      const existe = prev.find(i => i.codigo === code || i.id === pesoItem.producto.id);
+      if (existe) return prev.map(i => (i.codigo === code || i.id === pesoItem.producto.id) ? { ...i, codigo: code, cantidad: kg, precio: precioUnitario, unidad: pesoItem.producto.unidad } : i);
+      return [...prev, { id: pesoItem.producto.id, codigo: code, nombre: pesoItem.producto.nombre, precio: precioUnitario, cantidad: kg, unidad: pesoItem.producto.unidad }];
     });
     setPesoItem(null); setPesoKg(''); setPesoImporte('');
     setCodigo(''); setShowSug(false); setError('');
@@ -288,12 +294,12 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
     }
     const ya = items.find((p) => p.id === producto.id || (c && p.codigo === c));
     if (ya) {
-      setItems((prev) => prev.map(p => (p.id === producto.id || p.codigo === c) ? { ...p, cantidad: p.cantidad + 1 } : p));
+      setItems((prev) => prev.map(p => (p.id === producto.id || p.codigo === c) ? { ...p, cantidad: p.cantidad + 1, codigo: p.codigo === c ? p.codigo : (producto.codigoBarras || c) } : p));
       setCodigo(''); setShowSug(false); setSugIndex(-1);
       setTimeout(() => inputRef.current?.focus(), 50);
       return;
     }
-    setItems((prev) => [...prev, { id: producto.id, codigo: c, nombre: producto.nombre, precio: Number(producto.precioVenta), cantidad: 1 }]);
+    setItems((prev) => [...prev, { id: producto.id, codigo: producto.codigoBarras || c, nombre: producto.nombre, precio: Number(producto.precioVenta), cantidad: 1 }]);
     setCodigo(''); setShowSug(false); setSugIndex(-1);
     setTimeout(() => inputRef.current?.focus(), 50);
   };
@@ -570,22 +576,23 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
         {success && <div style={{ background: '#ecfdf5', color: '#059669', padding: 10, borderRadius: 6, marginTop: 8 }}>{success}</div>}
 
         <table style={{ width: '100%', marginTop: 20, borderCollapse: 'collapse' }}>
-          <thead><tr style={{ borderBottom: '2px solid #e5e7eb', textAlign: 'left' }}><th>Código</th><th>Producto</th><th>Cant</th><th>Precio</th><th>Subtotal</th><th></th></tr></thead>
+          <thead><tr style={{ borderBottom: '2px solid #e5e7eb', textAlign: 'left' }}><th style={{ fontSize: 12 }}>Código</th><th>Producto</th><th>Cant</th><th>Precio</th><th>Subtotal</th><th></th></tr></thead>
           <tbody>
             {items.map((item) => (
-              <tr key={item.codigo} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                <td>{item.codigo}</td><td>{item.nombre}</td>
+              <tr key={item.codigo + item.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                <td style={{ fontSize: 11, maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.codigo || '-'}</td>
+                <td style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.nombre}>{item.nombre.length > 28 ? item.nombre.substring(0, 28) + '...' : item.nombre}</td>
                 <td>
                   {esPeso(item) ? (
                     <span>
-                      {item.cantidad.toFixed(3)} {unidadLabel(item.unidad)}{' '}
-                      <button onClick={() => abrirPeso(item, item.codigo, item.cantidad)} style={{ padding: '2px 6px', cursor: 'pointer' }} title="Editar peso">✏️</button>
+                      {item.cantidad.toFixed(3)} {unidadLabel(item.unidad)}
                     </span>
                   ) : (
                     <><button onClick={() => updateCantidad(item.codigo, -1)} style={{ padding: '2px 6px' }}>-</button><span style={{ margin: '0 8px' }}>{item.cantidad}</span><button onClick={() => updateCantidad(item.codigo, 1)} style={{ padding: '2px 6px' }}>+</button></>
                   )}
                 </td>
-                <td>${item.precio.toFixed(0)}{esPeso(item) ? `/${unidadLabel(item.unidad)}` : ''}</td><td>${Math.round(item.precio * item.cantidad).toFixed(0)}</td>
+                <td>${(esPeso(item) ? item.precio : Math.round(item.precio)).toFixed(0)}{esPeso(item) ? `/${unidadLabel(item.unidad)}` : ''}</td>
+                <td>${Math.round(item.precio * item.cantidad).toFixed(0)}{esPeso(item) ? <button onClick={() => abrirPeso(items.find(i=>i.id===item.id) || item, item.codigo || (item as any).producto?.codigoBarras || item.nombre, item.cantidad)} style={{ marginLeft: 6, padding: '2px 6px', cursor: 'pointer' }} title="Editar importe/peso">✏️</button> : ''}</td>
                 <td><button onClick={() => removeItem(item.codigo)} style={{ color: 'red', border: 'none', background: 'none', cursor: 'pointer' }}>✕</button></td>
               </tr>
             ))}
@@ -814,7 +821,7 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
               })();
               const win = window.open('', '_blank', 'width=400,height=600');
               if (win) {
-                win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Ticket</title><style>body{font-family:monospace;font-size:12px;margin:0;padding:10px}h2{text-align:center;margin:4px}p{margin:2px 0}.line{border-top:1px dashed #000;margin:6px 0}.row{display:flex;justify-content:space-between}.tot{font-weight:bold;font-size:14px}</style></head><body><h2>AUTOSERVICIO</h2><p style="text-align:center">Comprobante: ${v.nroComprobante}</p><p style="text-align:center">${new Date().toLocaleString()}</p><div class="line"></div>${ticketItems.map((it:any)=>`<div class="row"><span>${it.cantidad} x ${(it.nombre||'').substring(0,18)}</span><span>$${Math.round((it.precioUnitario||0)*it.cantidad)}</span></div>`).join('')}<div class="line"></div><div class="row tot"><span>TOTAL</span><span>$${Number(v.total||total).toFixed(0)}</span></div><div class="row"><span>Pago</span><span>${METODOS_PAGO.find(m=>m.value===(v.metodoPago||metodoPago))?.label||''}</span></div>${(v.clienteSearch||clienteSearch)?`<p>Cliente: ${(v.clienteSearch||clienteSearch)}</p>`:''}<div class="line"></div><p style="text-align:center">¡Gracias por su compra!</p><script>window.onload=function(){window.print();setTimeout(function(){window.close();},500);};</script></body></html>`);
+                win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Ticket</title><style>body{font-family:monospace;font-size:12px;margin:0;padding:10px}h2{text-align:center;margin:4px}p{margin:2px 0}.line{border-top:1px dashed #000;margin:6px 0}.row{display:flex;justify-content:space-between}.tot{font-weight:bold;font-size:14px}</style></head><body><h2>AUTOSERVICIO</h2><p style="text-align:center;font-weight:bold">Autoservicio</p><p style="text-align:center">Comprobante: ${v.nroComprobante}</p><p style="text-align:center">${new Date().toLocaleString()}</p><div class="line"></div>${ticketItems.map((it:any)=>`<div class="row"><span>${Number(it.cantidad).toFixed(it.cantidad%1===0?0:3)} x ${(it.nombre||'').substring(0,18)}</span><span>$${Math.round((it.precioUnitario||0)*it.cantidad)}</span></div>`).join('')}<div class="line"></div><div class="row tot"><span>TOTAL</span><span>$${Number(v.total||total).toFixed(0)}</span></div><div class="row"><span>Pago</span><span>${METODOS_PAGO.find(m=>m.value===(v.metodoPago||metodoPago))?.label||''}</span></div>${(v.clienteSearch||clienteSearch)?`<p>Cliente: ${(v.clienteSearch||clienteSearch)}</p>`:''}<div class="line"></div><p style="text-align:center">¡Gracias por su compra!</p><script>window.onload=function(){window.print();setTimeout(function(){window.close();},500);};</script></body></html>`);
                 win.document.close();
               }
               setMostrarConfirmacion(false);
