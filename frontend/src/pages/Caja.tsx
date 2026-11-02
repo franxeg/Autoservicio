@@ -33,6 +33,9 @@ export default function Caja() {
           const ultima = cerradas.reduce((a: any, b: any) => new Date(a.fechaCierre) > new Date(b.fechaCierre) ? a : b);
           setMontoInicial(String(Math.round(Number(ultima.montoFinal) || 0)));
           setMontoInicialVirtual(String(Math.round(Number(ultima.montoFinalVirtual) || 0)));
+        } else {
+          setMontoInicial('0');
+          setMontoInicialVirtual('0');
         }
       }
     } catch (e: any) {

@@ -85,6 +85,9 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
   });
   const [catalog, setCatalog] = useState<any[]>([]);
   const [showSug, setShowSug] = useState(false);
+  const [sugIndex, setSugIndex] = useState(-1);
+  const [showCliSug, setShowCliSug] = useState(false);
+  const [cliIndex, setCliIndex] = useState(-1);
   const [pesoItem, setPesoItem] = useState<{ producto: any; code: string } | null>(null);
   const [pesoKg, setPesoKg] = useState('');
   const [pesoImporte, setPesoImporte] = useState('');
@@ -171,7 +174,7 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
     } catch { setCajaAbierta(null); }
   };
 
-  const filteredSug = codigo ? catalog.filter(p => p.nombre.toLowerCase().includes(codigo.toLowerCase()) || (p.codigoBarras || '').includes(codigo)).slice(0, 6) : [];
+  const filteredSug = codigo ? catalog.filter(p => p.nombre.toLowerCase().includes(codigo.toLowerCase()) || (p.codigoBarras || '').includes(codigo)).slice(0, 8) : [];
 
   const recomputarComboGroups = (currentItems: Item[], combosDisponibles: Combo[], existing: ComboGroup[] = []): ComboGroup[] => {
     if (combosDisponibles.length === 0) return [];
@@ -277,42 +280,71 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
     setError(''); setSuccess(''); setAviso('');
     const c = code || producto.codigoBarras || producto.nombre;
     if (esPeso(producto)) {
-      const existe = items.find(i => i.codigo === c);
-      setCodigo(''); setShowSug(false);
+      const existe = items.find(i => i.codigo === c || i.id === producto.id);
+      setCodigo(''); setShowSug(false); setSugIndex(-1);
       abrirPeso(producto, c, existe?.cantidad);
       return;
     }
-    const ya = items.find((p) => p.id === producto.id);
+    const ya = items.find((p) => p.id === producto.id || (c && p.codigo === c));
     if (ya) {
-      setItems((prev) => prev.map(p => p.id === producto.id ? { ...p, cantidad: p.cantidad + 1 } : p));
-      setCodigo(''); setShowSug(false);
+      setItems((prev) => prev.map(p => (p.id === producto.id || p.codigo === c) ? { ...p, cantidad: p.cantidad + 1 } : p));
+      setCodigo(''); setShowSug(false); setSugIndex(-1);
       setTimeout(() => inputRef.current?.focus(), 50);
       return;
     }
     setItems((prev) => [...prev, { id: producto.id, codigo: c, nombre: producto.nombre, precio: Number(producto.precioVenta), cantidad: 1 }]);
-    setCodigo(''); setShowSug(false);
+    setCodigo(''); setShowSug(false); setSugIndex(-1);
     setTimeout(() => inputRef.current?.focus(), 50);
   };
 
   const handleScan = async (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && codigo.trim()) {
-      const code = codigo.trim();
-      // Primero buscar en catálogo local por código exacto o nombre
-      const local = catalog.find(p => p.codigoBarras === code || p.nombre.toLowerCase() === code.toLowerCase());
-      if (local) { addProducto(local, code); return; }
-      // Si hay sugerencias, se carga la primera de la lista
-      if (filteredSug.length > 0) { addProducto(filteredSug[0]); return; }
-      // Fallback a API por código
-      setError(''); setSuccess(''); setAviso('');
-      setLoading(true);
-      try {
-        const { data } = await api.get(`/productos/codigo/${code}`);
-        addProducto(data, code);
-      } catch (err: any) {
-        if (err.response?.status === 404) setError(`Producto no encontrado: ${code}`);
-        else if (err.response?.status === 401) setError('Sesión expirada');
-        else setError(err.response?.data?.message || err.message);
-      } finally { setLoading(false); }
+    if (e.key === 'ArrowDown') {
+      if (codigo && filteredSug.length > 0) {
+        e.preventDefault();
+        setShowSug(true);
+        setSugIndex(i => (i + 1) % filteredSug.length);
+        return;
+      }
+    }
+    if (e.key === 'ArrowUp') {
+      if (codigo && filteredSug.length > 0) {
+        e.preventDefault();
+        setShowSug(true);
+        setSugIndex(i => (i - 1 + filteredSug.length) % filteredSug.length);
+        return;
+      }
+    }
+    if (e.key === 'Enter') {
+      if (codigo.trim()) {
+        e.preventDefault();
+        const code = codigo.trim();
+        if (sugIndex >= 0 && filteredSug[sugIndex]) {
+          addProducto(filteredSug[sugIndex]);
+          setSugIndex(-1);
+          return;
+        }
+        // Primero buscar en catálogo local por código exacto
+        const localExact = catalog.find(p => p.codigoBarras === code);
+        if (localExact) { addProducto(localExact, code); setSugIndex(-1); return; }
+        // Buscar por nombre exacto
+        const localName = catalog.find(p => p.nombre.toLowerCase() === code.toLowerCase());
+        if (localName) { addProducto(localName, code); setSugIndex(-1); return; }
+        // Si hay sugerencias, se carga la primera de la lista
+        if (filteredSug.length > 0) { addProducto(filteredSug[0]); setSugIndex(-1); return; }
+        // Fallback a API por código
+        setError(''); setSuccess(''); setAviso('');
+        setLoading(true);
+        try {
+          const { data } = await api.get(`/productos/codigo/${code}`);
+          addProducto(data, code);
+          setSugIndex(-1);
+        } catch (err: any) {
+          if (err.response?.status === 404) setError(`Producto no encontrado: ${code}`);
+          else if (err.response?.status === 401) setError('Sesión expirada');
+          else setError(err.response?.data?.message || err.message);
+        } finally { setLoading(false); }
+        return;
+      }
     }
   };
 
@@ -518,12 +550,12 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
           </div>
         </div>
         <div style={{ position: 'relative' }}>
-          <input ref={inputRef} value={codigo} onChange={(e) => { setCodigo(e.target.value); setShowSug(false); }} onKeyDown={handleScan} onFocus={() => setShowSug(false)}
+          <input ref={inputRef} value={codigo} onChange={(e) => { setCodigo(e.target.value); setShowSug(true); setSugIndex(-1); }} onKeyDown={handleScan} onFocus={() => { if (codigo && filteredSug.length > 0) setShowSug(true); }}
             placeholder="Escaneá código o escribí nombre... (ej: Yerba o 7790000000011)" style={{ width: '100%', padding: 16, fontSize: 18, marginTop: 12, border: '2px solid #111827', borderRadius: 8, boxSizing: 'border-box' }} />
-          {codigo && filteredSug.length > 0 && (
+          {codigo && filteredSug.length > 0 && showSug && (
             <div style={{ position: 'absolute', top: 90, left: 0, right: 0, background: 'white', border: '1px solid #e5e7eb', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 20 }}>
-              {filteredSug.map(p => (
-                <div key={p.id} onMouseDown={() => addProducto(p)} style={{ padding: '10px 12px', cursor: 'pointer', borderBottom: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between' }}>
+              {filteredSug.map((p, idx) => (
+                <div key={p.id} onMouseDown={(e) => { e.preventDefault(); addProducto(p); }} style={{ padding: '10px 12px', cursor: 'pointer', borderBottom: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between', background: sugIndex === idx ? '#eff6ff' : 'white' }}>
                   <span>{p.nombre} <code style={{ fontSize: 11, color: '#6b7280' }}>{p.codigoBarras || ''}</code></span><span style={{ fontWeight: 'bold' }}>${Number(p.precioVenta).toFixed(0)}</span>
                 </div>
               ))}
@@ -607,11 +639,19 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
         </div>
         {metodoPago === 'CUENTA_CORRIENTE' && (
           <div style={{ marginTop: 10 }}>
-            <input placeholder="Buscar cliente por nombre o teléfono" value={clienteSearch} onChange={e => setClienteSearch(e.target.value)} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} />
-            {clientes.length > 0 && clienteSearch && (
+            <input placeholder="Buscar cliente por nombre o teléfono" value={clienteSearch} onChange={e => { setClienteSearch(e.target.value); setShowCliSug(true); setCliIndex(-1); }} onKeyDown={(e) => {
+              if (e.key === 'ArrowDown' && clientes.length > 0) { e.preventDefault(); setShowCliSug(true); setCliIndex(i => (i + 1) % clientes.length); return; }
+              if (e.key === 'ArrowUp' && clientes.length > 0) { e.preventDefault(); setShowCliSug(true); setCliIndex(i => (i - 1 + clientes.length) % clientes.length); return; }
+              if (e.key === 'Enter' && clientes.length > 0) {
+                e.preventDefault();
+                const c = cliIndex >= 0 ? clientes[cliIndex] : clientes[0];
+                if (c) { setClienteId(c.id); setClienteSearch(c.nombre); setClientes([]); setShowCliSug(false); setCliIndex(-1); }
+              }
+            }} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} />
+            {clientes.length > 0 && clienteSearch && showCliSug && (
               <div style={{ marginTop: 6, maxHeight: 160, overflow: 'auto', border: '1px solid #e5e7eb', borderRadius: 6 }}>
-                {clientes.map((c: any) => (
-                  <div key={c.id} onMouseDown={() => { setClienteId(c.id); setClienteSearch(c.nombre); setClientes([]); }} style={{ padding: '6px 8px', borderBottom: '1px solid #f3f4f6', cursor: 'pointer', background: clienteId === c.id ? '#f3f4f6' : 'white' }}>
+                {clientes.map((c: any, idx: number) => (
+                  <div key={c.id} onMouseDown={(e) => { e.preventDefault(); setClienteId(c.id); setClienteSearch(c.nombre); setClientes([]); setShowCliSug(false); setCliIndex(-1); }} style={{ padding: '6px 8px', borderBottom: '1px solid #f3f4f6', cursor: 'pointer', background: (cliIndex === idx || clienteId === c.id) ? '#eff6ff' : 'white' }}>
                     <div style={{ fontWeight: 600 }}>{c.nombre}</div>
                     <small style={{ color: '#6b7280' }}>{c.telefono || '-'} · Saldo ${Number(c.saldoCuenta).toFixed(0)}</small>
                   </div>
