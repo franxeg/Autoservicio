@@ -48,8 +48,11 @@ export default function Caja() {
 
   const abrir = async () => {
     setError(''); setSuccess('');
+    const mi = Math.round(parseFloat(montoInicial) || 0);
+    const mv = Math.round(parseFloat(montoInicialVirtual) || 0);
+    if (!confirm(`¿Abrir caja?\n\nEfectivo inicial: $${mi}\nVirtual inicial: $${mv}\nSucursal: ${sucursalId}`)) return;
     try {
-      await api.post('/caja/abrir', { sucursalId, montoInicial: Math.round(parseFloat(montoInicial) || 0), montoInicialVirtual: Math.round(parseFloat(montoInicialVirtual) || 0) });
+      await api.post('/caja/abrir', { sucursalId, montoInicial: mi, montoInicialVirtual: mv });
       setSuccess('Caja abierta');
       fetch();
     } catch (e: any) { setError(e.response?.data?.message || e.message); }
@@ -57,6 +60,8 @@ export default function Caja() {
 
   const cerrar = async () => {
     if (!caja) return;
+    setError(''); setSuccess('');
+    if (!confirm(`¿Cerrar caja?\n\nEfectivo inicial: $${Number(caja.montoInicial).toFixed(0)}\nVirtual inicial: $${Number(caja.montoInicialVirtual || 0).toFixed(0)}\nVentas efectivo: $${Number(caja.totalVentasEfectivo || 0).toFixed(0)}\nVentas virtual: $${Number(caja.totalVentasVirtual || 0).toFixed(0)}\nBalance efectivo: $${Number(caja.balance ?? 0).toFixed(0)}\nBalance virtual: $${Number(caja.balanceVirtual ?? 0).toFixed(0)}`)) return;
     try {
       await api.patch(`/caja/${caja.id}/cerrar`, {});
       setSuccess('Caja cerrada');

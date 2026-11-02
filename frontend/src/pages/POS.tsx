@@ -100,6 +100,7 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
     return [];
   });
   const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false);
+  const [ultimoVenta, setUltimoVenta] = useState<any>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const pesoRef = useRef<HTMLInputElement>(null);
   const user = useAuthStore(s => s.user);
@@ -478,6 +479,7 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
         clienteId: metodoPago === 'CUENTA_CORRIENTE' ? clienteId : undefined,
         items: ventaItems,
       });
+      setUltimoVenta({ ...data, items: ventaItems, metodoPago, clienteSearch });
       setSuccess(`Venta #${data.nroComprobante} por $${Number(data.total).toFixed(0)} registrada`);
       limpiar();
       checkCaja();
@@ -550,7 +552,7 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
           </div>
         </div>
         <div style={{ position: 'relative' }}>
-          <input ref={inputRef} value={codigo} onChange={(e) => { setCodigo(e.target.value); setShowSug(true); setSugIndex(-1); }} onKeyDown={handleScan} onFocus={() => { if (codigo && filteredSug.length > 0) setShowSug(true); }}
+          <input ref={inputRef} value={codigo} onChange={(e) => { setCodigo(e.target.value); setShowSug(true); setSugIndex(-1); }} onKeyDown={handleScan}
             placeholder="Escaneá código o escribí nombre... (ej: Yerba o 7790000000011)" style={{ width: '100%', padding: 16, fontSize: 18, marginTop: 12, border: '2px solid #111827', borderRadius: 8, boxSizing: 'border-box' }} />
           {codigo && filteredSug.length > 0 && showSug && (
             <div style={{ position: 'absolute', top: 90, left: 0, right: 0, background: 'white', border: '1px solid #e5e7eb', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 20 }}>
@@ -788,9 +790,36 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
             );
           })()}
           
-          <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-            <button onClick={handleCobrar} disabled={cobrando} style={{ flex: 1, padding: 14, background: '#111827', color: 'white', border: 'none', borderRadius: 8, cursor: cobrando ? 'wait' : 'pointer', fontSize: 16, fontWeight: 600 }}>
+          <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
+            <button onClick={handleCobrar} disabled={cobrando} style={{ flex: 1, minWidth: 180, padding: 14, background: '#111827', color: 'white', border: 'none', borderRadius: 8, cursor: cobrando ? 'wait' : 'pointer', fontSize: 16, fontWeight: 600 }}>
               {cobrando ? 'Cobrando...' : 'Confirmar y cobrar (Enter)'}
+            </button>
+            <button onClick={() => {
+              // Generar ticket para impresión
+              if (!ultimoVenta && !(items.length > 0 || comboGroups.length > 0)) return;
+              const v = ultimoVenta || { nroComprobante: '---', total, items: [], metodoPago, clienteSearch };
+              const ticketItems = v.items && v.items.length > 0 ? v.items : (() => {
+                const list: any[] = [];
+                for (const group of comboGroups) {
+                  for (const ia of group.itemsAsignados || []) {
+                    const prod = catalog.find(p => p.id === ia.productoId) || items.find(i => i.id === ia.productoId);
+                    list.push({ productoId: ia.productoId, cantidad: ia.cantidad, precioUnitario: ia.precioUnitarioLista, nombre: prod?.nombre || group.combo.nombre });
+                  }
+                }
+                for (const item of productosSueltos) {
+                  const cant = Math.max(0, freeAmountByProduct.get(item.id) ?? 0);
+                  list.push({ productoId: item.id, cantidad: cant, precioUnitario: item.precio, nombre: item.nombre });
+                }
+                return list;
+              })();
+              const win = window.open('', '_blank', 'width=400,height=600');
+              if (win) {
+                win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Ticket</title><style>body{font-family:monospace;font-size:12px;margin:0;padding:10px}h2{text-align:center;margin:4px}p{margin:2px 0}.line{border-top:1px dashed #000;margin:6px 0}.row{display:flex;justify-content:space-between}.tot{font-weight:bold;font-size:14px}</style></head><body><h2>AUTOSERVICIO</h2><p style="text-align:center">Comprobante: ${v.nroComprobante}</p><p style="text-align:center">${new Date().toLocaleString()}</p><div class="line"></div>${ticketItems.map((it:any)=>`<div class="row"><span>${it.cantidad} x ${(it.nombre||'').substring(0,18)}</span><span>$${Math.round((it.precioUnitario||0)*it.cantidad)}</span></div>`).join('')}<div class="line"></div><div class="row tot"><span>TOTAL</span><span>$${Number(v.total||total).toFixed(0)}</span></div><div class="row"><span>Pago</span><span>${METODOS_PAGO.find(m=>m.value===(v.metodoPago||metodoPago))?.label||''}</span></div>${(v.clienteSearch||clienteSearch)?`<p>Cliente: ${(v.clienteSearch||clienteSearch)}</p>`:''}<div class="line"></div><p style="text-align:center">¡Gracias por su compra!</p><script>window.onload=function(){window.print();setTimeout(function(){window.close();},500);};</script></body></html>`);
+                win.document.close();
+              }
+              setMostrarConfirmacion(false);
+            }} style={{ padding: '14px 16px', background: '#0ea5e9', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>
+              Imprimir ticket
             </button>
             <button onClick={() => setMostrarConfirmacion(false)} style={{ padding: '14px 18px', background: '#e5e7eb', border: 'none', borderRadius: 8, cursor: 'pointer' }}>
               Cancelar

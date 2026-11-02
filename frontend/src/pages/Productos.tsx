@@ -362,7 +362,7 @@ export default function Productos() {
                 </div>
                 {editForm.unidad !== 'KG' && (
                   <>
-                    <label style={{ display: 'block', marginTop: 8 }}>Stock ({sucursalId})<input type="number" step="any" value={editForm.stock} onChange={e => setEditForm({ ...editForm, stock: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
+                    <label style={{ display: 'block', marginTop: 8 }}>Stock<input type="number" step="any" value={editForm.stock} onChange={e => setEditForm({ ...editForm, stock: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
                     <label style={{ display: 'block', marginTop: 8 }}>Mínimo en stock<input type="number" min="0" step="any" value={editForm.stockMinimo} onChange={e => setEditForm({ ...editForm, stockMinimo: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
                   </>
                 )}
