@@ -329,7 +329,7 @@ export default function Productos() {
                   const url = URL.createObjectURL(blob);
                   const win = window.open('', '_blank');
                   if (win) {
-                    win.document.write(`<html><head><title>Código de barras - ${editing?.nombre || ''}</title></head><body style="text-align:center;font-family:sans-serif"><h3 style="margin:10px">${(editing?.nombre || '').substring(0,40)}</h3><img src="${url}" style="max-width:100%"/><br/><a download="codigo-barras-${(editing?.nombre||'producto').replace(/[^a-z0-9]/gi,'_')}.png" href="${url}">Descargar PNG</a></body></html>`);
+                    win.document.write(`<html><head><title>Código de barras - ${editing?.nombre || ''}</title></head><body style="text-align:center;font-family:sans-serif"><div style="font-weight:bold;margin:6px">Autoservicio</div><h3 style="margin:6px">${(editing?.nombre || '').substring(0,40)}</h3><img src="${url}" style="max-width:100%"/><br/><a download="codigo-barras-${(editing?.nombre||'producto').replace(/[^a-z0-9]/gi,'_')}.png" href="${url}">Descargar PNG</a></body></html>`);
                     win.document.close();
                   }
                 }, 'image/png');
@@ -345,9 +345,11 @@ export default function Productos() {
               ctx.fillStyle = '#ffffff';
               ctx.fillRect(0,0,400,200);
               ctx.fillStyle = '#000000';
-              ctx.font = 'bold 16px Arial';
+              ctx.font = 'bold 14px Arial';
               ctx.textAlign = 'center';
-              ctx.fillText(nombre.substring(0,30), 200, 40);
+              ctx.fillText('Autoservicio', 200, 24);
+              ctx.font = 'bold 16px Arial';
+              ctx.fillText(nombre.substring(0,30), 200, 48);
               ctx.font = 'bold 72px Arial';
               ctx.fillText('$' + Number(precio).toFixed(0), 200, 130);
               canvas.toBlob((blob) => {
