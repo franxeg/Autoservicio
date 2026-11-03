@@ -115,6 +115,8 @@ foreach ($dll in @('msvcp140.dll','vcruntime140.dll','vcruntime140_1.dll')) {
 # --- 6) launcher ---
 Log "Copiando launcher..."
 Copy-Item (Join-Path $repo 'packaging\*.bat') $outDir
+if (Test-Path (Join-Path $repo 'packaging\iniciar-oculto.vbs')) { Copy-Item (Join-Path $repo 'packaging\iniciar-oculto.vbs') $outDir -Force }
+if (Test-Path (Join-Path $repo 'packaging\icon.ico')) { Copy-Item (Join-Path $repo 'packaging\icon.ico') $outDir -Force }
 Copy-Item (Join-Path $repo 'packaging\LEEME.txt') $outDir
 Robo (Join-Path $repo 'packaging\scripts') (Join-Path $outDir 'scripts')
 foreach ($d in @('logs','backups')) { New-Item -ItemType Directory -Path (Join-Path $outDir $d) | Out-Null }
