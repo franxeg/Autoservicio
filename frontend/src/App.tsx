@@ -10,6 +10,7 @@ import Movimientos from './pages/Movimientos';
 import Stock from './pages/Stock';
 import Clientes from './pages/Clientes';
 import Empleados from './pages/Empleados';
+import Configuracion from './pages/Configuracion';
 import Login from './pages/Login';
 import Setup from './pages/Setup';
 import Proveedor from './pages/Proveedor';
@@ -67,6 +68,7 @@ export default function App() {
           <Route path="proveedores" element={<RequireRole roles={['ADMIN', 'CAJERO']}><Proveedores /></RequireRole>} />
           <Route path="caja" element={<Caja />} />
           <Route path="empleados" element={<RequireRole roles={['ADMIN']}><Empleados /></RequireRole>} />
+          <Route path="configuracion" element={<Configuracion />} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -47,6 +47,7 @@ export default function Layout() {
         {!isRestricted && <Link to="/proveedores" style={linkStyle('/proveedores')}>🏭 Proveedores</Link>}
         {!isElaboracion && <Link to="/caja" style={linkStyle('/caja')}>💰 Caja</Link>}
         {isAdmin && <Link to="/empleados" style={linkStyle('/empleados')}>👷 Empleados</Link>}
+        <Link to="/configuracion" style={linkStyle('/configuracion')}>⚙️ Configuración</Link>
         <div style={{ marginTop: 'auto', borderTop: '1px solid #374151', paddingTop: 12 }}>
           <small>{user?.nombre || 'Usuario'} - {user?.rol}</small><br />
           <button onClick={handleLogout} style={{ marginTop: 8, width: '100%', padding: 6, cursor: 'pointer' }}>Cerrar Sesión</button>
