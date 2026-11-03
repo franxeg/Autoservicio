@@ -101,6 +101,7 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
     return [];
   });
   const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false);
+  const [mostrarCombosModal, setMostrarCombosModal] = useState(false);
   const [ultimoVenta, setUltimoVenta] = useState<any>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const pesoRef = useRef<HTMLInputElement>(null);
@@ -176,7 +177,7 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
     } catch { setCajaAbierta(null); }
   };
 
-  const filteredSug = codigo ? catalog.filter(p => p.nombre.toLowerCase().includes(codigo.toLowerCase()) || (p.codigoBarras || '').includes(codigo)).slice(0, 8) : [];
+  const filteredSug = codigo ? catalog.filter(p => !p.esCombo && (p.nombre.toLowerCase().includes(codigo.toLowerCase()) || (p.codigoBarras || '').includes(codigo))).slice(0, 8) : [];
 
   const recomputarComboGroups = (currentItems: Item[], combosDisponibles: Combo[], existing: ComboGroup[] = []): ComboGroup[] => {
     if (combosDisponibles.length === 0) return [];
@@ -522,40 +523,9 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
             <small style={{ color: '#059669' }}>✓ Caja abierta - Inicial: ${Number(cajaAbierta.montoInicial).toFixed(0)}</small>
           )}
           <div style={{ position: 'relative' }}>
-            <button onClick={(e) => { e.stopPropagation(); setShowSug(s => !s); }} onBlur={() => setTimeout(() => setShowSug(false), 200)} style={{ padding: '6px 10px', background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: 6, cursor: 'pointer', fontSize: 13, whiteSpace: 'nowrap' }}>
-              Cargar oferta o combo ▾
+            <button onClick={(e) => { e.stopPropagation(); setMostrarCombosModal(true); }} style={{ padding: '6px 10px', background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: 6, cursor: 'pointer', fontSize: 13, whiteSpace: 'nowrap' }}>
+              Cargar oferta o combo
             </button>
-            {showSug && (
-              <div style={{ position: 'absolute', right: 0, top: 30, background: 'white', border: '1px solid #e5e7eb', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 30, minWidth: 260, maxHeight: 240, overflow: 'auto' }}>
-                {combos.length === 0 && <div style={{ padding: 10, color: '#9ca3af', fontSize: 13 }}>Sin ofertas/combo cargados</div>}
-                {combos.map(c => (
-                  <div key={c.id} onMouseDown={(e) => {
-                    e.preventDefault();
-                    for (const ci of c.items || []) {
-                      const prod = catalog.find(p => p.id === ci.productoId);
-                      if (!prod) continue;
-                      const existente = items.find(i => i.id === ci.productoId);
-                      const requerido = Math.max(1, Number(ci.cantidad) || 1);
-                      if (existente) {
-                        if (existente.cantidad < requerido) {
-                          setItems(prev => prev.map(p => p.id === ci.productoId ? { ...p, cantidad: requerido } : p));
-                        }
-                      } else {
-                        if (esPeso(prod)) {
-                          abrirPeso(prod, prod.codigoBarras || prod.nombre);
-                        } else {
-                          setItems(prev => [...prev, { id: prod.id, codigo: prod.codigoBarras || prod.nombre, nombre: prod.nombre, precio: Number(prod.precioVenta), cantidad: requerido }]);
-                        }
-                      }
-                    }
-                    setShowSug(false);
-                  }} style={{ padding: '8px 10px', cursor: 'pointer', borderBottom: '1px solid #f3f4f6', fontSize: 13 }}>
-                    <div style={{ fontWeight: 600 }}>{c.nombre}</div>
-                    <div style={{ color: '#065f46', fontSize: 12 }}>${Number(c.precioVenta).toFixed(0)} (lista ${Number(c.totalLista).toFixed(0)})</div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         </div>
         <div style={{ position: 'relative' }}>
@@ -700,6 +670,45 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
           <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
             <button onClick={confirmarPeso} style={{ flex: 1, padding: 14, background: '#111827', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 16, fontWeight: 600 }}>Agregar</button>
             <button onClick={() => { setPesoItem(null); setTimeout(() => inputRef.current?.focus(), 50); }} style={{ padding: '14px 18px', background: '#e5e7eb', border: 'none', borderRadius: 8, cursor: 'pointer' }}>Cancelar</button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {mostrarCombosModal && (
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'grid', placeItems: 'center', zIndex: 95 }} onClick={() => setMostrarCombosModal(false)}>
+        <div style={{ background: 'white', padding: 24, borderRadius: 12, width: 460, maxHeight: '80vh', overflow: 'auto' }} onClick={e => e.stopPropagation()}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3 style={{ margin: 0 }}>Ofertas y Combos</h3>
+            <button onClick={() => setMostrarCombosModal(false)} style={{ border: 'none', background: '#e5e7eb', padding: '6px 10px', borderRadius: 6, cursor: 'pointer' }}>✕</button>
+          </div>
+          {combos.length === 0 && <div style={{ padding: 10, color: '#9ca3af', fontSize: 13, marginTop: 12 }}>Sin ofertas/combo cargados</div>}
+          <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {combos.map(c => (
+              <div key={c.id} onClick={() => {
+                for (const ci of c.items || []) {
+                  const prod = catalog.find(p => p.id === ci.productoId);
+                  if (!prod) continue;
+                  const existente = items.find(i => i.id === ci.productoId);
+                  const requerido = Math.max(1, Number(ci.cantidad) || 1);
+                  if (existente) {
+                    if (existente.cantidad < requerido) {
+                      setItems(prev => prev.map(p => p.id === ci.productoId ? { ...p, cantidad: requerido } : p));
+                    }
+                  } else {
+                    if (esPeso(prod)) {
+                      abrirPeso(prod, prod.codigoBarras || prod.nombre);
+                    } else {
+                      setItems(prev => [...prev, { id: prod.id, codigo: prod.codigoBarras || prod.nombre, nombre: prod.nombre, precio: Number(prod.precioVenta), cantidad: requerido }]);
+                    }
+                  }
+                }
+                setMostrarCombosModal(false);
+              }} style={{ padding: '10px 12px', cursor: 'pointer', border: '1px solid #e5e7eb', borderRadius: 8, background: '#f9fafb' }}>
+                <div style={{ fontWeight: 600 }}>{c.nombre}</div>
+                <div style={{ color: '#065f46', fontSize: 12, marginTop: 4 }}>${Number(c.precioVenta).toFixed(0)} (lista ${Number(c.totalLista).toFixed(0)})</div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
