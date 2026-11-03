@@ -60,6 +60,7 @@ Name: "{app}\backups";  Permissions: users-modify
 
 [Tasks]
 Name: "desktopicon"; Description: "Crear icono en el escritorio"; GroupDescription: "Iconos adicionales:"
+Name: "autostart"; Description: "Iniciar automáticamente al arrancar Windows (recomendado)"; GroupDescription: "Opciones adicionales:"
 
 [Icons]
 Name: "{group}\Iniciar Autoservicio"; Filename: "{app}\iniciar.bat"; WorkingDir: "{app}"; IconFilename: "{app}\icon.ico"
@@ -71,6 +72,10 @@ Name: "{autodesktop}\Autoservicio";   Filename: "{app}\iniciar.bat"; WorkingDir:
 
 [Run]
 Filename: "{app}\iniciar.bat"; Description: "Iniciar Autoservicio ahora"; Flags: postinstall nowait skipifsilent
+Filename: "powershell.exe"; Parameters: "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File ""{app}\scripts\autoarranque.ps1"""; Flags: runhidden; Tasks: autostart; Description: "Configurar inicio automático y backup diario"
+
+[UninstallRun]
+Filename: "powershell.exe"; Parameters: "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File ""{app}\scripts\autoarranque.ps1"" -Quitar"; Flags: runhidden
 
 [UninstallDelete]
 ; No borrar los datos del cliente al desinstalar (por seguridad).
