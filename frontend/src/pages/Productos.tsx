@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { api } from '../lib/api';
 import { useAuthStore } from '../lib/store';
+import { getNombreEmpresa } from '../lib/empresa';
 import { calcularPrecioVenta } from '../lib/precio';
 import Elaborados from './Elaborados';
 import JsBarcode from 'jsbarcode';
@@ -280,6 +281,37 @@ export default function Productos() {
         {search.trim()
           ? <small style={{ color: '#0ea5e9' }}>Mostrando la búsqueda "{search}" (ignora la categoría)</small>
           : <small style={{ color: '#6b7280' }}>{filtered.length} producto{filtered.length === 1 ? '' : 's'}</small>}
+        {!search.trim() && (
+          <button type="button" onClick={() => {
+            const items = filtered;
+            const nombreEmp = (function(){
+              try {
+                const keys = ['nombreEmpresa', 'empresaNombre', 'empresa', 'razonSocial', 'razon_social', 'configEmpresa', 'empresa_config', 'nombre'];
+                for (const k of keys) {
+                  const v = localStorage.getItem(k);
+                  if (v && v.trim()) {
+                    try {
+                      const parsed = JSON.parse(v);
+                      if (parsed && typeof parsed === 'object') {
+                        const cands = [parsed.nombre, parsed.razonSocial, parsed.empresa, parsed.nombreEmpresa];
+                        for (const cc of cands) if (cc && String(cc).trim()) return String(cc).trim();
+                      } else return v.trim();
+                    } catch { return v.trim(); }
+                  }
+                }
+                for (let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(!k) continue; const kl=k.toLowerCase(); if(kl.includes('empresa')||kl.includes('razon')){ const v=localStorage.getItem(k); if(!v) continue; try{ const p=JSON.parse(v); if(p&&typeof p==='object'){ const cands=[p.nombre,p.razonSocial,p.empresa,p.nombreEmpresa]; for(const cc of cands) if(cc&&String(cc).trim()) return String(cc).trim(); } else return v.trim(); }catch{return v.trim();}} }
+              } catch {}
+              return 'Autoservicio';
+            })();
+            const catNombre = catFiltro === 'ALL' ? 'Todas las categorías' : (catFiltro === '' ? 'Sin categoría' : (categorias.find(c=>c.id===catFiltro)?.nombre || catFiltro));
+            const win = window.open('', '_blank', 'width=900,height=700');
+            if (!win) return;
+            win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Listado stock - ${catNombre}</title><style>body{font-family:Arial,sans-serif;font-size:12px}h2{margin:4px 0}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:6px;text-align:left}th{background:#f5f5f5}</style></head><body><h2>${nombreEmp.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</h2><h3>Listado de stock - ${catNombre.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</h3><p>Fecha: ${new Date().toLocaleString()}</p><table><thead><tr><th>Código</th><th>Producto</th><th>Categoría</th><th>Unidad</th><th>Stock</th><th>Stock Mínimo</th><th>Precio Venta</th></tr></thead><tbody>${items.map((p:any)=>{const stock=p.unidad==='KG'?'—':((p.stocks?.[0]?.cantidad??'-'));const stockMin=p.unidad==='KG'?'—':((p.stocks?.[0]?.stockMinimo??'-'));return `<tr><td>${(p.codigoBarras||'-').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td><td>${(p.nombre||'-').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td><td>${(p.categoria?.nombre||'-').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td><td>${p.unidad||'-'}</td><td>${stock}</td><td>${stockMin}</td><td>$${Number(p.precioVenta||0).toFixed(0)}</td></tr>`;}).join('')}</tbody></table><script>window.onload=function(){window.print();setTimeout(function(){window.close();},800);};</script></body></html>`);
+            win.document.close();
+          }} style={{ padding: '8px 12px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}>
+            Imprimir listado
+          </button>
+        )}
       </div>
 
       <div style={{ background: 'white', padding: 16, borderRadius: 8, marginBottom: 20 }}>
@@ -322,6 +354,7 @@ export default function Productos() {
             <label style={{ display: 'block', marginTop: 10 }}>Código barras<div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}><input value={editForm.codigoBarras} onChange={e => setEditForm({ ...editForm, codigoBarras: e.target.value })} style={{ flex: 1, minWidth: 120, padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} /><button type="button" onClick={() => {
               if (!editForm.codigoBarras) return;
               const canvas = document.createElement('canvas');
+              const nombreEmp = getNombreEmpresa();
               try {
                 JsBarcode(canvas, editForm.codigoBarras, { format: 'CODE128', width: 2, height: 60, displayValue: true });
                 canvas.toBlob((blob) => {
@@ -329,7 +362,7 @@ export default function Productos() {
                   const url = URL.createObjectURL(blob);
                   const win = window.open('', '_blank');
                   if (win) {
-                    win.document.write(`<html><head><title>Código de barras - ${editing?.nombre || ''}</title></head><body style="text-align:center;font-family:sans-serif"><div style="font-weight:bold;margin:6px">Autoservicio</div><h3 style="margin:6px">${(editing?.nombre || '').substring(0,40)}</h3><img src="${url}" style="max-width:100%"/><br/><a download="codigo-barras-${(editing?.nombre||'producto').replace(/[^a-z0-9]/gi,'_')}.png" href="${url}">Descargar PNG</a></body></html>`);
+                    win.document.write(`<html><head><title>Código de barras - ${editing?.nombre || ''}</title></head><body style="text-align:center;font-family:sans-serif"><div style="font-weight:bold;margin:6px">${nombreEmp.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div><h3 style="margin:6px">${(editing?.nombre || '').substring(0,40).replace(/</g,'&lt;').replace(/>/g,'&gt;')}</h3><img src="${url}" style="max-width:100%"/><br/><a download="codigo-barras-${(editing?.nombre||'producto').replace(/[^a-z0-9]/gi,'_')}.png" href="${url}">Descargar PNG</a></body></html>`);
                     win.document.close();
                   }
                 }, 'image/png');
@@ -337,6 +370,7 @@ export default function Productos() {
             }} style={{ padding: '8px 10px', background: '#e5e7eb', border: 'none', borderRadius: 6, cursor: 'pointer', whiteSpace: 'nowrap', fontSize: 12 }}>Imprimir/Descargar código</button><button type="button" onClick={() => {
               const precio = editing ? editing.precioVenta : 0;
               const nombre = editing?.nombre || '';
+              const nombreEmp = getNombreEmpresa();
               const canvas = document.createElement('canvas');
               canvas.width = 400;
               canvas.height = 200;
@@ -347,7 +381,7 @@ export default function Productos() {
               ctx.fillStyle = '#000000';
               ctx.font = 'bold 14px Arial';
               ctx.textAlign = 'center';
-              ctx.fillText('Autoservicio', 200, 24);
+              ctx.fillText(nombreEmp.replace(/</g,'').replace(/>/g,''), 200, 24);
               ctx.font = 'bold 16px Arial';
               ctx.fillText(nombre.substring(0,30), 200, 48);
               ctx.font = 'bold 72px Arial';
