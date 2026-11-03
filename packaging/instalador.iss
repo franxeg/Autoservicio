@@ -62,12 +62,12 @@ Name: "{app}\backups";  Permissions: users-modify
 Name: "desktopicon"; Description: "Crear icono en el escritorio"; GroupDescription: "Iconos adicionales:"
 
 [Icons]
-Name: "{group}\Iniciar Autoservicio"; Filename: "{app}\iniciar.bat"; WorkingDir: "{app}"; IconFilename: "{app}\..\packaging\icon.ico"
-Name: "{commondesktop}\Autoservicio"; Filename: "{app}\iniciar.bat"; WorkingDir: "{app}"; Tasks: desktopicon; IconFilename: "{app}\..\packaging\icon.ico"
+Name: "{group}\Iniciar Autoservicio"; Filename: "{app}\iniciar.bat"; WorkingDir: "{app}"; IconFilename: "{app}\icon.ico"
+Name: "{commondesktop}\Autoservicio"; Filename: "{app}\iniciar.bat"; WorkingDir: "{app}"; IconFilename: "{app}\icon.ico"; Tasks: desktopicon
 Name: "{group}\Detener";              Filename: "{app}\detener.bat"; WorkingDir: "{app}"
 Name: "{group}\Backup ahora";         Filename: "{app}\backup.bat";  WorkingDir: "{app}"
 Name: "{group}\Instrucciones (LEEME)"; Filename: "{app}\LEEME.txt"
-Name: "{autodesktop}\Autoservicio";   Filename: "{app}\iniciar.bat"; WorkingDir: "{app}"; IconFilename: "{app}\..\packaging\icon.ico"
+Name: "{autodesktop}\Autoservicio";   Filename: "{app}\iniciar.bat"; WorkingDir: "{app}"; IconFilename: "{app}\icon.ico"
 
 [Run]
 Filename: "{app}\iniciar.bat"; Description: "Iniciar Autoservicio ahora"; Flags: postinstall nowait skipifsilent
