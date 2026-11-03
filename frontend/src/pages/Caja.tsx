@@ -104,11 +104,27 @@ export default function Caja() {
             <div style={{ marginTop: 20 }}>
               <h4>Movimientos</h4>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead><tr style={{ borderBottom: '2px solid #e5e7eb', textAlign: 'left' }}><th>Tipo</th><th>Monto</th><th>Descripción</th><th>Fecha</th></tr></thead>
+                <thead><tr style={{ borderBottom: '2px solid #e5e7eb', textAlign: 'left' }}><th>Tipo</th><th>Monto</th><th>Descripción</th><th>Medio</th><th>Fecha</th></tr></thead>
                 <tbody>
-                  {caja.movimientos.map((m: any) => (
-                    <tr key={m.id} style={{ borderBottom: '1px solid #f3f4f6' }}><td>{m.tipo}</td><td style={{ color: m.tipo === 'VENTA' || m.tipo === 'APERTURA' ? '#059669' : '#dc2626' }}>${Number(m.monto).toFixed(0)}</td><td>{m.descripcion}</td><td>{horaCorta(m.createdAt)}</td></tr>
-                  ))}
+                  {caja.movimientos.map((m: any) => {
+                    let medio = '-';
+                    if (m.tipo === 'VENTA') {
+                      medio = m.metodoPago || m.datos?.metodoPago || '-';
+                    } else if (m.tipo === 'APERTURA' || m.tipo === 'CIERRE') {
+                      medio = m.usuario?.nombre || m.empleado?.nombre || m.createdBy?.nombre || m.datos?.usuario || '-';
+                    } else if (m.tipo === 'GASTO') {
+                      medio = m.metodoPago || m.formaPago || m.datos?.metodoPago || '-';
+                    }
+                    return (
+                      <tr key={m.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                        <td>{m.tipo}</td>
+                        <td style={{ color: m.tipo === 'VENTA' || m.tipo === 'APERTURA' ? '#059669' : '#dc2626' }}>${Number(m.monto).toFixed(0)}</td>
+                        <td>{m.descripcion}</td>
+                        <td>{medio}</td>
+                        <td>{horaCorta(m.createdAt)}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
