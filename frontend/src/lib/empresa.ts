@@ -1,6 +1,16 @@
 export const getNombreEmpresa = (): string => {
   try {
-    const keys = ['nombreEmpresa', 'empresaNombre', 'empresa', 'razonSocial', 'razon_social', 'configEmpresa', 'empresa_config', 'nombre', 'titulo', 'appNombre', 'nombre_comercio', 'comercio', 'negocioNombre'];
+    // 1) Intentar desde el usuario logueado (localStorage 'user')
+    const userRaw = localStorage.getItem('user');
+    if (userRaw) {
+      try {
+        const u = JSON.parse(userRaw);
+        const n = u?.empresa?.nombre || u?.empresaNombre || u?.nombreEmpresa;
+        if (n && String(n).trim()) return String(n).trim();
+      } catch {}
+    }
+    // 2) Claves directas
+    const keys = ['nombreEmpresa', 'empresaNombre', 'razonSocial', 'razon_social', 'nombre_comercio', 'comercio', 'negocioNombre', 'empresa'];
     for (const k of keys) {
       const v = localStorage.getItem(k);
       if (v && v.trim()) {
@@ -15,10 +25,11 @@ export const getNombreEmpresa = (): string => {
             return parsed.trim();
           }
         } catch {}
-        if (v.trim()) return v.trim();
+        // Si no es JSON, usar el valor directo solo si no parece un objeto
+        if (!v.trim().startsWith('{')) return v.trim();
       }
     }
-    // Buscar en cualquier clave que contenga empresa/nombre/razon/comercio
+    // 3) Buscar en cualquier clave que contenga empresa/nombre/razon/comercio
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
       if (!k) continue;
@@ -37,7 +48,7 @@ export const getNombreEmpresa = (): string => {
             return parsed.trim();
           }
         } catch {
-          if (v.trim()) return v.trim();
+          if (v.trim() && !v.trim().startsWith('{')) return v.trim();
         }
       }
     }
