@@ -100,17 +100,12 @@ export default function Dashboard() {
           </div>
         </div>
         <div style={{ background: 'white', padding: 20, borderRadius: 8 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
-             <h3 style={{ margin: 0 }}>Top productos</h3>
-             <select value={catFiltroTop} onChange={e => setCatFiltroTop(e.target.value)} style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid #d1d5db', fontSize: 12 }}>
-               <option value="">Todas las categorías</option>
-               {categorias.map((c: any) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-             </select>
-           </div>
-          {(catFiltroTop ? data.topProductos.filter((p: any) => p.categoriaId === catFiltroTop) : data.topProductos).length === 0 ? <small style={{ color: '#9ca3af' }}>Sin ventas</small> : (
+          <h3>Top productos</h3>
+
+          {data.topProductos.length === 0 ? <small style={{ color: '#9ca3af' }}>Sin ventas</small> : (
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead><tr style={{ borderBottom: '1px solid #e5e7eb', textAlign: 'left' }}><th>Producto</th><th>Cant</th><th>Total</th></tr></thead>
-              <tbody>{(catFiltroTop ? data.topProductos.filter((p: any) => p.categoriaId === catFiltroTop) : data.topProductos).map((p: any) => <tr key={p.productoId} style={{ borderBottom: '1px solid #f3f4f6' }}><td>{p.nombre}</td><td>{p.cantidad}</td><td>${Number(p.total).toFixed(0)}</td></tr>)}</tbody>
+              <tbody>{data.topProductos.map((p: any) => <tr key={p.productoId} style={{ borderBottom: '1px solid #f3f4f6' }}><td>{p.nombre}</td><td>{p.cantidad}</td><td>${Number(p.total).toFixed(0)}</td></tr>)}</tbody>
             </table>
           )}
         </div>
@@ -164,6 +159,10 @@ export default function Dashboard() {
               {Array.from({ length: new Date().getFullYear() - 2019 }, (_, i) => new Date().getFullYear() - i).map(a => <option key={a} value={a}>{a}</option>)}
             </select>
             {mesSel && <button onClick={() => setMesSel('')} style={{ padding: '5px 10px', background: '#e5e7eb', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}>✕</button>}
+            <select value={catFiltroTop} onChange={e => setCatFiltroTop(e.target.value)} title="Filtrar por categoría" style={{ padding: '5px 8px', borderRadius: 6, border: catFiltroTop ? '2px solid #111827' : '1px solid #d1d5db', fontSize: 13, background: 'white' }}>
+              <option value="">Todas las categorías</option>
+              {categorias.map((c: any) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+            </select>
           </div>
         </div>
 
@@ -205,7 +204,7 @@ export default function Dashboard() {
                 <th style={{ padding: '6px 4px' }}>Producto</th><th>Cant.</th><th>Costo</th><th>% Crec.</th><th>% Venta</th><th>Total vendido</th>
               </tr></thead>
               <tbody>
-                {desglose.porProducto.map((p: any) => (
+                {(catFiltroTop ? desglose.porProducto.filter((p: any) => p.categoriaId === catFiltroTop) : desglose.porProducto).map((p: any) => (
                   <tr key={p.productoId} style={{ borderBottom: '1px solid #f3f4f6' }}>
                     <td style={{ padding: '6px 4px' }}>{p.nombre}</td>
                     <td>{cantTxt(p)}</td>

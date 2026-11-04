@@ -95,7 +95,7 @@ export class ReportesService {
       this.prisma.tenant.venta.count({ where }),
       this.prisma.tenant.detalleVenta.findMany({
         where: { venta: where },
-        include: { producto: { select: { id: true, nombre: true, codigoBarras: true, unidad: true } } },
+        include: { producto: { select: { id: true, nombre: true, codigoBarras: true, unidad: true, categoria: { select: { id: true, nombre: true } } } } },
       }),
     ]);
 
@@ -130,7 +130,7 @@ export class ReportesService {
 
       let p = porProducto.get(d.productoId);
       if (!p) {
-        p = { productoId: d.productoId, nombre: d.producto?.nombre || 'Desconocido', codigoBarras: d.producto?.codigoBarras, unidad: d.producto?.unidad || 'UNIDAD', unidades: 0, cantidad: 0, vendido: 0, costo: 0, aporteVenta: 0, aporteCrecimiento: 0, sinDato: 0 };
+        p = { productoId: d.productoId, nombre: d.producto?.nombre || 'Desconocido', codigoBarras: d.producto?.codigoBarras, unidad: d.producto?.unidad || 'UNIDAD', categoriaId: d.producto?.categoria?.id || null, categoria: d.producto?.categoria?.nombre || 'Sin categoría', unidades: 0, cantidad: 0, vendido: 0, costo: 0, aporteVenta: 0, aporteCrecimiento: 0, sinDato: 0 };
         porProducto.set(d.productoId, p);
       }
       p.unidades += Math.round(cant);
