@@ -16,6 +16,8 @@ export default function Dashboard() {
   const [periodo, setPeriodo] = useState('mes');
   const [mesSel, setMesSel] = useState('');
   const [desglose, setDesglose] = useState<any>(null);
+  const [categorias, setCategorias] = useState<any[]>([]);
+  const [catFiltroTop, setCatFiltroTop] = useState('');
 
   useEffect(() => {
     api.get('/reportes/desglose', { params: { sucursalId, periodo, mes: mesSel || undefined } })
@@ -33,6 +35,10 @@ export default function Dashboard() {
       .then(r => setData(r.data))
       .catch(() => {})
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    api.get('/categorias').then(r => setCategorias(r.data || [])).catch(() => setCategorias([]));
   }, []);
 
   const openVentasHoy = async () => {
@@ -94,11 +100,17 @@ export default function Dashboard() {
           </div>
         </div>
         <div style={{ background: 'white', padding: 20, borderRadius: 8 }}>
-          <h3>Top productos</h3>
-          {data.topProductos.length === 0 ? <small style={{ color: '#9ca3af' }}>Sin ventas</small> : (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+             <h3 style={{ margin: 0 }}>Top productos</h3>
+             <select value={catFiltroTop} onChange={e => setCatFiltroTop(e.target.value)} style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid #d1d5db', fontSize: 12 }}>
+               <option value="">Todas las categorías</option>
+               {categorias.map((c: any) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+             </select>
+           </div>
+          {(catFiltroTop ? data.topProductos.filter((p: any) => p.categoriaId === catFiltroTop) : data.topProductos).length === 0 ? <small style={{ color: '#9ca3af' }}>Sin ventas</small> : (
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead><tr style={{ borderBottom: '1px solid #e5e7eb', textAlign: 'left' }}><th>Producto</th><th>Cant</th><th>Total</th></tr></thead>
-              <tbody>{data.topProductos.map((p: any) => <tr key={p.productoId} style={{ borderBottom: '1px solid #f3f4f6' }}><td>{p.nombre}</td><td>{p.cantidad}</td><td>${Number(p.total).toFixed(0)}</td></tr>)}</tbody>
+              <tbody>{(catFiltroTop ? data.topProductos.filter((p: any) => p.categoriaId === catFiltroTop) : data.topProductos).map((p: any) => <tr key={p.productoId} style={{ borderBottom: '1px solid #f3f4f6' }}><td>{p.nombre}</td><td>{p.cantidad}</td><td>${Number(p.total).toFixed(0)}</td></tr>)}</tbody>
             </table>
           )}
         </div>

@@ -46,8 +46,8 @@ export class ReportesService {
     });
     const topConNombres = await Promise.all(
       topProductos.map(async (t) => {
-        const prod = await this.prisma.tenant.producto.findUnique({ where: { id: t.productoId }, select: { nombre: true, codigoBarras: true } });
-        return { productoId: t.productoId, nombre: prod?.nombre || 'Desconocido', codigoBarras: prod?.codigoBarras, cantidad: t._sum.cantidad, total: t._sum.subtotal };
+        const prod = await this.prisma.tenant.producto.findUnique({ where: { id: t.productoId }, select: { nombre: true, codigoBarras: true, categoria: { select: { id: true, nombre: true } } } });
+        return { productoId: t.productoId, nombre: prod?.nombre || 'Desconocido', codigoBarras: prod?.codigoBarras, categoriaId: prod?.categoria?.id || null, categoria: prod?.categoria?.nombre || 'Sin categoría', cantidad: t._sum.cantidad, total: t._sum.subtotal };
       }),
     );
 
