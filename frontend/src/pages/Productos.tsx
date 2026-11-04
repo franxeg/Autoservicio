@@ -360,7 +360,7 @@ export default function Productos() {
                 const url = canvas.toDataURL('image/png');
                 const win = window.open('', '_blank');
                 if (win) {
-                  win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Código de barras - ${editing?.nombre || ''}</title><style>@media print { body { margin: 0; } img { max-width: 100%; } } body { text-align: center; font-family: sans-serif; margin: 10px; } h3 { margin: 6px; font-size: 14px; } .emp { font-weight: bold; margin: 6px; font-size: 12px; } </style></head><body><div class="emp">${nombreEmp.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div><h3>${(editing?.nombre || '').substring(0,40).replace(/</g,'&lt;').replace(/>/g,'&gt;')}</h3><img src="${url}" /><br/><a download="codigo-barras-${(editing?.nombre||'producto').replace(/[^a-z0-9]/gi,'_')}.png" href="${url}">Descargar PNG</a><script>window.onload=function(){setTimeout(function(){window.print();},300);};</script></body></html>`);
+                  win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Código de barras - ${editing?.nombre || ''}</title></head><body style="text-align:center;font-family:sans-serif;margin:20px"><div style="font-weight:bold;margin:6px">${nombreEmp.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div><h3 style="margin:6px">${(editing?.nombre || '').substring(0,40).replace(/</g,'&lt;').replace(/>/g,'&gt;')}</h3><img src="${url}" style="max-width:100%"/><br/><br/><a download="codigo-barras-${(editing?.nombre||'producto').replace(/[^a-z0-9]/gi,'_')}.png" href="${url}" style="padding:10px 20px;background:#111827;color:white;text-decoration:none;border-radius:6;display:inline-block">Descargar PNG</a></body></html>`);
                   win.document.close();
                 }
               } catch(e) {}
@@ -386,7 +386,7 @@ export default function Productos() {
               const url = canvas.toDataURL('image/png');
               const win = window.open('', '_blank');
               if (win) {
-                win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Etiqueta precio - ${nombre}</title><style>@media print { body { margin: 0; } img { max-width: 100%; } } body { text-align: center; font-family: sans-serif; margin: 10px; }</style></head><body><img src="${url}" /><br/><a download="etiqueta-precio-${nombre.replace(/[^a-z0-9]/gi,'_')}.png" href="${url}">Descargar PNG</a><script>window.onload=function(){setTimeout(function(){window.print();},300);};</script></body></html>`);
+                win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Etiqueta precio - ${nombre}</title></head><body style="text-align:center;font-family:sans-serif;margin:20px"><img src="${url}" style="max-width:100%"/><br/><br/><a download="etiqueta-precio-${nombre.replace(/[^a-z0-9]/gi,'_')}.png" href="${url}" style="padding:10px 20px;background:#111827;color:white;text-decoration:none;border-radius:6;display:inline-block">Descargar PNG</a></body></html>`);
                 win.document.close();
               }
             }} style={{ padding: '8px 10px', background: '#e5e7eb', border: 'none', borderRadius: 6, cursor: 'pointer', whiteSpace: 'nowrap', fontSize: 12 }}>Descargar etiqueta PNG</button></div></label>
