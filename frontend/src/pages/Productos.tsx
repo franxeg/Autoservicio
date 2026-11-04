@@ -24,6 +24,7 @@ interface Producto {
 export default function Productos() {
   const user = useAuthStore(s => s.user);
   const sucursalId = user?.sucursalId || localStorage.getItem('sucursalId') || 'sucursal-central';
+  const nombreEmpresa = user?.empresa?.nombre || getNombreEmpresa();
   const [productos, setProductos] = useState<Producto[]>([]);
   const [filtered, setFiltered] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -353,21 +354,39 @@ export default function Productos() {
             <div style={{ display: 'flex', justifyContent: 'space-between' }}><h3>Editar producto</h3><button onClick={() => setEditing(null)} style={{ border: 'none', background: '#e5e7eb', padding: '6px 10px', borderRadius: 6, cursor: 'pointer' }}>✕</button></div>
             <label style={{ display: 'block', marginTop: 10 }}>Código barras<div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}><input value={editForm.codigoBarras} onChange={e => setEditForm({ ...editForm, codigoBarras: e.target.value })} style={{ flex: 1, minWidth: 120, padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} /><button type="button" onClick={() => {
               if (!editForm.codigoBarras) return;
-              const canvas = document.createElement('canvas');
-              const nombreEmp = getNombreEmpresa();
+              const nombreEmp = nombreEmpresa || getNombreEmpresa();
+              const nombreProd = editing?.nombre || '';
+              const bc = document.createElement('canvas');
               try {
-                JsBarcode(canvas, editForm.codigoBarras, { format: 'CODE128', width: 2, height: 60, displayValue: true });
-                const url = canvas.toDataURL('image/png');
-                const win = window.open('', '_blank');
-                if (win) {
-                  win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Código de barras - ${editing?.nombre || ''}</title></head><body style="text-align:center;font-family:sans-serif;margin:20px"><div style="font-weight:bold;margin:6px">${nombreEmp.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div><h3 style="margin:6px">${(editing?.nombre || '').substring(0,40).replace(/</g,'&lt;').replace(/>/g,'&gt;')}</h3><img src="${url}" style="max-width:100%"/><br/><br/><a download="codigo-barras-${(editing?.nombre||'producto').replace(/[^a-z0-9]/gi,'_')}.png" href="${url}" style="padding:10px 20px;background:#111827;color:white;text-decoration:none;border-radius:6;display:inline-block">Descargar PNG</a></body></html>`);
-                  win.document.close();
-                }
-              } catch(e) {}
+                JsBarcode(bc, editForm.codigoBarras, { format: 'CODE128', width: 2, height: 60, displayValue: true });
+              } catch(e) { return; }
+              const pad = 12;
+              const w = Math.max(bc.width + pad*2, 260);
+              const h = bc.height + 56 + pad*2;
+              const canvas = document.createElement('canvas');
+              canvas.width = w;
+              canvas.height = h;
+              const ctx = canvas.getContext('2d');
+              if (!ctx) return;
+              ctx.fillStyle = '#ffffff';
+              ctx.fillRect(0, 0, w, h);
+              ctx.fillStyle = '#000000';
+              ctx.textAlign = 'center';
+              ctx.font = 'bold 14px Arial';
+              ctx.fillText(nombreEmp, w/2, 20);
+              ctx.font = '13px Arial';
+              ctx.fillText(nombreProd.substring(0, 34), w/2, 40);
+              ctx.drawImage(bc, (w - bc.width)/2, 50);
+              const url = canvas.toDataURL('image/png');
+              const win = window.open('', '_blank');
+              if (win) {
+                win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Código de barras - ${nombreProd}</title></head><body style="text-align:center;font-family:sans-serif;margin:20px"><img src="${url}" style="max-width:100%"/><br/><br/><a download="codigo-barras-${nombreProd.replace(/[^a-z0-9]/gi,'_')}.png" href="${url}" style="padding:10px 20px;background:#111827;color:white;text-decoration:none;border-radius:6;display:inline-block">Descargar PNG</a></body></html>`);
+                win.document.close();
+              }
             }} style={{ padding: '8px 10px', background: '#e5e7eb', border: 'none', borderRadius: 6, cursor: 'pointer', whiteSpace: 'nowrap', fontSize: 12 }}>Imprimir/Descargar código</button><button type="button" onClick={() => {
               const precio = editing ? editing.precioVenta : 0;
               const nombre = editing?.nombre || '';
-              const nombreEmp = getNombreEmpresa();
+              const nombreEmp = nombreEmpresa || getNombreEmpresa();
               const canvas = document.createElement('canvas');
               canvas.width = 400;
               canvas.height = 200;
