@@ -1,5 +1,5 @@
-import { ReactNode } from 'react';
-import { getPremiumStatus } from '../lib/premium';
+import { ReactNode, useState, useEffect } from 'react';
+import { getPremiumStatus, refreshPremiumStatus } from '../lib/premium';
 
 interface Props {
   children: ReactNode;
@@ -7,7 +7,11 @@ interface Props {
 }
 
 export default function PremiumGate({ children, titulo }: Props) {
-  const status = getPremiumStatus();
+  const [status, setStatus] = useState(getPremiumStatus());
+
+  useEffect(() => {
+    refreshPremiumStatus().then(s => setStatus(s)).catch(() => {});
+  }, []);
 
   if (status.isPremium) return <>{children}</>;
 

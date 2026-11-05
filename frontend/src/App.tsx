@@ -12,6 +12,7 @@ import Clientes from './pages/Clientes';
 import Empleados from './pages/Empleados';
 import Configuracion from './pages/Configuracion';
 import Login from './pages/Login';
+import Registro from './pages/Registro';
 import Setup from './pages/Setup';
 import Proveedor from './pages/Proveedor';
 import { useAuthStore } from './lib/store';
@@ -56,6 +57,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/registro" element={<Registro />} />
         <Route path="/setup" element={<SetupRoute><Setup /></SetupRoute>} />
         <Route path="/proveedor" element={<Proveedor />} />
         <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>

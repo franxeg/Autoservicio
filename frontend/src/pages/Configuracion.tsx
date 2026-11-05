@@ -98,6 +98,12 @@ function TabPremium() {
       <div style={{ marginTop: 20, padding: 12, background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 6, fontSize: 13, color: '#92400e' }}>
         ⚠️ Después de pagar, enviame el comprobante por WhatsApp/Instagram y te activo Premium manualmente dentro de las 24 hs.
       </div>
+      <div style={{ marginTop: 16, padding: 12, background: '#f0f9ff', border: '1px solid #bfdbfe', borderRadius: 6 }}>
+        <h4 style={{ marginTop: 0 }}>Vincular cuenta</h4>
+        <p style={{ fontSize: 13, color: '#6b7280' }}>Registrate o iniciá sesión para vincular este sistema a tu cuenta y activar el Premium online.</p>
+        <a href="/registro" style={{ display: 'inline-block', padding: '8px 16px', background: '#2563eb', color: 'white', borderRadius: 6, textDecoration: 'none', fontSize: 13 }}>Ir a registro / login</a>
+      </div>
+
       <div style={{ marginTop: 16 }}>
         <h4>¿Ya pagaste?</h4>
         <p style={{ fontSize: 13, color: '#6b7280' }}>Ingresá tu código de activación:</p>

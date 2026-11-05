@@ -1,12 +1,8 @@
-// Sistema de licencias / premium (Fase 3 - frontend).
-// Por ahora funciona en modo "trial local": 30 días gratis desde la primera ejecución.
-// Cuando se implemente el backend de licencias (Fase 1/2), este módulo se conectará al servidor.
+// Sistema de licencias / premium.
+// Se integra con lib/license.ts para verificar contra el servidor.
+// Soporta modo offline con grace period.
 
-const TRIAL_DAYS = 30;
-const STORAGE_KEY_TRIAL_START = 'premium_trial_start';
-const STORAGE_KEY_PREMIUM = 'premium_activo';
-const STORAGE_KEY_PREMIUM_EXPIRY = 'premium_expiry';
-const STORAGE_KEY_LICENSE_KEY = 'license_key';
+import { checkLicenseStatus, isRegistered } from './license';
 
 export interface PremiumStatus {
   isPremium: boolean;
@@ -14,7 +10,10 @@ export interface PremiumStatus {
   trialDaysLeft: number;
   expiryDate: string | null;
   licenseKey: string | null;
+  offline: boolean;
 }
+
+const STORAGE_KEY_TRIAL_START = 'premium_trial_start';
 
 function getTrialStart(): number {
   let v = localStorage.getItem(STORAGE_KEY_TRIAL_START);
@@ -25,60 +24,84 @@ function getTrialStart(): number {
   return Number(v);
 }
 
+// Sincrónico: usa cache o trial local
 export function getPremiumStatus(): PremiumStatus {
-  const licenseKey = localStorage.getItem(STORAGE_KEY_LICENSE_KEY);
-  const premiumFlag = localStorage.getItem(STORAGE_KEY_PREMIUM) === 'true';
-  const expiryRaw = localStorage.getItem(STORAGE_KEY_PREMIUM_EXPIRY);
-  const expiry = expiryRaw ? Number(expiryRaw) : null;
-
-  // Si tiene licencia premium activa y no venció
-  if (licenseKey && premiumFlag && expiry && Date.now() < expiry) {
-    return {
-      isPremium: true,
-      isTrial: false,
-      trialDaysLeft: 0,
-      expiryDate: new Date(expiry).toISOString(),
-      licenseKey,
-    };
+  const cached = localStorage.getItem('license_status_cache');
+  if (cached) {
+    try {
+      const parsed = JSON.parse(cached);
+      const status = parsed.status || parsed;
+      if (status) {
+        return {
+          isPremium: !!status.isPremium,
+          isTrial: !!status.isTrial,
+          trialDaysLeft: status.trialDaysLeft || 0,
+          expiryDate: status.expiryDate || null,
+          licenseKey: status.licenseKey || null,
+          offline: false,
+        };
+      }
+    } catch {}
   }
 
-  // Trial: 30 días desde la primera ejecución
-  const trialStart = getTrialStart();
-  const trialEnd = trialStart + TRIAL_DAYS * 24 * 60 * 60 * 1000;
-  const daysLeft = Math.max(0, Math.ceil((trialEnd - Date.now()) / (24 * 60 * 60 * 1000)));
-
-  if (Date.now() < trialEnd) {
+  // Si no está registrado, usar trial local de 30 días
+  if (!isRegistered()) {
+    const trialStart = getTrialStart();
+    const trialEnd = trialStart + 30 * 24 * 60 * 60 * 1000;
+    const daysLeft = Math.max(0, Math.ceil((trialEnd - Date.now()) / (24 * 60 * 60 * 1000)));
+    const isTrial = Date.now() < trialEnd;
     return {
-      isPremium: true,
-      isTrial: true,
+      isPremium: isTrial,
+      isTrial,
       trialDaysLeft: daysLeft,
       expiryDate: new Date(trialEnd).toISOString(),
       licenseKey: null,
+      offline: false,
     };
   }
 
-  // Venció el trial y no hay premium
+  // Registrado pero sin cache: asumir no premium (se actualizará al hacer check)
   return {
     isPremium: false,
     isTrial: false,
     trialDaysLeft: 0,
     expiryDate: null,
     licenseKey: null,
+    offline: true,
   };
 }
 
-export function activatePremium(licenseKey: string, daysValid: number = 30): void {
-  localStorage.setItem(STORAGE_KEY_LICENSE_KEY, licenseKey);
-  localStorage.setItem(STORAGE_KEY_PREMIUM, 'true');
-  localStorage.setItem(STORAGE_KEY_PREMIUM_EXPIRY, String(Date.now() + daysValid * 24 * 60 * 60 * 1000));
-}
-
-export function deactivatePremium(): void {
-  localStorage.removeItem(STORAGE_KEY_LICENSE_KEY);
-  localStorage.removeItem(STORAGE_KEY_PREMIUM);
-  localStorage.removeItem(STORAGE_KEY_PREMIUM_EXPIRY);
+// Asincrónico: consulta al servidor y actualiza cache
+export async function refreshPremiumStatus(): Promise<PremiumStatus> {
+  const status = await checkLicenseStatus();
+  return {
+    isPremium: status.isPremium,
+    isTrial: status.isTrial,
+    trialDaysLeft: status.trialDaysLeft,
+    expiryDate: status.expiryDate,
+    licenseKey: status.licenseKey,
+    offline: status.offline,
+  };
 }
 
 export function isPremiumActive(): boolean {
   return getPremiumStatus().isPremium;
+}
+
+export function activatePremium(licenseKey: string, daysValid: number = 30): void {
+  localStorage.setItem('license_key', licenseKey);
+  localStorage.setItem('premium_activo', 'true');
+  localStorage.setItem('premium_expiry', String(Date.now() + daysValid * 24 * 60 * 60 * 1000));
+  // También actualizar cache
+  const cached = {
+    status: {
+      isPremium: true,
+      isTrial: false,
+      trialDaysLeft: 0,
+      expiryDate: new Date(Date.now() + daysValid * 24 * 60 * 60 * 1000).toISOString(),
+      licenseKey,
+    },
+    timestamp: Date.now(),
+  };
+  localStorage.setItem('license_status_cache', JSON.stringify(cached));
 }
