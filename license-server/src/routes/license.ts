@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { requireAuth } from '../middleware/auth';
+import { requireAuth, AuthRequest } from '../middleware/auth';
 
 export default function licenseRoutes(prisma: PrismaClient) {
   const router = Router();
 
   // Verificar estado de licencia (requiere auth)
-  router.get('/status', requireAuth, async (req, res, next) => {
+  router.get('/status', requireAuth, async (req: AuthRequest, res, next) => {
     try {
       const company = await prisma.company.findUnique({ where: { id: req.company!.id } });
       if (!company) return res.status(404).json({ message: 'Empresa no encontrada' });
@@ -31,7 +31,7 @@ export default function licenseRoutes(prisma: PrismaClient) {
   });
 
   // Activar premium con código (se validará con el admin o webhook de pago)
-  router.post('/activate', requireAuth, async (req, res, next) => {
+  router.post('/activate', requireAuth, async (req: AuthRequest, res, next) => {
     try {
       const { code } = req.body;
       if (!code) return res.status(400).json({ message: 'Código requerido' });
