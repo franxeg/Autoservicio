@@ -1,11 +1,21 @@
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../lib/store';
+import { useEffect } from 'react';
 
 export default function Layout() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
   const rol = user?.rol;
+
+  useEffect(() => {
+    const modo = localStorage.getItem('tema_modo') || 'claro';
+    const color = localStorage.getItem('tema_color') || '#111827';
+    const fs = localStorage.getItem('tema_fontSize') || '14';
+    document.documentElement.style.setProperty('--color-primario', color);
+    document.documentElement.style.setProperty('--font-size-base', fs + 'px');
+    if (modo === 'oscuro') document.body.classList.add('tema-oscuro'); else document.body.classList.remove('tema-oscuro');
+  }, []);
 
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';

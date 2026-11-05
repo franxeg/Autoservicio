@@ -15,6 +15,7 @@ import Login from './pages/Login';
 import Setup from './pages/Setup';
 import Proveedor from './pages/Proveedor';
 import { useAuthStore } from './lib/store';
+import PremiumGate from './components/PremiumGate';
 
 const RESTRICTED_ROLE_PATHS = ['/', '/pos', '/movimientos', '/proveedores', '/clientes', '/empleados'];
 
@@ -58,16 +59,16 @@ export default function App() {
         <Route path="/setup" element={<SetupRoute><Setup /></SetupRoute>} />
         <Route path="/proveedor" element={<Proveedor />} />
         <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-          <Route index element={<RequireRole roles={['ADMIN']}><Dashboard /></RequireRole>} />
+          <Route index element={<RequireRole roles={['ADMIN']}><PremiumGate titulo="Dashboard"><Dashboard /></PremiumGate></RequireRole>} />
           <Route path="pos" element={<RequireRole roles={['ADMIN', 'CAJERO']}><POS /></RequireRole>} />
           <Route path="productos" element={<Productos />} />
           <Route path="stock" element={<Stock />} />
           <Route path="compras" element={<Compras />} />
-          <Route path="movimientos" element={<RequireRole roles={['ADMIN']}><Movimientos /></RequireRole>} />
+          <Route path="movimientos" element={<RequireRole roles={['ADMIN']}><PremiumGate titulo="Movimientos"><Movimientos /></PremiumGate></RequireRole>} />
           <Route path="clientes" element={<RequireRole roles={['ADMIN', 'CAJERO']}><Clientes /></RequireRole>} />
           <Route path="proveedores" element={<RequireRole roles={['ADMIN', 'CAJERO']}><Proveedores /></RequireRole>} />
           <Route path="caja" element={<Caja />} />
-          <Route path="empleados" element={<RequireRole roles={['ADMIN']}><Empleados /></RequireRole>} />
+          <Route path="empleados" element={<RequireRole roles={['ADMIN']}><PremiumGate titulo="Empleados"><Empleados /></PremiumGate></RequireRole>} />
           <Route path="configuracion" element={<Configuracion />} />
         </Route>
       </Routes>

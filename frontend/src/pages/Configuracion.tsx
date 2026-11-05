@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../lib/store';
 import { api } from '../lib/api';
+import { getPremiumStatus, activatePremium } from '../lib/premium';
 
 const TABS = [
   { id: 'premium', label: 'Suscribirse a Premium' },
@@ -48,9 +49,30 @@ export default function Configuracion() {
 }
 
 function TabPremium() {
+  const status = getPremiumStatus();
+  const [codigo, setCodigo] = useState('');
+  const [msg, setMsg] = useState('');
+
+  const activar = () => {
+    if (!codigo.trim()) { setMsg('Ingresá un código'); return; }
+    // Por ahora activa por 30 días. Cuando exista el backend, se validará online.
+    activatePremium(codigo.trim(), 30);
+    setMsg('Premium activado por 30 días. Recargá la página.');
+    setCodigo('');
+  };
+
   return (
     <div>
       <h3>Suscribirse a Premium</h3>
+      <div style={{ background: status.isPremium ? '#ecfdf5' : '#fef2f2', border: `1px solid ${status.isPremium ? '#a7f3d0' : '#fecaca'}`, padding: 12, borderRadius: 6, marginBottom: 16 }}>
+        {status.isTrial ? (
+          <span style={{ color: '#059669' }}>✅ Estás en <b>período de prueba</b>. Te quedan <b>{status.trialDaysLeft} días</b> de Premium.</span>
+        ) : status.isPremium ? (
+          <span style={{ color: '#059669' }}>✅ Premium activo hasta {status.expiryDate ? new Date(status.expiryDate).toLocaleDateString() : '—'}</span>
+        ) : (
+          <span style={{ color: '#dc2626' }}>⚠️ Tu período de prueba venció. Suscribite para seguir usando Dashboard, Movimientos y Empleados.</span>
+        )}
+      </div>
       <p style={{ color: '#6b7280' }}>
         Con Premium tenés acceso a <b>Dashboard, Movimientos y Empleados</b> con todas sus funcionalidades.
         El resto del sistema (POS, Productos, Caja, etc.) funciona siempre, con o sin Premium.
@@ -80,9 +102,10 @@ function TabPremium() {
         <h4>¿Ya pagaste?</h4>
         <p style={{ fontSize: 13, color: '#6b7280' }}>Ingresá tu código de activación:</p>
         <div style={{ display: 'flex', gap: 8 }}>
-          <input placeholder="Código de activación" style={{ flex: 1, padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }} />
-          <button style={{ padding: '10px 16px', background: '#059669', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Activar</button>
+          <input value={codigo} onChange={e => setCodigo(e.target.value)} placeholder="Código de activación" style={{ flex: 1, padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }} />
+          <button onClick={activar} style={{ padding: '10px 16px', background: '#059669', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Activar</button>
         </div>
+        {msg && <small style={{ color: '#059669', marginTop: 8, display: 'block' }}>{msg}</small>}
       </div>
     </div>
   );
