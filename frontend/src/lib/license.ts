@@ -2,7 +2,7 @@
 // Se conecta al license-server para verificar el estado de la licencia.
 // Soporta modo offline con grace period de 7 días.
 
-const LICENSE_SERVER_URL = (import.meta as any).env?.VITE_LICENSE_SERVER_URL || 'https://tu-servidor-de-licencias.onrender.com';
+const LICENSE_SERVER_URL = (import.meta as any).env?.VITE_LICENSE_SERVER_URL || 'https://autoservicio-license-server.onrender.com';
 const GRACE_PERIOD_DAYS = 7;
 
 const STORAGE_KEY_TOKEN = 'license_token';

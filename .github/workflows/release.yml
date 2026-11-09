@@ -46,6 +46,8 @@ jobs:
 
       - name: Build portable release bundle
         shell: powershell
+        env:
+          VITE_LICENSE_SERVER_URL: ${{ secrets.VITE_LICENSE_SERVER_URL || 'https://autoservicio-license-server.onrender.com' }}
         run: |
           Set-Location "${{ github.workspace }}"
           powershell -ExecutionPolicy Bypass -File .\scripts\construir-release.ps1
