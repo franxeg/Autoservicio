@@ -63,6 +63,17 @@ export class AuthService {
     return result;
   }
 
+  async cambiarPasswordUsuario(userId: string, passwordActual: string, passwordNueva: string) {
+    const user = await this.prisma.tenant.usuario.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('Usuario no encontrado');
+    const valid = await bcrypt.compare(passwordActual, user.password);
+    if (!valid) throw new UnauthorizedException('La contraseña actual no es correcta');
+    if (!passwordNueva || passwordNueva.length < 4) throw new BadRequestException('La contraseña debe tener al menos 4 caracteres');
+    const password = await bcrypt.hash(passwordNueva, 10);
+    await this.prisma.tenant.usuario.update({ where: { id: userId }, data: { password } });
+    return { ok: true, message: 'Contraseña actualizada correctamente' };
+  }
+
   async loginProveedor(usuario: string, password: string) {
     const expectedUser = process.env.PROVIDER_USER;
     const expectedPass = process.env.PROVIDER_PASSWORD;

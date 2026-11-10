@@ -1,0 +1,100 @@
+DOCUMENTACION - AUTOSERVICIO
+============================
+
+1. POS / VENTAS
+---------------
+- Escanea el codigo de barras o escribe el nombre del producto.
+- Presiona Enter para agregarlo al carrito.
+- Productos por peso: ingresa el importe, el peso se calcula automaticamente.
+- Combos y ofertas se aplican automaticamente al cargar productos.
+- Usa F12 para iniciar el cobro, Enter para confirmar.
+- Podes abrir un segundo POS para atender a otro cliente sin perder la venta en curso.
+
+2. PRODUCTOS
+------------
+- Alta rapida con lector de codigo de barras.
+- Click en un producto para editarlo.
+- Imprimir codigo de barras y etiqueta de precio en formato PNG.
+- Filtrar por categoria.
+- Imprimir listado de productos con stock por categoria.
+
+3. OFERTAS Y COMBOS
+-------------------
+- Crear combos con varios productos.
+- En el POS se aplican automaticamente cuando tenes los productos cargados.
+- El precio del combo se reparte proporcionalmente entre los items.
+
+4. CAJA
+-------
+- Abrir caja al empezar el dia (saldo inicial se precarga con el ultimo cierre).
+- Cerrar caja al terminar.
+- Ver movimientos con medio de pago.
+- Historial de cajas.
+
+5. STOCK
+--------
+- Control de inventario.
+- Alertas de stock critico.
+- Ajustes de stock por merma o ajuste.
+
+6. CLIENTES / PROVEEDORES
+-------------------------
+- Gestion de contactos.
+- Cuentas corrientes.
+- Historial de compras/ventas.
+
+7. COMPRAS / GASTOS
+--------------------
+- Registro de compras a proveedores.
+- Gastos varios.
+- Confirmacion de compras.
+
+8. MOVIMIENTOS
+--------------
+- Historial de todas las ventas.
+- Desglose por producto y categoria.
+- Filtro por fecha.
+
+9. EMPLEADOS
+------------
+- Gestion de usuarios con roles: Admin, Cajero, Repositor, Elaboracion.
+- Permisos diferenciados por rol.
+
+10. CONFIGURACION
+-----------------
+- Suscripcion a Premium.
+- Cambio de tema (colores, fuentes).
+- Datos de la empresa (nombre, direccion, CUIT, telefono).
+- Backup manual.
+- Documentacion.
+- Acerca de.
+- Informar un error.
+- Actualizaciones.
+- Cambiar contraseña.
+
+11. ATAJOS DE TECLADO
+----------------------
+- F12: Iniciar cobro
+- Enter: Confirmar venta (en modal de confirmacion)
+- Flechas arriba/abajo: Navegar sugerencias
+- Enter: Seleccionar sugerencia
+
+12. IMPRESION
+-------------
+- Codigo de barras: se genera como PNG para descargar e imprimir.
+- Etiqueta de precio: se genera como PNG con nombre de empresa, nombre del producto y precio.
+- Ticket de venta: se imprime al cobrar.
+
+13. BACKUP
+----------
+- Backup automatico diario a las 22:00 (si autoarranque esta activado).
+- Backup manual desde Configuracion.
+- Los backups se guardan en la carpeta "backups/".
+
+14. SOPORTE
+-----------
+Email: jupitertecnologias@gmail.com
+Instagram: @jupiterinformatica
+GitHub: github.com/franxeg
+Web: https://franxeg.github.io/Web-design
+Telefono: +54 9 2355 554004

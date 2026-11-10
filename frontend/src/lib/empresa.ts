@@ -1,4 +1,23 @@
 export const getNombreEmpresa = (): string => {
+  // Solo mostrar nombre de empresa si es premium
+  const esPremium = (() => {
+    try {
+      const cache = localStorage.getItem('license_status_cache');
+      if (cache) {
+        const parsed = JSON.parse(cache);
+        const status = parsed?.status || parsed;
+        if (status?.isPremium) return true;
+      }
+      const trialStart = localStorage.getItem('premium_trial_start');
+      if (trialStart) {
+        const trialEnd = Number(trialStart) + 30 * 24 * 60 * 60 * 1000;
+        if (Date.now() < trialEnd) return true;
+      }
+      return localStorage.getItem('premium_activo') === 'true';
+    } catch { return false; }
+  })();
+  if (!esPremium) return 'Autoservicio';
+
   try {
     // 1) Intentar desde el usuario logueado (localStorage 'user')
     const userRaw = localStorage.getItem('user');

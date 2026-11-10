@@ -43,10 +43,29 @@ export default function Layout() {
   const isRepositor = rol === 'REPOSITOR';
   const isElaboracion = rol === 'ELABORACION';
 
+  // Nombre de empresa solo si es premium, sino 'Autoservicio'
+  const esPremium = (() => {
+    try {
+      const cache = localStorage.getItem('license_status_cache');
+      if (cache) {
+        const parsed = JSON.parse(cache);
+        const status = parsed?.status || parsed;
+        if (status?.isPremium) return true;
+      }
+      const trialStart = localStorage.getItem('premium_trial_start');
+      if (trialStart) {
+        const trialEnd = Number(trialStart) + 30 * 24 * 60 * 60 * 1000;
+        if (Date.now() < trialEnd) return true;
+      }
+      return localStorage.getItem('premium_activo') === 'true';
+    } catch { return false; }
+  })();
+  const nombreEmpresaSidebar = esPremium ? (localStorage.getItem('empresa_nombre') || user?.empresa?.nombre || 'Autoservicio') : 'Autoservicio';
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh', fontFamily: 'sans-serif' }}>
       <aside style={{ width: 240, background: '#111827', color: 'white', padding: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <h2 style={{ marginBottom: 20, fontSize: 18 }}>{user?.empresa?.nombre || 'Autoservicio'}</h2>
+        <h2 style={{ marginBottom: 20, fontSize: 18 }}>{nombreEmpresaSidebar}</h2>
         {isAdmin && <Link to="/" style={linkStyle('/')}>📊 Dashboard</Link>}
         {!isRestricted && <Link to="/pos" style={linkStyle('/pos')}>🛒 POS / Ventas</Link>}
         <Link to="/productos" style={linkStyle('/productos')}>📦 Productos</Link>

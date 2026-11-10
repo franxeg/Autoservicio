@@ -75,4 +75,11 @@ export class AuthController {
   async me(@CurrentUser() user: any) {
     return this.authService.me(user.id);
   }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post('cambiar-password')
+  async cambiarPassword(@CurrentUser() user: any, @Body() body: any) {
+    return this.authService.cambiarPasswordUsuario(user.id, body.passwordActual, body.passwordNueva);
+  }
 }
