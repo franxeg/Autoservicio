@@ -84,7 +84,7 @@ function TabPremium() {
         </ul>
       </div>
       <div style={{ marginTop: 16, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-        <a href="https://mpago.la/..." target="_blank" rel="noreferrer" style={{ padding: '12px 20px', background: '#009ee3', color: 'white', borderRadius: 8, textDecoration: 'none', fontWeight: 600 }}>
+        <a href="https://mpago.la/1XcoPQc" target="_blank" rel="noreferrer" style={{ padding: '12px 20px', background: '#009ee3', color: 'white', borderRadius: 8, textDecoration: 'none', fontWeight: 600 }}>
           Pagar con Mercado Pago
         </a>
         <button onClick={() => { navigator.clipboard?.writeText('https://mpago.la/...'); alert('Link copiado'); }} style={{ padding: '12px 20px', background: '#e5e7eb', border: 'none', borderRadius: 8, cursor: 'pointer' }}>

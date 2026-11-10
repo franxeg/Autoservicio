@@ -46,6 +46,16 @@ export default function Proveedor() {
   const [passAdminCambiando, setPassAdminCambiando] = useState(false);
   const [passAdminResultado, setPassAdminResultado] = useState<any | null>(null);
 
+  // Gestión Premium (license server)
+  const [lsUrl, setLsUrl] = useState(() => localStorage.getItem('ls_url') || 'https://autoservicio-license-server.onrender.com');
+  const [lsToken, setLsToken] = useState(() => localStorage.getItem('ls_token') || '');
+  const [lsUser, setLsUser] = useState('admin');
+  const [lsPass, setLsPass] = useState('');
+  const [lsError, setLsError] = useState('');
+  const [lsLoading, setLsLoading] = useState(false);
+  const [lsCompanies, setLsCompanies] = useState<any[] | null>(null);
+  const [lsMsg, setLsMsg] = useState('');
+
   const navigate = useNavigate();
 
   const headers = () => ({ headers: { Authorization: `Bearer ${token}` } });
@@ -87,6 +97,69 @@ export default function Proveedor() {
 
   const copiar = (texto: string) => {
     navigator.clipboard?.writeText(texto);
+  };
+
+  // Gestión Premium - License Server
+  const lsHeaders = () => ({ headers: { Authorization: `Bearer ${lsToken}` } });
+
+  const lsLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLsError(''); setLsLoading(true);
+    try {
+      const res = await fetch(`${lsUrl}/api/auth/admin/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: lsUser, password: lsPass }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Error de login');
+      localStorage.setItem('ls_url', lsUrl);
+      localStorage.setItem('ls_token', data.access_token);
+      setLsToken(data.access_token);
+      setLsPass('');
+      cargarLsCompanies(data.access_token);
+    } catch (err: any) {
+      setLsError(err.message || 'No se pudo conectar al license server');
+    } finally {
+      setLsLoading(false);
+    }
+  };
+
+  const cargarLsCompanies = async (tok?: string) => {
+    const t = tok || lsToken;
+    if (!t) return;
+    setLsError(''); setLsLoading(true);
+    try {
+      const res = await fetch(`${lsUrl}/api/admin/companies`, {
+        headers: { Authorization: `Bearer ${t}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Error al cargar empresas');
+      setLsCompanies(data);
+    } catch (err: any) {
+      setLsError(err.message || 'No se pudieron cargar las empresas');
+      setLsCompanies([]);
+    } finally {
+      setLsLoading(false);
+    }
+  };
+
+  const togglePremium = async (company: any) => {
+    setLsMsg('');
+    try {
+      const nuevoEstado = !company.isPremium;
+      const res = await fetch(`${lsUrl}/api/admin/companies/${company.id}/premium`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${lsToken}` },
+        body: JSON.stringify({ isPremium: nuevoEstado, days: 30 }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Error');
+      setLsMsg(`${company.nombre}: Premium ${nuevoEstado ? 'activado' : 'desactivado'}`);
+      cargarLsCompanies();
+    } catch (err: any) {
+      setLsError(err.message || 'Error al cambiar premium');
+    }
   };
 
   const crearEmpresa = async (e: React.FormEvent) => {
@@ -329,6 +402,55 @@ export default function Proveedor() {
             </div>
             <div style={{ textAlign: 'right' }}>
               <button onClick={cerrarSesion} style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: 13 }}>Cerrar sesión de proveedor</button>
+            </div>
+
+            <div style={{ background: 'white', padding: 24, borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginTop: 20 }}>
+              <h2 style={{ marginTop: 0 }}>Gestión Premium (License Server)</h2>
+              <p style={{ color: '#6b7280', fontSize: 13, marginBottom: 16 }}>Conectate al servidor de licencias para gestionar las suscripciones de los clientes.</p>
+
+              {!lsToken ? (
+                <form onSubmit={lsLogin} style={{ display: 'grid', gap: 10, maxWidth: 400 }}>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>URL del License Server<input value={lsUrl} onChange={e => setLsUrl(e.target.value)} style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>Usuario admin<input value={lsUser} onChange={e => setLsUser(e.target.value)} style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>Contraseña<input type="password" value={lsPass} onChange={e => setLsPass(e.target.value)} style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
+                  <button type="submit" disabled={lsLoading} style={{ padding: '10px 16px', background: '#111827', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', width: 'fit-content' }}>{lsLoading ? 'Conectando...' : 'Conectar'}</button>
+                  {lsError && <div style={{ color: '#dc2626', fontSize: 13 }}>{lsError}</div>}
+                </form>
+              ) : (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                    <span style={{ color: '#059669', fontSize: 13 }}>✅ Conectado al license server</span>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button onClick={() => cargarLsCompanies()} style={{ fontSize: 12, padding: '4px 10px', cursor: 'pointer' }}>Actualizar</button>
+                      <button onClick={() => { localStorage.removeItem('ls_token'); setLsToken(''); setLsCompanies(null); }} style={{ fontSize: 12, padding: '4px 10px', cursor: 'pointer' }}>Desconectar</button>
+                    </div>
+                  </div>
+                  {lsError && <div style={{ color: '#dc2626', fontSize: 13, marginBottom: 8 }}>{lsError}</div>}
+                  {lsMsg && <div style={{ color: '#059669', fontSize: 13, marginBottom: 8 }}>{lsMsg}</div>}
+                  {lsLoading && <p style={{ color: '#6b7280' }}>Cargando...</p>}
+                  {lsCompanies && lsCompanies.length === 0 && <p style={{ color: '#6b7280' }}>No hay empresas registradas.</p>}
+                  {lsCompanies && lsCompanies.length > 0 && (
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                      <thead><tr style={{ borderBottom: '2px solid #e5e7eb', textAlign: 'left' }}><th>Empresa</th><th>Email</th><th>Premium</th><th>Vencimiento</th><th>Acción</th></tr></thead>
+                      <tbody>
+                        {lsCompanies.map((c: any) => (
+                          <tr key={c.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                            <td>{c.nombre}</td>
+                            <td style={{ fontSize: 11 }}>{c.email}</td>
+                            <td>{c.isPremium ? '✅ Sí' : (new Date() < new Date(c.trialEnd) ? '⏳ Trial' : '❌ No')}</td>
+                            <td style={{ fontSize: 11 }}>{c.isPremium ? (c.premiumExpiry ? new Date(c.premiumExpiry).toLocaleDateString() : '—') : new Date(c.trialEnd).toLocaleDateString()}</td>
+                            <td>
+                              <button onClick={() => togglePremium(c)} style={{ padding: '4px 10px', background: c.isPremium ? '#dc2626' : '#059669', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 12 }}>
+                                {c.isPremium ? 'Desactivar' : 'Activar Premium'}
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </>
+              )}
             </div>
 
             <form onSubmit={cambiarPassword} style={{ background: 'white', padding: 24, borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginTop: 20 }}>
