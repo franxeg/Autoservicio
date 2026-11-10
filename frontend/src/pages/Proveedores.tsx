@@ -9,6 +9,14 @@ export default function Proveedores() {
   const [search, setSearch] = useState('');
   const [showSug, setShowSug] = useState(false);
 
+  // Saldar deuda
+  const [saldarProv, setSaldarProv] = useState<any>(null);
+  const [saldarMonto, setSaldarMonto] = useState('');
+  const [saldarMetodo, setSaldarMetodo] = useState('EFECTIVO');
+  const [saldarError, setSaldarError] = useState('');
+  const [saldarOk, setSaldarOk] = useState('');
+  const [saldando, setSaldando] = useState(false);
+
   const fetch = async () => {
     const { data } = await api.get('/proveedores');
     setAll(data); setList(data);
@@ -38,6 +46,27 @@ export default function Proveedores() {
       await api.delete(`/proveedores/${p.id}`);
       fetch();
     } catch (e: any) { setError(e.response?.data?.message || e.message); }
+  };
+
+  const handleSaldar = async () => {
+    if (!saldarProv) return;
+    setSaldarError(''); setSaldarOk('');
+    const monto = Math.round(parseFloat(saldarMonto) || 0);
+    if (monto <= 0) { setSaldarError('Ingresá un monto válido'); return; }
+    const sucursalId = localStorage.getItem('sucursalId');
+    if (!sucursalId) { setSaldarError('No hay sucursal seleccionada'); return; }
+    setSaldando(true);
+    try {
+      const { data } = await api.post(`/proveedores/${saldarProv.id}/saldar`, {
+        monto,
+        metodoPago: saldarMetodo,
+        sucursalId,
+      });
+      setSaldarOk(`Pago registrado. Nuevo saldo: $${Number(data.saldo).toFixed(0)}`);
+      setSaldarMonto('');
+      fetch();
+    } catch (e: any) { setSaldarError(e.response?.data?.message || e.message); }
+    finally { setSaldando(false); }
   };
 
   return (
@@ -75,12 +104,42 @@ export default function Proveedores() {
             <tr key={p.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
               <td style={{ padding: 10 }}>{p.nombre}</td><td>{p.cuit || '-'}</td><td>{p.telefono || '-'}</td><td>{p.email || '-'}</td>
               <td style={{ color: p.saldoCuenta > 0 ? '#dc2626' : '#059669', fontWeight: 'bold' }}>${Number(p.saldoCuenta || 0).toFixed(0)}</td>
-              <td style={{ textAlign: 'right' }}><button onClick={() => handleDelete(p)} style={{ padding: '6px 10px', background: '#fee2e2', color: '#b91c1c', border: '1px solid #fecaca', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}>Eliminar</button></td>
+              <td style={{ textAlign: 'right', display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                {Number(p.saldoCuenta || 0) > 0 && (
+                  <button onClick={() => { setSaldarProv(p); setSaldarMonto(String(Math.round(Number(p.saldoCuenta)))); setSaldarError(''); setSaldarOk(''); }} style={{ padding: '6px 10px', background: '#059669', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}>Saldar</button>
+                )}
+                <button onClick={() => handleDelete(p)} style={{ padding: '6px 10px', background: '#fee2e2', color: '#b91c1c', border: '1px solid #fecaca', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}>Eliminar</button>
+              </td>
             </tr>
           ))}
           {list.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', padding: 20, color: '#9ca3af' }}>Sin proveedores</td></tr>}
         </tbody>
       </table>
+
+      {saldarProv && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'grid', placeItems: 'center', zIndex: 50 }} onClick={() => setSaldarProv(null)}>
+          <div style={{ background: 'white', padding: 24, borderRadius: 12, width: 420 }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ marginTop: 0 }}>Saldar deuda - {saldarProv.nombre}</h3>
+            <p style={{ color: '#6b7280', fontSize: 13 }}>Deuda actual: <b>${Number(saldarProv.saldoCuenta).toFixed(0)}</b></p>
+            <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>Monto a pagar<input type="number" min="1" step="1" value={saldarMonto} onChange={e => setSaldarMonto(e.target.value)} style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>Medio de pago
+                <select value={saldarMetodo} onChange={e => setSaldarMetodo(e.target.value)} style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }}>
+                  <option value="EFECTIVO">Efectivo</option>
+                  <option value="TRANSFERENCIA">Transferencia</option>
+                  <option value="TARJETA">Tarjeta</option>
+                </select>
+              </label>
+              <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                <button onClick={handleSaldar} disabled={saldando} style={{ flex: 1, padding: 10, background: '#059669', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>{saldando ? 'Procesando...' : 'Confirmar pago'}</button>
+                <button onClick={() => setSaldarProv(null)} style={{ padding: '10px 16px', background: '#e5e7eb', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Cancelar</button>
+              </div>
+              {saldarError && <div style={{ color: '#dc2626', fontSize: 13 }}>{saldarError}</div>}
+              {saldarOk && <div style={{ color: '#059669', fontSize: 13 }}>{saldarOk}</div>}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

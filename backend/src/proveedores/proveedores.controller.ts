@@ -2,6 +2,7 @@ import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards } f
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { ProveedoresService } from './proveedores.service';
 import { CreateProveedorDto } from './dto/create-proveedor.dto';
+import { SaldarProveedorDto } from './dto/saldar-proveedor.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('proveedores')
@@ -25,4 +26,7 @@ export class ProveedoresController {
 
   @Delete(':id')
   remove(@Param('id') id: string) { return this.service.remove(id); }
+
+  @Post(':id/saldar')
+  saldar(@Param('id') id: string, @Body() dto: SaldarProveedorDto) { return this.service.saldar(id, dto); }
 }
