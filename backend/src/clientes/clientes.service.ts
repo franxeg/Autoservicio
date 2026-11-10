@@ -13,6 +13,25 @@ export class ClientesService {
     return this.prisma.tenant.cliente.findMany({ where, orderBy: { nombre: 'asc' } });
   }
 
+  async cumpleanios(mes?: number) {
+    const m = mes && mes >= 1 && mes <= 12 ? mes : new Date().getMonth() + 1;
+    const clientes = await this.prisma.tenant.cliente.findMany({
+      where: { fechaNacimiento: { not: null } },
+      select: { id: true, nombre: true, telefono: true, email: true, fechaNacimiento: true },
+    });
+    return clientes
+      .filter((c) => c.fechaNacimiento && c.fechaNacimiento.getMonth() + 1 === m)
+      .map((c) => ({
+        id: c.id,
+        nombre: c.nombre,
+        telefono: c.telefono,
+        email: c.email,
+        dia: c.fechaNacimiento!.getDate(),
+        mes: c.fechaNacimiento!.getMonth() + 1,
+      }))
+      .sort((a, b) => a.dia - b.dia);
+  }
+
   async findOne(id: string) {
     const cliente = await this.prisma.tenant.cliente.findUnique({
       where: { id },
@@ -24,11 +43,17 @@ export class ClientesService {
 
   private sanitizar(dto: CreateClienteDto) {
     const data: any = {};
-    for (const key of ['nombre', 'dni', 'telefono', 'email', 'direccion', 'sucursalId']) {
+    for (const key of ['nombre', 'dni', 'telefono', 'email', 'direccion', 'sucursalId', 'fechaNacimiento']) {
       const valor = (dto as any)[key];
       if (valor === undefined || valor === null) continue;
       if (typeof valor === 'string' && valor.trim() === '') continue;
-      data[key] = typeof valor === 'string' ? valor.trim() : valor;
+      if (key === 'fechaNacimiento') {
+        const d = new Date(valor);
+        if (isNaN(d.getTime())) continue;
+        data[key] = d;
+      } else {
+        data[key] = typeof valor === 'string' ? valor.trim() : valor;
+      }
     }
     return data;
   }

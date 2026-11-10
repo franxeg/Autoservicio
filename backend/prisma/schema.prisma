@@ -261,6 +261,7 @@ model Cliente {
   telefono  String?
   email     String?
   direccion String?
+  fechaNacimiento DateTime?
   saldoCuenta Float @default(0) // cuenta corriente
   sucursalId String?
   sucursal   Sucursal? @relation(fields: [sucursalId], references: [id])

@@ -17,6 +17,11 @@ export class ClientesController {
     return this.service.findAll(search, sucursalId);
   }
 
+  @Get('cumpleanios')
+  cumpleanios(@Query('mes') mes?: string) {
+    return this.service.cumpleanios(mes ? Number(mes) : undefined);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) { return this.service.findOne(id); }
 
