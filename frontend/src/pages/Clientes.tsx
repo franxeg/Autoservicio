@@ -67,6 +67,7 @@ export default function Clientes() {
       await api.post('/clientes', form);
       setForm({ nombre: '', telefono: '', direccion: '', fechaNacimiento: '' });
       fetch();
+      fetchCumple(cumpleMes);
     } catch (e: any) { setError(e.response?.data?.message || e.message); }
   };
 
@@ -83,7 +84,7 @@ export default function Clientes() {
     setGuardandoEdit(true);
     try {
       await api.patch(`/clientes/${selected.id}`, editForm);
-      fetch(); verCuenta(selected.id);
+      fetch(); verCuenta(selected.id); fetchCumple(cumpleMes);
     } catch (e: any) { setError(e.response?.data?.message || e.message); }
     finally { setGuardandoEdit(false); }
   };
@@ -139,6 +140,35 @@ export default function Clientes() {
         <button onClick={() => { setSearch(''); setList(all); }} style={{ padding: '10px 16px', background: '#e5e7eb', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Limpiar</button>
       </div>
 
+      {/* Cumpleaños */}
+      <div style={{ background: 'white', padding: 16, borderRadius: 8, marginBottom: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+          <h4 style={{ margin: 0 }}>Cumpleaños</h4>
+          <select value={cumpleMes} onChange={e => setCumpleMes(Number(e.target.value))} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid #d1d5db', fontSize: 13 }}>
+            {['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'].map((m, i) => (
+              <option key={i} value={i + 1}>{m}</option>
+            ))}
+          </select>
+        </div>
+        {cumpleanios.length === 0 ? (
+          <p style={{ color: '#9ca3af', fontSize: 13 }}>Sin cumpleaños en este mes</p>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead><tr style={{ borderBottom: '1px solid #e5e7eb', textAlign: 'left' }}><th style={{ padding: 6 }}>Día</th><th>Nombre</th><th>Teléfono</th><th>Dirección</th></tr></thead>
+            <tbody>
+              {cumpleanios.map((c: any) => (
+                <tr key={c.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                  <td style={{ padding: 6, fontWeight: 'bold' }}>{c.dia}</td>
+                  <td style={{ padding: 6 }}>{c.nombre}</td>
+                  <td style={{ padding: 6 }}>{c.telefono || '-'}</td>
+                  <td style={{ padding: 6 }}>{c.direccion || '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
       <div style={{ background: 'white', padding: 16, borderRadius: 8, marginBottom: 20 }}>
         <h4>Alta cliente</h4>
         <form onSubmit={handleCreate} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8 }}>
@@ -158,7 +188,7 @@ export default function Clientes() {
               <tr key={c.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
                 <td style={{ padding: 10 }}>{c.nombre}</td><td>{c.telefono || '-'}</td>
                 <td style={{ color: c.saldoCuenta > 0 ? '#dc2626' : '#059669', fontWeight: 'bold' }}>${Number(c.saldoCuenta).toFixed(0)}</td>
-                <td><button onClick={() => verCuenta(c.id)} style={{ padding: '6px 10px', background: '#111827', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Ver</button></td>
+                <td><button onClick={() => { if (selected?.id === c.id) { setSelected(null); setCuenta(null); } else { verCuenta(c.id); } }} style={{ padding: '6px 10px', background: selected?.id === c.id ? '#dc2626' : '#111827', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>{selected?.id === c.id ? 'Cancelar' : 'Ver'}</button></td>
               </tr>
             ))}
             {list.length === 0 && <tr><td colSpan={4} style={{ textAlign: 'center', padding: 20, color: '#9ca3af' }}>Sin clientes</td></tr>}
@@ -299,34 +329,6 @@ export default function Clientes() {
         </div>
       </div>
 
-      {/* Cumpleaños */}
-      <div style={{ background: 'white', padding: 16, borderRadius: 8, marginTop: 20 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
-          <h4 style={{ margin: 0 }}>Cumpleaños</h4>
-          <select value={cumpleMes} onChange={e => setCumpleMes(Number(e.target.value))} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid #d1d5db', fontSize: 13 }}>
-            {['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'].map((m, i) => (
-              <option key={i} value={i + 1}>{m}</option>
-            ))}
-          </select>
-        </div>
-        {cumpleanios.length === 0 ? (
-          <p style={{ color: '#9ca3af', fontSize: 13 }}>Sin cumpleaños en este mes</p>
-        ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-            <thead><tr style={{ borderBottom: '1px solid #e5e7eb', textAlign: 'left' }}><th style={{ padding: 6 }}>Día</th><th>Nombre</th><th>Teléfono</th><th>Email</th></tr></thead>
-            <tbody>
-              {cumpleanios.map((c: any) => (
-                <tr key={c.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                  <td style={{ padding: 6, fontWeight: 'bold' }}>{c.dia}</td>
-                  <td style={{ padding: 6 }}>{c.nombre}</td>
-                  <td style={{ padding: 6 }}>{c.telefono || '-'}</td>
-                  <td style={{ padding: 6 }}>{c.email || '-'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
     </div>
   );
 }
