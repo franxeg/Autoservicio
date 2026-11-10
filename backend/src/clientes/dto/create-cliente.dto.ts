@@ -26,6 +26,11 @@ export class CreateClienteDto {
   @IsString()
   direccion?: string;
 
+  @ApiPropertyOptional({ example: '1990-05-15', description: 'Fecha de nacimiento (YYYY-MM-DD)' })
+  @IsOptional()
+  @IsString()
+  fechaNacimiento?: string;
+
   @ApiPropertyOptional({ example: 'sucursal-central' })
   @IsOptional()
   @IsString()

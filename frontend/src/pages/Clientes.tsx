@@ -5,7 +5,7 @@ import { fechaCorta } from '../lib/fecha';
 export default function Clientes() {
   const [all, setAll] = useState<any[]>([]);
   const [list, setList] = useState<any[]>([]);
-  const [form, setForm] = useState({ nombre: '', telefono: '', direccion: '' });
+  const [form, setForm] = useState({ nombre: '', telefono: '', direccion: '', fechaNacimiento: '' });
   const [search, setSearch] = useState('');
   const [showSug, setShowSug] = useState(false);
   const [error, setError] = useState('');
@@ -18,6 +18,8 @@ export default function Clientes() {
 
   // Edición de datos + ajuste de la deuda (para migrar saldos anteriores)
   const [editForm, setEditForm] = useState<any>(null);
+  const [cumpleMes, setCumpleMes] = useState(new Date().getMonth() + 1);
+  const [cumpleanios, setCumpleanios] = useState<any[]>([]);
   const [guardandoEdit, setGuardandoEdit] = useState(false);
   const [ajusteMonto, setAjusteMonto] = useState('');
   const [ajusteDesc, setAjusteDesc] = useState('');
@@ -35,6 +37,14 @@ export default function Clientes() {
     setAll(data); setList(data);
   };
   useEffect(() => { fetch(); }, []);
+
+  const fetchCumple = async (mes: number) => {
+    try {
+      const { data } = await api.get('/clientes/cumpleanios', { params: { mes } });
+      setCumpleanios(data || []);
+    } catch { setCumpleanios([]); }
+  };
+  useEffect(() => { fetchCumple(cumpleMes); }, [cumpleMes]);
 
   useEffect(() => {
     const sucursalId = localStorage.getItem('sucursalId');
@@ -55,7 +65,7 @@ export default function Clientes() {
     e.preventDefault(); setError('');
     try {
       await api.post('/clientes', form);
-      setForm({ nombre: '', telefono: '', direccion: '' });
+      setForm({ nombre: '', telefono: '', direccion: '', fechaNacimiento: '' });
       fetch();
     } catch (e: any) { setError(e.response?.data?.message || e.message); }
   };
@@ -63,7 +73,7 @@ export default function Clientes() {
   const verCuenta = async (id: string) => {
     const { data } = await api.get(`/clientes/${id}/cuenta`);
     setCuenta(data); setSelected(data.cliente);
-    setEditForm({ nombre: data.cliente.nombre, dni: data.cliente.dni || '', telefono: data.cliente.telefono || '', email: data.cliente.email || '', direccion: data.cliente.direccion || '' });
+    setEditForm({ nombre: data.cliente.nombre, dni: data.cliente.dni || '', telefono: data.cliente.telefono || '', email: data.cliente.email || '', direccion: data.cliente.direccion || '', fechaNacimiento: data.cliente.fechaNacimiento ? data.cliente.fechaNacimiento.slice(0, 10) : '' });
     setAjusteMonto(''); setAjusteDesc(''); setPagoOk(''); setError('');
   };
 
@@ -131,10 +141,11 @@ export default function Clientes() {
 
       <div style={{ background: 'white', padding: 16, borderRadius: 8, marginBottom: 20 }}>
         <h4>Alta cliente</h4>
-        <form onSubmit={handleCreate} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+        <form onSubmit={handleCreate} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8 }}>
           <input required placeholder="Nombre*" value={form.nombre} onChange={e => setForm({ ...form, nombre: e.target.value })} style={{ padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} />
           <input placeholder="Teléfono (solo números)" inputMode="numeric" value={form.telefono} onChange={e => setForm({ ...form, telefono: e.target.value.replace(/\D/g, '') })} style={{ padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} />
           <input placeholder="Dirección" value={form.direccion} onChange={e => setForm({ ...form, direccion: e.target.value })} style={{ padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} />
+          <input type="date" placeholder="Cumpleaños" value={form.fechaNacimiento} onChange={e => setForm({ ...form, fechaNacimiento: e.target.value })} style={{ padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} />
           <button type="submit" style={{ padding: 10, background: '#059669', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Crear</button>
         </form>
       </div>
@@ -170,6 +181,7 @@ export default function Clientes() {
                     <input required placeholder="Nombre*" value={editForm.nombre} onChange={e => setEditForm({ ...editForm, nombre: e.target.value })} style={{ padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} />
                     <input placeholder="Teléfono" inputMode="numeric" value={editForm.telefono} onChange={e => setEditForm({ ...editForm, telefono: e.target.value.replace(/\D/g, '') })} style={{ padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} />
                     <input placeholder="Dirección" value={editForm.direccion} onChange={e => setEditForm({ ...editForm, direccion: e.target.value })} style={{ padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} />
+                    <input type="date" value={editForm.fechaNacimiento || ''} onChange={e => setEditForm({ ...editForm, fechaNacimiento: e.target.value })} style={{ padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} />
                     <button type="submit" disabled={guardandoEdit} style={{ padding: '8px 12px', background: guardandoEdit ? '#9ca3af' : '#111827', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>
                       {guardandoEdit ? 'Guardando...' : 'Guardar cambios'}
                     </button>
@@ -285,6 +297,35 @@ export default function Clientes() {
             </>
           )}
         </div>
+      </div>
+
+      {/* Cumpleaños */}
+      <div style={{ background: 'white', padding: 16, borderRadius: 8, marginTop: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+          <h4 style={{ margin: 0 }}>Cumpleaños</h4>
+          <select value={cumpleMes} onChange={e => setCumpleMes(Number(e.target.value))} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid #d1d5db', fontSize: 13 }}>
+            {['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'].map((m, i) => (
+              <option key={i} value={i + 1}>{m}</option>
+            ))}
+          </select>
+        </div>
+        {cumpleanios.length === 0 ? (
+          <p style={{ color: '#9ca3af', fontSize: 13 }}>Sin cumpleaños en este mes</p>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead><tr style={{ borderBottom: '1px solid #e5e7eb', textAlign: 'left' }}><th style={{ padding: 6 }}>Día</th><th>Nombre</th><th>Teléfono</th><th>Email</th></tr></thead>
+            <tbody>
+              {cumpleanios.map((c: any) => (
+                <tr key={c.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                  <td style={{ padding: 6, fontWeight: 'bold' }}>{c.dia}</td>
+                  <td style={{ padding: 6 }}>{c.nombre}</td>
+                  <td style={{ padding: 6 }}>{c.telefono || '-'}</td>
+                  <td style={{ padding: 6 }}>{c.email || '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );
