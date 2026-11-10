@@ -17,7 +17,7 @@ export class ClientesService {
     const m = mes && mes >= 1 && mes <= 12 ? mes : new Date().getMonth() + 1;
     const clientes = await this.prisma.tenant.cliente.findMany({
       where: { fechaNacimiento: { not: null } },
-      select: { id: true, nombre: true, telefono: true, email: true, fechaNacimiento: true },
+      select: { id: true, nombre: true, telefono: true, direccion: true, fechaNacimiento: true },
     });
     return clientes
       .filter((c) => c.fechaNacimiento && c.fechaNacimiento.getMonth() + 1 === m)
@@ -25,7 +25,7 @@ export class ClientesService {
         id: c.id,
         nombre: c.nombre,
         telefono: c.telefono,
-        email: c.email,
+        direccion: c.direccion,
         dia: c.fechaNacimiento!.getDate(),
         mes: c.fechaNacimiento!.getMonth() + 1,
       }))
