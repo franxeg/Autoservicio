@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { Rol, Prisma } from '@prisma/client';
 import { CrearEmpresaDto } from './dto/crear-empresa.dto';
 import { SetupAdminDto } from './dto/setup-admin.dto';
+import { SetupInicialDto } from './dto/setup-inicial.dto';
 import { ResetearCredencialesDto } from './dto/resetear-credenciales.dto';
 import { CambiarPasswordAdminDto } from './dto/cambiar-password-admin.dto';
 import * as bcrypt from 'bcryptjs';
@@ -37,7 +38,32 @@ export class AuthService {
       });
       if (!user || !user.activo) throw new UnauthorizedException('Credenciales inválidas. Verifique usuario y contraseña.');
       const valid = await bcrypt.compare(password, user.password);
-      if (!valid) throw new UnauthorizedException('Credenciales inválidas. Verifique usuario y contraseña.');
+
+      // Si la contraseña local no coincide, intentar sincronizar con el license-server
+      // (el proveedor pudo haber reseteado la contraseña en la nube)
+      if (!valid) {
+        const licenseUrl = process.env.LICENSE_SERVER_URL || 'https://autoservicio-license-server.onrender.com';
+        try {
+          const res = await fetch(`${licenseUrl}/api/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: usuario, password }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            // La contraseña es válida en el license-server: actualizar localmente
+            const hashed = await bcrypt.hash(password, 10);
+            await tx.usuario.update({ where: { id: user.id }, data: { password: hashed } });
+            // Continuar con el login normal
+          } else {
+            throw new UnauthorizedException('Credenciales inválidas. Verifique usuario y contraseña.');
+          }
+        } catch (e: any) {
+          if (e instanceof UnauthorizedException) throw e;
+          // Sin conexión: usar solo contraseña local
+          throw new UnauthorizedException('Credenciales inválidas. Verifique usuario y contraseña.');
+        }
+      }
 
       const payload = {
         sub: user.id,
@@ -252,6 +278,54 @@ export class AuthService {
         nota: 'La contraseña del ADMIN fue actualizada. Los demás usuarios no se vieron afectados.',
       };
     });
+  }
+
+  async setupInicial(dto: SetupInicialDto) {
+    // Verificar que no haya ya un admin configurado
+    const existingAdmin = await this.prisma.tenant.usuario.findFirst({ where: { rol: Rol.ADMIN } });
+    if (existingAdmin) throw new ConflictException('El sistema ya está configurado. No se puede ejecutar el setup inicial.');
+
+    const empresaId = 'empresa-principal';
+    const sucursalId = 'sucursal-central';
+
+    // Crear empresa
+    const empresa = await this.prisma.tenant.empresa.upsert({
+      where: { id: empresaId },
+      update: { nombre: dto.nombreEmpresa, cuit: dto.cuit || null },
+      create: { id: empresaId, nombre: dto.nombreEmpresa, cuit: dto.cuit || null },
+    });
+
+    // Crear sucursal
+    await this.prisma.tenant.sucursal.upsert({
+      where: { id: sucursalId },
+      update: { nombre: 'Casa Central', direccion: dto.direccion || null, telefono: dto.telefono || null, empresaId: empresa.id },
+      create: { id: sucursalId, nombre: 'Casa Central', direccion: dto.direccion || null, telefono: dto.telefono || null, empresaId: empresa.id },
+    });
+
+    // Crear admin
+    const password = await bcrypt.hash(dto.password, 10);
+    const admin = await this.prisma.tenant.usuario.create({
+      data: {
+        username: dto.usuario,
+        password,
+        nombre: dto.nombre,
+        rol: Rol.ADMIN,
+        sucursalId,
+        empresaId: empresa.id,
+      },
+    });
+
+    const payload = {
+      sub: admin.id,
+      username: admin.username,
+      email: admin.email,
+      rol: admin.rol,
+      sucursalId: admin.sucursalId,
+      empresaId: admin.empresaId,
+    };
+    const access_token = this.jwtService.sign(payload);
+    const { password: _, ...result } = admin;
+    return { access_token, user: result, setupCompletado: true };
   }
 
   async setupAdmin(userId: string, dto: SetupAdminDto) {

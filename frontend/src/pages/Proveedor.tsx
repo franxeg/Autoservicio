@@ -55,6 +55,10 @@ export default function Proveedor() {
   const [lsLoading, setLsLoading] = useState(false);
   const [lsCompanies, setLsCompanies] = useState<any[] | null>(null);
   const [lsMsg, setLsMsg] = useState('');
+  const [lsPassCompany, setLsPassCompany] = useState<any | null>(null);
+  const [lsPassNueva, setLsPassNueva] = useState('');
+  const [lsPassError, setLsPassError] = useState('');
+  const [lsPassOk, setLsPassOk] = useState('');
 
   const navigate = useNavigate();
 
@@ -159,6 +163,25 @@ export default function Proveedor() {
       cargarLsCompanies();
     } catch (err: any) {
       setLsError(err.message || 'Error al cambiar premium');
+    }
+  };
+
+  const resetLsPassword = async () => {
+    if (!lsPassCompany || !lsPassNueva.trim()) { setLsPassError('Ingresá la nueva contraseña'); return; }
+    if (lsPassNueva.length < 6) { setLsPassError('Mínimo 6 caracteres'); return; }
+    setLsPassError(''); setLsPassOk('');
+    try {
+      const res = await fetch(`${lsUrl}/api/admin/companies/${lsPassCompany.id}/password`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${lsToken}` },
+        body: JSON.stringify({ password: lsPassNueva }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Error');
+      setLsPassOk(`Contraseña actualizada para ${lsPassCompany.nombre}. Nueva contraseña: ${lsPassNueva}`);
+      setLsPassNueva('');
+    } catch (err: any) {
+      setLsPassError(err.message || 'Error al cambiar contraseña');
     }
   };
 
@@ -311,7 +334,9 @@ export default function Proveedor() {
             )}
 
             <div style={{ display: 'flex', gap: 20, marginBottom: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-              <form onSubmit={crearEmpresa} style={{ background: 'white', padding: 24, borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', flex: 1, minWidth: 300 }}>
+              <div style={{ background: '#f0f9ff', padding: 16, borderRadius: 12, border: '1px solid #bfdbfe', flex: 1, minWidth: 300 }}>
+                <h3 style={{ marginTop: 0, color: '#1e40af' }}>ℹ️ Las empresas se registran automáticamente</h3>
+                <p style={{ color: '#1e3a8a', fontSize: 13, margin: 0 }}>Los clientes crean su empresa al instalar el sistema. Acá solo gestionás las suscripciones Premium.</p>
                 <h2 style={{ marginTop: 0 }}>Crear nueva empresa</h2>
                 {error && <div style={{ background: '#fee2e2', color: '#dc2626', padding: 10, borderRadius: 6, marginBottom: 12, fontSize: 14 }}>{error}</div>}
                 <label>Nombre de la empresa *</label>
@@ -331,7 +356,7 @@ export default function Proveedor() {
                     <small style={{ color: '#065f46', display: 'block', marginTop: 10 }}>El cliente creará su propio administrador al primer ingreso. Esta contraseña no volverá a mostrarse.</small>
                   </div>
                 )}
-              </form>
+              </div>
 
               <div style={{ background: 'white', padding: 24, borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', flex: 1, minWidth: 300 }}>
                 <h2 style={{ marginTop: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>Empresas <button onClick={cargarEmpresas} style={{ fontSize: 13, padding: '6px 10px', cursor: 'pointer' }}>Actualizar</button></h2>
@@ -384,11 +409,6 @@ export default function Proveedor() {
                           </div>
                         )}
                         <button
-                          onClick={() => abrirReset(e)}
-                          disabled={reseteandoId === e.id}
-                          style={{ fontSize: 12, padding: '5px 10px', marginRight: 6, background: '#fee2e2', color: '#b91c1c', border: '1px solid #fca5a5', borderRadius: 6, cursor: 'pointer', opacity: reseteandoId === e.id ? 0.6 : 1 }}
-                        >{reseteandoId === e.id ? 'Reseteando...' : resetEmpresa?.id === e.id ? 'Cerrar' : 'Resetear credenciales'}</button>
-                        <button
                           onClick={() => abrirPassAdmin(e)}
                           disabled={!e.adminUsuario}
                           title={!e.adminUsuario ? 'Esta empresa todavía no tiene admin' : 'Cambiar la contraseña del ADMIN'}
@@ -431,18 +451,19 @@ export default function Proveedor() {
                   {lsCompanies && lsCompanies.length === 0 && <p style={{ color: '#6b7280' }}>No hay empresas registradas.</p>}
                   {lsCompanies && lsCompanies.length > 0 && (
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                      <thead><tr style={{ borderBottom: '2px solid #e5e7eb', textAlign: 'left' }}><th>Empresa</th><th>Email</th><th>Premium</th><th>Vencimiento</th><th>Acción</th></tr></thead>
+                      <thead><tr style={{ borderBottom: '2px solid #e5e7eb', textAlign: 'left' }}><th>Empresa</th><th>Usuario</th><th>Premium</th><th>Vencimiento</th><th>Acciones</th></tr></thead>
                       <tbody>
                         {lsCompanies.map((c: any) => (
                           <tr key={c.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
                             <td>{c.nombre}</td>
-                            <td style={{ fontSize: 11 }}>{c.email}</td>
+                            <td style={{ fontSize: 11 }}>{c.username || '—'}</td>
                             <td>{c.isPremium ? '✅ Sí' : (new Date() < new Date(c.trialEnd) ? '⏳ Trial' : '❌ No')}</td>
                             <td style={{ fontSize: 11 }}>{c.isPremium ? (c.premiumExpiry ? new Date(c.premiumExpiry).toLocaleDateString() : '—') : new Date(c.trialEnd).toLocaleDateString()}</td>
-                            <td>
-                              <button onClick={() => togglePremium(c)} style={{ padding: '4px 10px', background: c.isPremium ? '#dc2626' : '#059669', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 12 }}>
-                                {c.isPremium ? 'Desactivar' : 'Activar Premium'}
+                            <td style={{ display: 'flex', gap: 4 }}>
+                              <button onClick={() => togglePremium(c)} style={{ padding: '4px 8px', background: c.isPremium ? '#dc2626' : '#059669', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 11 }}>
+                                {c.isPremium ? 'Desactivar' : 'Activar'}
                               </button>
+                              <button onClick={() => { setLsPassCompany(c); setLsPassNueva(''); setLsPassError(''); setLsPassOk(''); }} style={{ padding: '4px 8px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 11 }}>Cambiar pass</button>
                             </td>
                           </tr>
                         ))}
@@ -450,6 +471,24 @@ export default function Proveedor() {
                     </table>
                   )}
                 </>
+              )}
+
+              {lsPassCompany && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'grid', placeItems: 'center', zIndex: 60 }} onClick={() => setLsPassCompany(null)}>
+                  <div style={{ background: 'white', padding: 24, borderRadius: 12, width: 400 }} onClick={e => e.stopPropagation()}>
+                    <h3 style={{ marginTop: 0 }}>Cambiar contraseña - {lsPassCompany.nombre}</h3>
+                    <p style={{ color: '#6b7280', fontSize: 13 }}>Usuario: <b>{lsPassCompany.username}</b></p>
+                    <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
+                      <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>Nueva contraseña<input type="password" value={lsPassNueva} onChange={e => setLsPassNueva(e.target.value)} placeholder="Mínimo 6 caracteres" style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button onClick={resetLsPassword} style={{ flex: 1, padding: 10, background: '#2563eb', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Cambiar</button>
+                        <button onClick={() => setLsPassCompany(null)} style={{ padding: '10px 16px', background: '#e5e7eb', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Cancelar</button>
+                      </div>
+                      {lsPassError && <div style={{ color: '#dc2626', fontSize: 13 }}>{lsPassError}</div>}
+                      {lsPassOk && <div style={{ color: '#059669', fontSize: 13 }}>{lsPassOk}</div>}
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
 

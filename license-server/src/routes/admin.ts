@@ -12,6 +12,7 @@ export default function adminRoutes(prisma: PrismaClient) {
         select: {
           id: true,
           nombre: true,
+          username: true,
           email: true,
           licenseKey: true,
           isPremium: true,
@@ -56,6 +57,25 @@ export default function adminRoutes(prisma: PrismaClient) {
         data: { activo: req.body.activo !== false },
       });
       res.json({ id: company.id, nombre: company.nombre, activo: company.activo });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Resetear contraseña (admin)
+  router.patch('/companies/:id/password', requireAdmin, async (req, res, next) => {
+    try {
+      const { password } = req.body;
+      if (!password || password.length < 6) {
+        return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres' });
+      }
+      const bcrypt = require('bcryptjs');
+      const hashed = await bcrypt.hash(password, 10);
+      const company = await prisma.company.update({
+        where: { id: req.params.id },
+        data: { password: hashed },
+      });
+      res.json({ id: company.id, nombre: company.nombre, message: 'Contraseña actualizada' });
     } catch (err) {
       next(err);
     }

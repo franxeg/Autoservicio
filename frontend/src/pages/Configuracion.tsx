@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../lib/store';
 import { api } from '../lib/api';
-import { getPremiumStatus, activatePremium } from '../lib/premium';
+import { getPremiumStatus } from '../lib/premium';
 
 const TABS = [
   { id: 'premium', label: 'Suscribirse a Premium' },
@@ -51,15 +51,6 @@ export default function Configuracion() {
 
 function TabPremium() {
   const status = getPremiumStatus();
-  const [codigo, setCodigo] = useState('');
-  const [msg, setMsg] = useState('');
-
-  const activar = () => {
-    if (!codigo.trim()) { setMsg('Ingresá un código'); return; }
-    activatePremium(codigo.trim(), 30);
-    setMsg('Premium activado por 30 días. Recargá la página.');
-    setCodigo('');
-  };
 
   return (
     <div>
@@ -99,14 +90,9 @@ function TabPremium() {
         <p style={{ fontSize: 13, color: '#6b7280' }}>Registrate o iniciá sesión para vincular este sistema a tu cuenta y activar el Premium online.</p>
         <a href="/registro" style={{ display: 'inline-block', padding: '8px 16px', background: '#2563eb', color: 'white', borderRadius: 6, textDecoration: 'none', fontSize: 13 }}>Ir a registro / login</a>
       </div>
-      <div style={{ marginTop: 16 }}>
-        <h4>¿Ya pagaste?</h4>
-        <p style={{ fontSize: 13, color: '#6b7280' }}>Ingresá tu código de activación:</p>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <input value={codigo} onChange={e => setCodigo(e.target.value)} placeholder="Código de activación" style={{ flex: 1, padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }} />
-          <button onClick={activar} style={{ padding: '10px 16px', background: '#059669', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Activar</button>
-        </div>
-        {msg && <small style={{ color: '#059669', marginTop: 8, display: 'block' }}>{msg}</small>}
+      <div style={{ marginTop: 16, padding: 12, background: '#f0f9ff', border: '1px solid #bfdbfe', borderRadius: 6 }}>
+        <h4 style={{ marginTop: 0 }}>Activación de Premium</h4>
+        <p style={{ fontSize: 13, color: '#6b7280' }}>El Premium se activa desde el panel de proveedor una vez confirmado el pago. Si ya pagaste, esperá a que te lo activen (dentro de las 24 hs).</p>
       </div>
     </div>
   );
@@ -354,6 +340,18 @@ function TabPassword() {
     try {
       const res = await api.post('/auth/cambiar-password', { passwordActual: actual, passwordNueva: nueva });
       setMsg(res.data?.message || 'Contraseña actualizada correctamente');
+      // Sincronizar con license-server (si está registrado)
+      const token = localStorage.getItem('license_token');
+      const lsUrl = localStorage.getItem('ls_url') || 'https://autoservicio-license-server.onrender.com';
+      if (token) {
+        try {
+          await fetch(`${lsUrl}/api/license/change-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ passwordActual: actual, passwordNueva: nueva }),
+          });
+        } catch {}
+      }
       setActual(''); setNueva(''); setConfirmar('');
     } catch (e: any) {
       setMsg(e.response?.data?.message || 'Error al cambiar contraseña');

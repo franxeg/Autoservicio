@@ -8,26 +8,44 @@ const TRIAL_DAYS = 30;
 export default function authRoutes(prisma: PrismaClient) {
   const router = Router();
 
+  // Verificar si un username está disponible
+  router.get('/check-username/:username', async (req, res, next) => {
+    try {
+      const { username } = req.params;
+      if (!username || username.length < 3) {
+        return res.status(400).json({ available: false, message: 'El usuario debe tener al menos 3 caracteres' });
+      }
+      const exists = await prisma.company.findUnique({ where: { username } });
+      res.json({ available: !exists, message: exists ? 'El usuario ya está en uso' : 'Usuario disponible' });
+    } catch (err) {
+      next(err);
+    }
+  });
+
   // Registro de nueva empresa
   router.post('/register', async (req, res, next) => {
     try {
-      const { nombre, email, password } = req.body;
-      if (!nombre || !email || !password) {
-        return res.status(400).json({ message: 'nombre, email y password son requeridos' });
+      const { nombre, username, password, cuit, direccion, telefono } = req.body;
+      if (!nombre || !username || !password) {
+        return res.status(400).json({ message: 'nombre, username y password son requeridos' });
+      }
+      if (username.length < 3) {
+        return res.status(400).json({ message: 'El usuario debe tener al menos 3 caracteres' });
       }
       if (password.length < 6) {
         return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres' });
       }
 
-      const exists = await prisma.company.findUnique({ where: { email } });
-      if (exists) {
-        return res.status(409).json({ message: 'Ya existe una cuenta con ese email' });
+      // Verificar username disponible
+      const existsUser = await prisma.company.findUnique({ where: { username } });
+      if (existsUser) {
+        return res.status(409).json({ message: 'El usuario ya está en uso. Elegí otro.' });
       }
 
       // Verificar que el nombre de empresa no esté tomado
       const nameExists = await prisma.company.findFirst({ where: { nombre } });
       if (nameExists) {
-        return res.status(409).json({ message: 'Ya existe una empresa con ese nombre. Agregá algo para diferenciarla (ej: "Panadería El Sol - Centro").' });
+        return res.status(409).json({ message: 'Ya existe una empresa con ese nombre. Agregá algo para diferenciarla.' });
       }
 
       const hashed = await bcrypt.hash(password, 10);
@@ -36,14 +54,14 @@ export default function authRoutes(prisma: PrismaClient) {
       const company = await prisma.company.create({
         data: {
           nombre,
-          email,
+          username,
           password: hashed,
           trialEnd,
         },
       });
 
       const token = jwt.sign(
-        { sub: company.id, email: company.email },
+        { sub: company.id, username: company.username },
         process.env.JWT_SECRET || 'secret',
         { expiresIn: '30d' },
       );
@@ -55,7 +73,7 @@ export default function authRoutes(prisma: PrismaClient) {
         company: {
           id: company.id,
           nombre: company.nombre,
-          email: company.email,
+          username: company.username,
           isPremium: false,
           isTrial: true,
           trialDaysLeft: TRIAL_DAYS,
@@ -70,12 +88,12 @@ export default function authRoutes(prisma: PrismaClient) {
   // Login
   router.post('/login', async (req, res, next) => {
     try {
-      const { email, password } = req.body;
-      if (!email || !password) {
-        return res.status(400).json({ message: 'email y password son requeridos' });
+      const { username, password } = req.body;
+      if (!username || !password) {
+        return res.status(400).json({ message: 'username y password son requeridos' });
       }
 
-      const company = await prisma.company.findUnique({ where: { email } });
+      const company = await prisma.company.findUnique({ where: { username } });
       if (!company || !company.activo) {
         return res.status(401).json({ message: 'Credenciales inválidas' });
       }
@@ -86,21 +104,26 @@ export default function authRoutes(prisma: PrismaClient) {
       }
 
       const token = jwt.sign(
-        { sub: company.id, email: company.email },
+        { sub: company.id, username: company.username },
         process.env.JWT_SECRET || 'secret',
         { expiresIn: '30d' },
       );
+
+      const now = new Date();
+      const isTrial = !company.isPremium && now < company.trialEnd;
+      const trialDaysLeft = isTrial ? Math.max(0, Math.ceil((company.trialEnd.getTime() - now.getTime()) / (24 * 60 * 60 * 1000))) : 0;
+      const isPremium = company.isPremium && (!company.premiumExpiry || now < company.premiumExpiry);
 
       res.json({
         access_token: token,
         company: {
           id: company.id,
           nombre: company.nombre,
-          email: company.email,
+          username: company.username,
           licenseKey: company.licenseKey,
-          isPremium: company.isPremium,
-          isTrial: !company.isPremium && new Date() < company.trialEnd,
-          trialDaysLeft: company.isPremium ? 0 : Math.max(0, Math.ceil((company.trialEnd.getTime() - Date.now()) / (24 * 60 * 60 * 1000))),
+          isPremium: isPremium || isTrial,
+          isTrial,
+          trialDaysLeft,
           trialEnd: company.trialEnd,
           premiumExpiry: company.premiumExpiry,
         },
@@ -110,7 +133,7 @@ export default function authRoutes(prisma: PrismaClient) {
     }
   });
 
-  // Admin login (para el panel de administración)
+  // Admin login
   router.post('/admin/login', async (req, res) => {
     const { username, password } = req.body;
     const adminUser = process.env.ADMIN_USER || 'admin';

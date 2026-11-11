@@ -4,6 +4,7 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { CrearEmpresaDto } from './dto/crear-empresa.dto';
 import { SetupAdminDto } from './dto/setup-admin.dto';
+import { SetupInicialDto } from './dto/setup-inicial.dto';
 import { CambiarPasswordProveedorDto } from './dto/cambiar-password-proveedor.dto';
 import { ResetearCredencialesDto } from './dto/resetear-credenciales.dto';
 import { CambiarPasswordAdminDto } from './dto/cambiar-password-admin.dto';
@@ -60,6 +61,11 @@ export class AuthController {
   @Post('cambiar-password-admin')
   async cambiarPasswordAdmin(@Body() dto: CambiarPasswordAdminDto) {
     return this.authService.cambiarPasswordAdmin(dto);
+  }
+
+  @Post('setup-inicial')
+  async setupInicial(@Body() dto: SetupInicialDto) {
+    return this.authService.setupInicial(dto);
   }
 
   @ApiBearerAuth()

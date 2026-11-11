@@ -30,6 +30,38 @@ export default function licenseRoutes(prisma: PrismaClient) {
     }
   });
 
+  // Cambiar contraseña (requiere auth)
+  router.post('/change-password', requireAuth, async (req: AuthRequest, res, next) => {
+    try {
+      const { passwordActual, passwordNueva } = req.body;
+      if (!passwordActual || !passwordNueva) {
+        return res.status(400).json({ message: 'passwordActual y passwordNueva son requeridos' });
+      }
+      if (passwordNueva.length < 6) {
+        return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres' });
+      }
+
+      const company = await prisma.company.findUnique({ where: { id: req.company!.id } });
+      if (!company) return res.status(404).json({ message: 'Empresa no encontrada' });
+
+      const bcrypt = require('bcryptjs');
+      const valid = await bcrypt.compare(passwordActual, company.password);
+      if (!valid) {
+        return res.status(401).json({ message: 'La contraseña actual no es correcta' });
+      }
+
+      const hashed = await bcrypt.hash(passwordNueva, 10);
+      await prisma.company.update({
+        where: { id: company.id },
+        data: { password: hashed },
+      });
+
+      res.json({ message: 'Contraseña actualizada correctamente' });
+    } catch (err) {
+      next(err);
+    }
+  });
+
   // Activar premium con código (se validará con el admin o webhook de pago)
   router.post('/activate', requireAuth, async (req: AuthRequest, res, next) => {
     try {
