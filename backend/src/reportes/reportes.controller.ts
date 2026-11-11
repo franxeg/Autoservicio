@@ -35,8 +35,10 @@ export class ReportesController {
     @Query('sucursalId') sucursalId?: string,
     @Query('desde') desde?: string,
     @Query('hasta') hasta?: string,
+    @Query('horaDesde') horaDesde?: string,
+    @Query('horaHasta') horaHasta?: string,
   ) {
-    return this.service.movimientos(sucursalId, desde, hasta);
+    return this.service.movimientos(sucursalId, desde, hasta, horaDesde, horaHasta);
   }
 
   @Get('stock-critico')

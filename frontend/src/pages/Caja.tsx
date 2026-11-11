@@ -11,6 +11,12 @@ export default function Caja() {
   const [historialLimit, setHistorialLimit] = useState(10);
   const [montoInicial, setMontoInicial] = useState('5000');
   const [montoInicialVirtual, setMontoInicialVirtual] = useState('0');
+  const [ajusteOpen, setAjusteOpen] = useState(false);
+  const [ajusteMedio, setAjusteMedio] = useState('EFECTIVO');
+  const [ajusteMonto, setAjusteMonto] = useState('');
+  const [ajusteDesc, setAjusteDesc] = useState('');
+  const [ajusteError, setAjusteError] = useState('');
+  const [ajusteOk, setAjusteOk] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -70,6 +76,25 @@ export default function Caja() {
     } catch (e: any) { setError(e.response?.data?.message || e.message); }
   };
 
+  const handleAjuste = async () => {
+    if (!caja) return;
+    setAjusteError(''); setAjusteOk('');
+    const monto = parseFloat(ajusteMonto);
+    if (isNaN(monto) || monto === 0) { setAjusteError('Ingresá un monto válido (distinto de 0)'); return; }
+    try {
+      await api.post(`/caja/${caja.id}/movimiento`, {
+        tipo: 'AJUSTE',
+        monto: Math.round(monto),
+        descripcion: ajusteDesc.trim() || (monto > 0 ? 'Ajuste de caja (ingreso)' : 'Ajuste de caja (egreso)'),
+        metodoPago: ajusteMedio,
+      });
+      setAjusteOk('Ajuste registrado correctamente');
+      setAjusteMonto(''); setAjusteDesc('');
+      fetch();
+      setTimeout(() => { setAjusteOpen(false); setAjusteOk(''); }, 1200);
+    } catch (e: any) { setAjusteError(e.response?.data?.message || e.message); }
+  };
+
   const imprimirCaja = async (id: string) => {
     try {
       const { data } = await api.get(`/caja/${id}`);
@@ -121,7 +146,10 @@ export default function Caja() {
             <div style={{ background: '#111827', color: 'white', padding: 12, borderRadius: 6 }}><small>Balance</small><p style={{ fontSize: 16, fontWeight: 'bold' }}>Ef: ${Number(caja.balance ?? 0).toFixed(0)}</p><p style={{ fontSize: 14, color: '#7dd3fc' }}>Virt: ${Number(caja.balanceVirtual ?? 0).toFixed(0)}</p></div>
           </div>
           {caja.estado === 'ABIERTA' ? (
-            <button onClick={cerrar} style={{ marginTop: 16, padding: '10px 16px', background: '#dc2626', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Cerrar Caja</button>
+            <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+              <button onClick={cerrar} style={{ padding: '10px 16px', background: '#dc2626', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Cerrar Caja</button>
+              <button onClick={() => { setAjusteOpen(true); setAjusteError(''); setAjusteOk(''); setAjusteMonto(''); setAjusteDesc(''); }} style={{ padding: '10px 16px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Ajuste de caja</button>
+            </div>
           ) : (
             <p style={{ marginTop: 12, color: '#6b7280' }}>Cerrada el {fechaHora(caja.fechaCierre)} - Final: ${caja.montoFinal ? Number(caja.montoFinal).toFixed(0) : '-'}</p>
           )}
@@ -180,6 +208,36 @@ export default function Caja() {
           </tbody>
         </table>
       </div>
+
+      {ajusteOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'grid', placeItems: 'center', zIndex: 50 }} onClick={() => setAjusteOpen(false)}>
+          <div style={{ background: 'white', padding: 24, borderRadius: 12, width: 420 }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ marginTop: 0 }}>Ajuste de caja</h3>
+            <p style={{ color: '#6b7280', fontSize: 13 }}>Sumar o restar dinero de la caja (ingreso extra, cambio mal dado, etc.).</p>
+            <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>Medio
+                <select value={ajusteMedio} onChange={e => setAjusteMedio(e.target.value)} style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }}>
+                  <option value="EFECTIVO">Efectivo</option>
+                  <option value="TRANSFERENCIA">Transferencia</option>
+                  <option value="TARJETA">Tarjeta</option>
+                </select>
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>Monto (positivo = ingreso, negativo = egreso)
+                <input type="number" step="1" value={ajusteMonto} onChange={e => setAjusteMonto(e.target.value)} style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }} />
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>Descripción (opcional)
+                <input value={ajusteDesc} onChange={e => setAjusteDesc(e.target.value)} style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }} />
+              </label>
+              <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                <button onClick={handleAjuste} style={{ flex: 1, padding: 10, background: '#2563eb', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Confirmar</button>
+                <button onClick={() => setAjusteOpen(false)} style={{ padding: '10px 16px', background: '#e5e7eb', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Cancelar</button>
+              </div>
+              {ajusteError && <div style={{ color: '#dc2626', fontSize: 13 }}>{ajusteError}</div>}
+              {ajusteOk && <div style={{ color: '#059669', fontSize: 13 }}>{ajusteOk}</div>}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

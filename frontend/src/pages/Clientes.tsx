@@ -22,7 +22,6 @@ export default function Clientes() {
   const [cumpleanios, setCumpleanios] = useState<any[]>([]);
   const [guardandoEdit, setGuardandoEdit] = useState(false);
   const [ajusteMonto, setAjusteMonto] = useState('');
-  const [ajusteDesc, setAjusteDesc] = useState('');
   const [guardandoAjuste, setGuardandoAjuste] = useState(false);
 
   const METODOS_PAGO = [
@@ -75,7 +74,7 @@ export default function Clientes() {
     const { data } = await api.get(`/clientes/${id}/cuenta`);
     setCuenta(data); setSelected(data.cliente);
     setEditForm({ nombre: data.cliente.nombre, dni: data.cliente.dni || '', telefono: data.cliente.telefono || '', email: data.cliente.email || '', direccion: data.cliente.direccion || '', fechaNacimiento: data.cliente.fechaNacimiento ? data.cliente.fechaNacimiento.slice(0, 10) : '' });
-    setAjusteMonto(''); setAjusteDesc(''); setPagoOk(''); setError('');
+    setAjusteMonto(''); setPagoOk(''); setError('');
   };
 
   const guardarEdit = async (e: React.FormEvent) => {
@@ -84,7 +83,8 @@ export default function Clientes() {
     setGuardandoEdit(true);
     try {
       await api.patch(`/clientes/${selected.id}`, editForm);
-      fetch(); verCuenta(selected.id); fetchCumple(cumpleMes);
+      setEditForm(null);
+      fetch(); fetchCumple(cumpleMes);
     } catch (e: any) { setError(e.response?.data?.message || e.message); }
     finally { setGuardandoEdit(false); }
   };
@@ -97,10 +97,10 @@ export default function Clientes() {
     try {
       await api.post(`/clientes/${selected.id}/ajuste`, {
         monto,
-        descripcion: ajusteDesc.trim() || (monto > 0 ? 'Deuda anterior al sistema' : 'Ajuste de deuda'),
+        descripcion: monto > 0 ? 'Deuda anterior al sistema' : 'Ajuste de deuda',
       });
-      setAjusteMonto(''); setAjusteDesc('');
-      verCuenta(selected.id); fetch();
+      setAjusteMonto('');
+      verCuenta(selected.id); fetch(); fetchCumple(cumpleMes);
     } catch (e: any) { setError(e.response?.data?.message || e.message); }
     finally { setGuardandoAjuste(false); }
   };
@@ -223,9 +223,8 @@ export default function Clientes() {
                 <div style={{ marginTop: 12, border: '1px dashed #fbbf24', background: '#fffbeb', borderRadius: 8, padding: 12 }}>
                   <h5 style={{ margin: '0 0 4px' }}>Ajustar deuda</h5>
                   <small style={{ color: '#92400e' }}>Para cargar la deuda que el cliente ya traía antes del sistema (o corregirla). No afecta la caja.</small>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 8 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 6, marginTop: 8 }}>
                     <input type="number" min="0" step="1" placeholder="Monto" value={ajusteMonto} onChange={e => setAjusteMonto(e.target.value)} style={{ padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} />
-                    <input placeholder="Motivo (opcional)" value={ajusteDesc} onChange={e => setAjusteDesc(e.target.value)} style={{ padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} />
                   </div>
                   <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
                     <button type="button" disabled={guardandoAjuste || !ajusteMonto} onClick={() => aplicarAjuste(1)} style={{ flex: 1, padding: '8px 12px', background: guardandoAjuste || !ajusteMonto ? '#9ca3af' : '#dc2626', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>+ Sumar deuda</button>

@@ -94,20 +94,20 @@ export class ReportesService {
   }
 
   // Desglose de cada precio vendido: costo + aporte del %crecimiento + aporte del %venta
-  async desglose(sucursalId?: string, periodo?: string, mes?: string, dia?: string) {
+  async desglose(sucursalId?: string, periodo?: string, mes?: string, dia?: string, categoriaId?: string) {
     const where: any = { estado: 'COMPLETADA', fecha: this.rango(periodo, mes, dia) };
     if (sucursalId) where.sucursalId = sucursalId;
 
     const [ventas, detalles] = await Promise.all([
       this.prisma.tenant.venta.count({ where }),
       this.prisma.tenant.detalleVenta.findMany({
-        where: { venta: where },
+        where: { venta: where, ...(categoriaId ? { producto: { categoriaId } } : {}) },
         include: { producto: { select: { id: true, nombre: true, codigoBarras: true, unidad: true, categoria: { select: { id: true, nombre: true } } } } },
       }),
     ]);
 
     const total = { vendido: 0, costo: 0, aporteVenta: 0, aporteCrecimiento: 0, sinDato: 0, unidades: 0, lineas: 0, lineasSinFoto: 0 };
-    const porProducto = new Map<string, any>();
+    const porCategoria = new Map<string, any>();
 
     for (const d of detalles) {
       const vendido = Math.round(d.subtotal);
@@ -135,10 +135,12 @@ export class ReportesService {
       total.lineas += 1;
       if (!completo) total.lineasSinFoto += 1;
 
-      let p = porProducto.get(d.productoId);
+      const catId = d.producto?.categoria?.id || 'sin-categoria';
+      const catNombre = d.producto?.categoria?.nombre || 'Sin categoría';
+      let p = porCategoria.get(catId);
       if (!p) {
-        p = { productoId: d.productoId, nombre: d.producto?.nombre || 'Desconocido', codigoBarras: d.producto?.codigoBarras, unidad: d.producto?.unidad || 'UNIDAD', categoriaId: d.producto?.categoria?.id || null, categoria: d.producto?.categoria?.nombre || 'Sin categoría', unidades: 0, cantidad: 0, vendido: 0, costo: 0, aporteVenta: 0, aporteCrecimiento: 0, sinDato: 0 };
-        porProducto.set(d.productoId, p);
+        p = { categoriaId: catId === 'sin-categoria' ? null : catId, categoria: catNombre, unidades: 0, cantidad: 0, vendido: 0, costo: 0, aporteVenta: 0, aporteCrecimiento: 0, sinDato: 0, ventas: 0, ventasSet: new Set() };
+        porCategoria.set(catId, p);
       }
       p.unidades += Math.round(cant);
       p.cantidad += cant;
@@ -147,6 +149,7 @@ export class ReportesService {
       p.aporteVenta += aporteVenta;
       p.aporteCrecimiento += aporteCrecimiento;
       p.sinDato += sinDato;
+      p.ventasSet.add(d.ventaId);
     }
 
     return {
@@ -154,7 +157,7 @@ export class ReportesService {
       mes: mes || null,
       ventas,
       ...total,
-      porProducto: [...porProducto.values()].sort((a, b) => b.vendido - a.vendido),
+      porCategoria: [...porCategoria.values()].map(c => ({ categoriaId: c.categoriaId, categoria: c.categoria, unidades: c.unidades, cantidad: c.cantidad, vendido: c.vendido, costo: c.costo, aporteVenta: c.aporteVenta, aporteCrecimiento: c.aporteCrecimiento, sinDato: c.sinDato, ventas: c.ventasSet.size })).sort((a, b) => b.vendido - a.vendido),
     };
   }
 
@@ -164,26 +167,38 @@ export class ReportesService {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   }
 
-  private rangoDias(desde?: string, hasta?: string) {
+  private rangoDias(desde?: string, hasta?: string, horaDesde?: string, horaHasta?: string) {
     const parse = (s?: string) => {
       if (!s) return null;
       const [y, m, d] = String(s).slice(0, 10).split('-').map(Number);
       if (!y || !m || !d) return null;
-      return new Date(y, m - 1, d);
+      const date = new Date(y, m - 1, d);
+      return date;
     };
     const ini = parse(desde) || new Date();
-    ini.setHours(0, 0, 0, 0);
+    // Aplicar hora de inicio si se proporciona
+    if (horaDesde) {
+      const [hh, mm] = horaDesde.split(':').map(Number);
+      if (!isNaN(hh)) ini.setHours(hh, mm || 0, 0, 0);
+      else ini.setHours(0, 0, 0, 0);
+    } else {
+      ini.setHours(0, 0, 0, 0);
+    }
     const fin = parse(hasta) || new Date(ini);
-    fin.setHours(0, 0, 0, 0);
-    const finLt = new Date(fin);
-    finLt.setDate(fin.getDate() + 1);
-    return { ini, fin, finLt };
+    if (horaHasta) {
+      const [hh, mm] = horaHasta.split(':').map(Number);
+      if (!isNaN(hh)) fin.setHours(hh, mm || 0, 59, 999);
+      else fin.setHours(23, 59, 59, 999);
+    } else {
+      fin.setHours(23, 59, 59, 999);
+    }
+    return { ini, fin };
   }
 
   // Informe para la pestaña Movimientos: gastos, compras, ventas y tops del día/mes elegido
-  async movimientos(sucursalId?: string, desde?: string, hasta?: string) {
-    const r = this.rangoDias(desde, hasta);
-    const rango = { gte: r.ini, lt: r.finLt };
+  async movimientos(sucursalId?: string, desde?: string, hasta?: string, horaDesde?: string, horaHasta?: string) {
+    const r = this.rangoDias(desde, hasta, horaDesde, horaHasta);
+    const rango = { gte: r.ini, lte: r.fin };
     const whereSucursal = sucursalId ? { sucursalId } : {};
 
     const [gastos, compras, ventas, movimientosStock] = await Promise.all([
