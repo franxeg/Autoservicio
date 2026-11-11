@@ -517,7 +517,7 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, gap: 12 }}>
           {!cajaAbierta ? (
             <div style={{ background: '#fef2f2', color: '#dc2626', padding: 10, borderRadius: 6, flex: 1 }}>
-              ⚠️ No hay caja abierta para esta sucursal. <a href="/caja" style={{ color: '#dc2626', fontWeight: 'bold' }}>Abrir caja</a> para poder cobrar.
+              ⚠️ No hay caja abierta. <a href="/caja" style={{ color: '#dc2626', fontWeight: 'bold' }}>Abrir caja</a> para poder cobrar.
             </div>
           ) : (
             <small style={{ color: '#059669' }}>✓ Caja abierta - Inicial: ${Number(cajaAbierta.montoInicial).toFixed(0)}</small>

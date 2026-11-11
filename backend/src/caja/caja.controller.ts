@@ -18,8 +18,8 @@ export class CajaController {
   }
 
   @Get('sucursal/:sucursalId')
-  findBySucursal(@Param('sucursalId') sucursalId: string) {
-    return this.service.findBySucursal(sucursalId);
+  findBySucursal(@Param('sucursalId') sucursalId: string, @Query('limit') limit?: string) {
+    return this.service.findBySucursal(sucursalId, limit ? Number(limit) : 10);
   }
 
   @Get(':id')
