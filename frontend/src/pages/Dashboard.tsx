@@ -15,15 +15,16 @@ export default function Dashboard() {
   const [ventasHoyDet, setVentasHoyDet] = useState<any[]>([]);
   const [periodo, setPeriodo] = useState('mes');
   const [mesSel, setMesSel] = useState('');
+  const [diaSel, setDiaSel] = useState('');
   const [desglose, setDesglose] = useState<any>(null);
   const [categorias, setCategorias] = useState<any[]>([]);
   const [catFiltroTop, setCatFiltroTop] = useState('');
 
   useEffect(() => {
-    api.get('/reportes/desglose', { params: { sucursalId, periodo, mes: mesSel || undefined } })
+    api.get('/reportes/desglose', { params: { sucursalId, periodo: diaSel ? 'dia' : periodo, mes: mesSel || undefined, dia: diaSel || undefined } })
       .then(r => setDesglose(r.data))
       .catch(() => setDesglose(null));
-  }, [periodo, mesSel]);
+  }, [periodo, mesSel, diaSel]);
 
   const cantTxt = (p: any) => {
     const n = Number(p.cantidad ?? 0);
@@ -159,6 +160,8 @@ export default function Dashboard() {
               {Array.from({ length: new Date().getFullYear() - 2019 }, (_, i) => new Date().getFullYear() - i).map(a => <option key={a} value={a}>{a}</option>)}
             </select>
             {mesSel && <button onClick={() => setMesSel('')} style={{ padding: '5px 10px', background: '#e5e7eb', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}>✕</button>}
+            <input type="date" value={diaSel} onChange={e => setDiaSel(e.target.value)} title="Filtrar por día" style={{ padding: '5px 8px', borderRadius: 6, border: diaSel ? '2px solid #111827' : '1px solid #d1d5db', fontSize: 13, background: 'white' }} />
+            {diaSel && <button onClick={() => setDiaSel('')} style={{ padding: '5px 10px', background: '#e5e7eb', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}>✕</button>}
             <select value={catFiltroTop} onChange={e => setCatFiltroTop(e.target.value)} title="Filtrar por categoría" style={{ padding: '5px 8px', borderRadius: 6, border: catFiltroTop ? '2px solid #111827' : '1px solid #d1d5db', fontSize: 13, background: 'white' }}>
               <option value="">Todas las categorías</option>
               {categorias.map((c: any) => <option key={c.id} value={c.id}>{c.nombre}</option>)}

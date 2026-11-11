@@ -68,9 +68,16 @@ export class ReportesService {
 
   // Rango de fechas para el desglose: hoy | 7d | mes (por defecto mes).
   // Si se pasa un mes puntual "aaaa-mm" (param `mes`), se usa ese mes calendario.
-  private rango(periodo?: string, mes?: string) {
+  private rango(periodo?: string, mes?: string, dia?: string) {
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
+    if (periodo === 'dia' && dia) {
+      const d = new Date(dia + 'T00:00:00');
+      d.setHours(0, 0, 0, 0);
+      const next = new Date(d);
+      next.setDate(d.getDate() + 1);
+      return { gte: d, lt: next };
+    }
     const m = /^(\d{4})-(\d{2})$/.exec(mes || '');
     if (m) {
       const y = Number(m[1]);
@@ -87,8 +94,8 @@ export class ReportesService {
   }
 
   // Desglose de cada precio vendido: costo + aporte del %crecimiento + aporte del %venta
-  async desglose(sucursalId?: string, periodo?: string, mes?: string) {
-    const where: any = { estado: 'COMPLETADA', fecha: this.rango(periodo, mes) };
+  async desglose(sucursalId?: string, periodo?: string, mes?: string, dia?: string) {
+    const where: any = { estado: 'COMPLETADA', fecha: this.rango(periodo, mes, dia) };
     if (sucursalId) where.sucursalId = sucursalId;
 
     const [ventas, detalles] = await Promise.all([

@@ -25,8 +25,9 @@ export class ReportesController {
     @Query('sucursalId') sucursalId?: string,
     @Query('periodo') periodo?: string,
     @Query('mes') mes?: string,
+    @Query('dia') dia?: string,
   ) {
-    return this.service.desglose(sucursalId, periodo, mes);
+    return this.service.desglose(sucursalId, periodo, mes, dia);
   }
 
   @Get('movimientos')

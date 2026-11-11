@@ -8,6 +8,7 @@ export default function Caja() {
   const sucursalId = user?.sucursalId || localStorage.getItem('sucursalId') || 'sucursal-central';
   const [caja, setCaja] = useState<any>(null);
   const [historial, setHistorial] = useState<any[]>([]);
+  const [historialLimit, setHistorialLimit] = useState(10);
   const [montoInicial, setMontoInicial] = useState('5000');
   const [montoInicialVirtual, setMontoInicialVirtual] = useState('0');
   const [loading, setLoading] = useState(true);
@@ -24,7 +25,7 @@ export default function Caja() {
         detalle = det.data;
       }
       setCaja(detalle);
-      const hist = await api.get(`/caja/sucursal/${sucursalId}`);
+      const hist = await api.get(`/caja/sucursal/${sucursalId}`, { params: { limit: historialLimit } });
       setHistorial(hist.data);
       // Prellenar el saldo inicial con lo que dejó el último cierre (editable)
       if (!data) {
@@ -44,13 +45,13 @@ export default function Caja() {
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { fetch(); }, []);
+  useEffect(() => { fetch(); }, [historialLimit]);
 
   const abrir = async () => {
     setError(''); setSuccess('');
     const mi = Math.round(parseFloat(montoInicial) || 0);
     const mv = Math.round(parseFloat(montoInicialVirtual) || 0);
-    if (!confirm(`¿Abrir caja?\n\nEfectivo inicial: $${mi}\nVirtual inicial: $${mv}\nSucursal: ${sucursalId}`)) return;
+    if (!confirm(`¿Abrir caja?\n\nEfectivo inicial: $${mi}\nVirtual inicial: $${mv}`)) return;
     try {
       await api.post('/caja/abrir', { sucursalId, montoInicial: mi, montoInicialVirtual: mv });
       setSuccess('Caja abierta');
@@ -61,12 +62,36 @@ export default function Caja() {
   const cerrar = async () => {
     if (!caja) return;
     setError(''); setSuccess('');
-    if (!confirm(`¿Cerrar caja?\n\nEfectivo inicial: $${Number(caja.montoInicial).toFixed(0)}\nVirtual inicial: $${Number(caja.montoInicialVirtual || 0).toFixed(0)}\nVentas efectivo: $${Number(caja.totalVentasEfectivo || 0).toFixed(0)}\nVentas virtual: $${Number(caja.totalVentasVirtual || 0).toFixed(0)}\nBalance efectivo: $${Number(caja.balance ?? 0).toFixed(0)}\nBalance virtual: $${Number(caja.balanceVirtual ?? 0).toFixed(0)}`)) return;
+    if (!confirm(`¿Cerrar caja?\n\nEfectivo inicial: $${Number(caja.montoInicial).toFixed(0)}\nVirtual inicial: $${Number(caja.montoInicialVirtual || 0).toFixed(0)}\nVentas efectivo: $${Number(caja.totalVentasEfectivo || 0).toFixed(0)}\nVentas transferencia: $${Number(caja.totalVentasTransferencia || 0).toFixed(0)}\nVentas tarjeta: $${Number(caja.totalVentasTarjeta || 0).toFixed(0)}\nVentas cuenta corriente: $${Number(caja.totalVentasCuentaCorriente || 0).toFixed(0)}\nBalance efectivo: $${Number(caja.balance ?? 0).toFixed(0)}\nBalance virtual: $${Number(caja.balanceVirtual ?? 0).toFixed(0)}`)) return;
     try {
       await api.patch(`/caja/${caja.id}/cerrar`, {});
       setSuccess('Caja cerrada');
       fetch();
     } catch (e: any) { setError(e.response?.data?.message || e.message); }
+  };
+
+  const imprimirCaja = async (id: string) => {
+    try {
+      const { data } = await api.get(`/caja/${id}`);
+      const win = window.open('', '_blank', 'width=500,height=700');
+      if (!win) return;
+      const nombreEmp = (function(){ try { const u = JSON.parse(localStorage.getItem('user') || 'null'); return u?.empresa?.nombre || localStorage.getItem('empresa_nombre') || 'Autoservicio'; } catch { return 'Autoservicio'; } })();
+      const empleado = data.usuario?.nombre || '-';
+      const inicialEf = Number(data.montoInicial || 0);
+      const inicialVirt = Number(data.montoInicialVirtual || 0);
+      const ventasEf = Number(data.totalVentasEfectivo || 0);
+      const ventasTransf = Number(data.totalVentasTransferencia || 0);
+      const ventasTarjeta = Number(data.totalVentasTarjeta || 0);
+      const ventasCC = Number(data.totalVentasCuentaCorriente || 0);
+      const gastos = Number(data.gastos || 0);
+      const compras = Number(data.compras || 0);
+      const finalVirt = Number(data.balanceVirtual ?? data.montoFinalVirtual ?? 0);
+      const finalEf = Number(data.balance ?? data.montoFinal ?? 0);
+      win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Caja ${data.id}</title><style>body{font-family:monospace;font-size:12px;margin:0;padding:10px}h2{text-align:center;margin:4px}p{margin:2px 0}.line{border-top:1px dashed #000;margin:6px 0}.row{display:flex;justify-content:space-between}.tot{font-weight:bold;font-size:13px}</style></head><body><h2>${nombreEmp}</h2><p style="text-align:center">Caja ${data.estado}</p><p style="text-align:center">${data.fechaApertura ? new Date(data.fechaApertura).toLocaleString() : ''} ${data.fechaCierre ? '→ ' + new Date(data.fechaCierre).toLocaleString() : ''}</p><div class="line"></div><div class="row"><span>Empleado</span><span>${empleado}</span></div><div class="line"></div><div class="row"><span>Inicial efectivo</span><span>$${inicialEf.toFixed(0)}</span></div><div class="row"><span>Inicial virtual</span><span>$${inicialVirt.toFixed(0)}</span></div><div class="line"></div><div class="row"><span>Ventas efectivo</span><span>$${ventasEf.toFixed(0)}</span></div><div class="row"><span>Ventas transferencia</span><span>$${ventasTransf.toFixed(0)}</span></div><div class="row"><span>Ventas tarjeta</span><span>$${ventasTarjeta.toFixed(0)}</span></div><div class="row"><span>Ventas cta. cte.</span><span>$${ventasCC.toFixed(0)}</span></div><div class="line"></div><div class="row"><span>Gastos</span><span>$${gastos.toFixed(0)}</span></div><div class="row"><span>Compras</span><span>$${compras.toFixed(0)}</span></div><div class="line"></div><div class="row tot"><span>Final efectivo</span><span>$${finalEf.toFixed(0)}</span></div><div class="row tot"><span>Final virtual</span><span>$${finalVirt.toFixed(0)}</span></div><div class="line"></div><p style="text-align:center">¡Gracias!</p><script>window.onload=function(){window.print();setTimeout(function(){window.close();},500);};</script></body></html>`);
+      win.document.close();
+    } catch (e: any) {
+      alert('Error al cargar datos de la caja');
+    }
   };
 
   if (loading) return <p>Cargando...</p>;
@@ -133,13 +158,25 @@ export default function Caja() {
       )}
 
       <div style={{ background: 'white', padding: 16, borderRadius: 8, marginTop: 20 }}>
-        <h4>Historial (últimas 10)</h4>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead><tr style={{ borderBottom: '2px solid #e5e7eb', textAlign: 'left' }}><th>Estado</th><th>Inicial</th><th>Final</th><th>Ventas</th><th>Apertura</th></tr></thead>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <h4 style={{ margin: 0 }}>Historial (últimas {historialLimit})</h4>
+          <button onClick={() => setHistorialLimit(l => l + 10)} style={{ padding: '4px 10px', background: '#e5e7eb', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 12 }}>Ver más</button>
+        </div>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+          <thead><tr style={{ borderBottom: '2px solid #e5e7eb', textAlign: 'left' }}><th>Estado</th><th>Inicial (Ef+Virt)</th><th>Final (Ef+Virt)</th><th>Ventas</th><th>Apertura</th><th>Cierre</th><th></th></tr></thead>
           <tbody>
             {historial.map((h: any) => (
-              <tr key={h.id} style={{ borderBottom: '1px solid #f3f4f6' }}><td>{h.estado}</td><td>${Number(h.montoInicial).toFixed(0)}</td><td>{h.montoFinal ? `$${Number(h.montoFinal).toFixed(0)}` : '-'}</td><td>{h._count?.ventas ?? '-'}</td><td>{fechaHora(h.fechaApertura)}</td></tr>
+              <tr key={h.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                <td>{h.estado}</td>
+                <td>${(Number(h.montoInicial || 0) + Number(h.montoInicialVirtual || 0)).toFixed(0)}</td>
+                <td>{h.montoFinal ? `$${(Number(h.montoFinal || 0) + Number(h.montoFinalVirtual || 0)).toFixed(0)}` : '-'}</td>
+                <td>{h._count?.ventas ?? '-'}</td>
+                <td>{fechaHora(h.fechaApertura)}</td>
+                <td>{h.fechaCierre ? fechaHora(h.fechaCierre) : '-'}</td>
+                <td><button onClick={() => imprimirCaja(h.id)} style={{ padding: '4px 8px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 11 }}>Imprimir</button></td>
+              </tr>
             ))}
+            {historial.length === 0 && <tr><td colSpan={7} style={{ textAlign: 'center', padding: 20, color: '#9ca3af' }}>Sin historial</td></tr>}
           </tbody>
         </table>
       </div>

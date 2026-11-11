@@ -109,11 +109,15 @@ export class CajaService {
     const totalVentas = caja.ventas.filter(v => v.estado === 'COMPLETADA').reduce((a, v) => a + v.total, 0);
     const totalVentasEfectivo = caja.ventas.filter(v => v.estado === 'COMPLETADA' && esEfectivoCobrado(v.metodoPago)).reduce((a, v) => a + v.total, 0);
     const totalVentasVirtual = caja.ventas.filter(v => v.estado === 'COMPLETADA' && esVirtual(v.metodoPago)).reduce((a, v) => a + v.total, 0);
+    const totalVentasTransferencia = caja.ventas.filter(v => v.estado === 'COMPLETADA' && v.metodoPago === 'TRANSFERENCIA').reduce((a, v) => a + v.total, 0);
+    const totalVentasTarjeta = caja.ventas.filter(v => v.estado === 'COMPLETADA' && v.metodoPago === 'TARJETA').reduce((a, v) => a + v.total, 0);
+    const totalVentasCuentaCorriente = caja.ventas.filter(v => v.estado === 'COMPLETADA' && v.metodoPago === 'CUENTA_CORRIENTE').reduce((a, v) => a + v.total, 0);
     const pagosEfectivo = caja.pagos.filter((p: any) => esEfectivoCobrado(p.metodoPago)).reduce((a: number, p: any) => a + p.monto, 0);
     const pagosVirtuales = caja.pagos.filter((p: any) => esVirtual(p.metodoPago)).reduce((a: number, p: any) => a + p.monto, 0);
     const gastosEfectivo = caja.movimientos.filter(m => !['APERTURA', 'CIERRE', 'VENTA', 'PAGO_CUENTA'].includes(m.tipo) && esEfectivoCobrado(m.metodoPago || 'EFECTIVO')).reduce((a, m) => a + m.monto, 0);
     const gastosVirtuales = caja.movimientos.filter(m => !['APERTURA', 'CIERRE', 'VENTA', 'PAGO_CUENTA'].includes(m.tipo) && esVirtual(m.metodoPago || 'EFECTIVO')).reduce((a, m) => a + m.monto, 0);
-    const gastos = gastosEfectivo;
+    const gastos = gastosEfectivo + gastosVirtuales;
+    const compras = caja.movimientos.filter(m => m.tipo === 'COMPRA').reduce((a, m) => a + Math.abs(m.monto), 0);
     const balance = (caja.montoInicial || 0) + totalVentasEfectivo + pagosEfectivo - gastosEfectivo;
     const balanceVirtual = (caja.montoInicialVirtual || 0) + totalVentasVirtual + pagosVirtuales - gastosVirtuales;
     return {
@@ -121,6 +125,9 @@ export class CajaService {
       totalVentas,
       totalVentasEfectivo,
       totalVentasVirtual,
+      totalVentasTransferencia,
+      totalVentasTarjeta,
+      totalVentasCuentaCorriente,
       pagosEfectivo,
       pagosVirtuales,
       balance,
@@ -128,6 +135,7 @@ export class CajaService {
       gastos,
       gastosEfectivo,
       gastosVirtuales,
+      compras,
     };
   }
 }
