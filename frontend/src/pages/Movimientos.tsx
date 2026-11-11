@@ -16,8 +16,18 @@ export default function Movimientos() {
   const [mes, setMes] = useState(ahora.getMonth());
   const [anio, setAnio] = useState(ahora.getFullYear());
   const [seleccion, setSeleccion] = useState<{ desde: string; hasta: string; etiqueta: string } | null>(null);
+  const [horaDesde, setHoraDesde] = useState('');
+  const [horaHasta, setHoraHasta] = useState('');
   const [data, setData] = useState<any>(null);
   const [cargando, setCargando] = useState(false);
+
+  const imprimirLista = (titulo: string, lineas: string[]) => {
+    const win = window.open('', '_blank', 'width=600,height=700');
+    if (!win) return;
+    const nombreEmp = (function(){ try { const u = JSON.parse(localStorage.getItem('user') || 'null'); return u && u.empresa ? u.empresa.nombre : (localStorage.getItem('empresa_nombre') || 'Autoservicio'); } catch (e) { return 'Autoservicio'; } })();
+    win.document.write('<!doctype html><html><head><meta charset="utf-8"><title>' + titulo + '</title><style>body{font-family:monospace;font-size:12px;margin:0;padding:10px}h2{text-align:center;margin:4px}p{margin:2px 0}.line{border-top:1px dashed #000;margin:6px 0}</style></head><body><h2>' + nombreEmp + '</h2><h3 style="text-align:center">' + titulo + '</h3><p style="text-align:center">' + (seleccion ? seleccion.etiqueta : '') + '</p><div class="line"></div>' + lineas.map(function(l){ return '<p>' + l.replace(/</g,'&lt;') + '</p>'; }).join('') + '<div class="line"></div><script>window.onload=function(){window.print();setTimeout(function(){window.close();},500);};</script></body></html>');
+    win.document.close();
+  };
 
   const celdas = useMemo(() => {
     const total = new Date(anio, mes + 1, 0).getDate();
@@ -47,11 +57,11 @@ export default function Movimientos() {
   useEffect(() => {
     if (!seleccion) { setData(null); return; }
     setCargando(true);
-    api.get('/reportes/movimientos', { params: { sucursalId, desde: seleccion.desde, hasta: seleccion.hasta } })
+    api.get('/reportes/movimientos', { params: { sucursalId, desde: seleccion.desde, hasta: seleccion.hasta, horaDesde: horaDesde || undefined, horaHasta: horaHasta || undefined } })
       .then(r => setData(r.data))
       .catch(() => setData(null))
       .finally(() => setCargando(false));
-  }, [seleccion, sucursalId]);
+  }, [seleccion, sucursalId, horaDesde, horaHasta]);
 
   const th: React.CSSProperties = { padding: '8px 6px', textAlign: 'left', borderBottom: '2px solid #e5e7eb', fontSize: 13, color: '#374151' };
   const td: React.CSSProperties = { padding: '8px 6px', borderBottom: '1px solid #f3f4f6', fontSize: 13 };
@@ -98,6 +108,15 @@ export default function Movimientos() {
             <button onClick={elegirMes} style={{ flex: 1, padding: '8px 10px', background: '#111827', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}>Ver mes completo</button>
             <button onClick={() => { const d = ahora; setMes(d.getMonth()); setAnio(d.getFullYear()); elegirDia(d.getDate()); }} style={{ padding: '8px 12px', background: '#e5e7eb', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}>Hoy</button>
           </div>
+          <div style={{ marginTop: 12, padding: 10, background: '#f9fafb', borderRadius: 6 }}>
+            <small style={{ color: '#6b7280', display: 'block', marginBottom: 6 }}>Filtrar por franja horaria (opcional)</small>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input type="time" value={horaDesde} onChange={e => setHoraDesde(e.target.value)} style={{ flex: 1, padding: 6, borderRadius: 6, border: '1px solid #d1d5db', fontSize: 13 }} />
+              <span style={{ color: '#6b7280' }}>a</span>
+              <input type="time" value={horaHasta} onChange={e => setHoraHasta(e.target.value)} style={{ flex: 1, padding: 6, borderRadius: 6, border: '1px solid #d1d5db', fontSize: 13 }} />
+              {(horaDesde || horaHasta) && <button onClick={() => { setHoraDesde(''); setHoraHasta(''); }} style={{ padding: '6px 10px', background: '#e5e7eb', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 12 }}>X</button>}
+            </div>
+          </div>
         </div>
 
         <div style={{ flex: 1, minWidth: 400 }}>
@@ -126,7 +145,10 @@ export default function Movimientos() {
                     {cajaResumen('Neto caja', data.neto, data.neto >= 0 ? '#111827' : '#dc2626', 'ventas − compras − gastos')}
                   </div>
 
-                  <h4 style={{ margin: '24px 0 8px', color: '#9a3412' }}>1. Gastos (movimientos de caja que no son compra ni venta)</h4>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 24, marginBottom: 8 }}>
+                    <h4 style={{ margin: 0, color: '#9a3412' }}>1. Gastos (movimientos de caja que no son compra ni venta)</h4>
+                    {data.gastos.length > 0 && <button onClick={() => imprimirLista('Gastos', data.gastos.map((g: any) => fechaCorta(g.fecha) + ' ' + horaCorta(g.fecha) + ' | ' + g.tipo + ' | ' + (g.descripcion || '-') + ' | $' + Math.round(g.monto)))} style={{ padding: '4px 10px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 12 }}>Imprimir</button>}
+                  </div>
                   {data.gastos.length === 0 ? <p style={{ color: '#9ca3af', fontSize: 13 }}>Sin gastos en el período.</p> : (
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                       <thead><tr><th style={th}>Fecha</th><th style={th}>Hora</th><th style={th}>Tipo</th><th style={th}>Descripción</th><th style={{ ...th, textAlign: 'right' }}>Importe</th></tr></thead>
@@ -138,7 +160,10 @@ export default function Movimientos() {
                     </table>
                   )}
 
-                  <h4 style={{ margin: '24px 0 8px', color: '#0284c7' }}>2. Compras del período</h4>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 24, marginBottom: 8 }}>
+                    <h4 style={{ margin: 0, color: '#0284c7' }}>2. Compras del período</h4>
+                    {data.compras.length > 0 && <button onClick={() => imprimirLista('Compras', data.compras.map((c: any) => fechaCorta(c.fecha) + ' | ' + c.proveedor + ' | ' + (c.nroFactura || '-') + ' | ' + c.metodoPago + ' | ' + c.items + ' items | $' + Math.round(c.total)))} style={{ padding: '4px 10px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 12 }}>Imprimir</button>}
+                  </div>
                   {data.compras.length === 0 ? <p style={{ color: '#9ca3af', fontSize: 13 }}>Sin compras en el período.</p> : (
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                       <thead><tr><th style={th}>Fecha</th><th style={th}>Proveedor</th><th style={th}>Factura</th><th style={th}>Medio</th><th style={th}>Items</th><th style={{ ...th, textAlign: 'right' }}>Total</th></tr></thead>
@@ -150,7 +175,10 @@ export default function Movimientos() {
                     </table>
                   )}
 
-                  <h4 style={{ margin: '24px 0 8px', color: '#059669' }}>3. Ventas del período</h4>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 24, marginBottom: 8 }}>
+                    <h4 style={{ margin: 0, color: '#059669' }}>3. Ventas del período</h4>
+                    {data.ventas.length > 0 && <button onClick={() => imprimirLista('Ventas', data.ventas.map((v: any) => fechaCorta(v.fecha) + ' ' + horaCorta(v.fecha) + ' | #' + v.nro + ' | ' + v.metodoPago + ' | ' + v.items + ' items | $' + Math.round(v.total)))} style={{ padding: '4px 10px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 12 }}>Imprimir</button>}
+                  </div>
                   {data.ventas.length === 0 ? <p style={{ color: '#9ca3af', fontSize: 13 }}>Sin ventas en el período.</p> : (
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                       <thead><tr><th style={th}>Fecha</th><th style={th}>Hora</th><th style={th}>Comprobante</th><th style={th}>Medio</th><th style={th}>Items</th><th style={{ ...th, textAlign: 'right' }}>Total</th></tr></thead>

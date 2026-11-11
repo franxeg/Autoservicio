@@ -21,10 +21,10 @@ export default function Dashboard() {
   const [catFiltroTop, setCatFiltroTop] = useState('');
 
   useEffect(() => {
-    api.get('/reportes/desglose', { params: { sucursalId, periodo: diaSel ? 'dia' : periodo, mes: mesSel || undefined, dia: diaSel || undefined } })
+    api.get('/reportes/desglose', { params: { sucursalId, periodo: diaSel ? 'dia' : periodo, mes: mesSel || undefined, dia: diaSel || undefined, categoriaId: catFiltroTop || undefined } })
       .then(r => setDesglose(r.data))
       .catch(() => setDesglose(null));
-  }, [periodo, mesSel, diaSel]);
+  }, [periodo, mesSel, diaSel, catFiltroTop]);
 
   const cantTxt = (p: any) => {
     const n = Number(p.cantidad ?? 0);
@@ -204,19 +204,19 @@ export default function Dashboard() {
 
             <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 16, fontSize: 13 }}>
               <thead><tr style={{ borderBottom: '2px solid #e5e7eb', textAlign: 'left' }}>
-                <th style={{ padding: '6px 4px' }}>Producto</th><th>Cant.</th><th>Costo</th><th>% Crec.</th><th>% Venta</th><th>Total vendido</th>
+                <th style={{ padding: '6px 4px' }}>Categoría</th><th>Cant.</th><th>Costo</th><th>Ventas</th><th>Total vendido</th>
               </tr></thead>
               <tbody>
-                {(catFiltroTop ? desglose.porProducto.filter((p: any) => p.categoriaId === catFiltroTop) : desglose.porProducto).map((p: any) => (
-                  <tr key={p.productoId} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                    <td style={{ padding: '6px 4px' }}>{p.nombre}</td>
-                    <td>{cantTxt(p)}</td>
+                {(desglose.porCategoria || []).map((p: any) => (
+                  <tr key={p.categoriaId || p.categoria} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                    <td style={{ padding: '6px 4px' }}>{p.categoria}</td>
+                    <td>{p.unidades}</td>
                     <td style={{ color: '#6b7280' }}>${Number(p.costo).toFixed(0)}</td>
-                    <td style={{ color: '#0284c7', fontWeight: 'bold' }}>${Number(p.aporteCrecimiento).toFixed(0)}</td>
-                    <td style={{ color: '#059669', fontWeight: 'bold' }}>${Number(p.aporteVenta).toFixed(0)}</td>
+                    <td style={{ color: '#0284c7', fontWeight: 'bold' }}>{p.ventas}</td>
                     <td style={{ fontWeight: 'bold' }}>${Number(p.vendido).toFixed(0)}</td>
                   </tr>
                 ))}
+                {(desglose.porCategoria || []).length === 0 && <tr><td colSpan={5} style={{ textAlign: 'center', padding: 10, color: '#9ca3af' }}>Sin ventas en este período</td></tr>}
               </tbody>
             </table>
           </>
