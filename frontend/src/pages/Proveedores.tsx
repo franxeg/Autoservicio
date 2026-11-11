@@ -65,6 +65,7 @@ export default function Proveedores() {
       setSaldarOk(`Pago registrado. Nuevo saldo: $${Number(data.saldo).toFixed(0)}`);
       setSaldarMonto('');
       fetch();
+      setTimeout(() => { setSaldarProv(null); setSaldarOk(''); }, 1200);
     } catch (e: any) { setSaldarError(e.response?.data?.message || e.message); }
     finally { setSaldando(false); }
   };
