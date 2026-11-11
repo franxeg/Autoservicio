@@ -102,6 +102,10 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
   });
   const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false);
   const [mostrarCombosModal, setMostrarCombosModal] = useState(false);
+  const [mostrarCombinar, setMostrarCombinar] = useState(false);
+  const [pagosCombinados, setPagosCombinados] = useState<{ metodo: string; monto: number }[]>([]);
+  const [pagoCombinadoMetodo, setPagoCombinadoMetodo] = useState('EFECTIVO');
+  const [pagoCombinadoMonto, setPagoCombinadoMonto] = useState('');
   const [ultimoVenta, setUltimoVenta] = useState<any>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const pesoRef = useRef<HTMLInputElement>(null);
@@ -395,6 +399,7 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
     setItems([]); setCodigo(''); setError(''); setAviso(''); setSuccess('');
     setMetodoPago('EFECTIVO'); setClienteId(''); setClienteSearch(''); setClientes([]);
     setComboGroups([]);
+    setPagosCombinados([]);
     try {
       localStorage.removeItem(storageKey);
       localStorage.removeItem(`pos_combo_${canal}`);
@@ -479,13 +484,15 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
         });
       }
 
+      const pagos = pagosCombinados.length > 1 ? pagosCombinados : undefined;
       const { data } = await api.post('/ventas', {
         sucursalId,
-        metodoPago,
+        metodoPago: pagos ? 'MIXTO' : metodoPago,
         descuento: 0,
         cajaId: cajaAbierta.id,
         clienteId: metodoPago === 'CUENTA_CORRIENTE' ? clienteId : undefined,
         items: ventaItems,
+        pagos,
       });
       setUltimoVenta({ ...data, items: ventaItems, metodoPago, clienteSearch });
       setSuccess(`Venta #${data.nroComprobante} por $${Number(data.total).toFixed(0)} registrada`);
@@ -640,7 +647,18 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
             )}
           </div>
         )}
-        <button onClick={iniciarCobro} disabled={(items.length === 0 && comboGroups.length === 0) || cobrando || !cajaAbierta} style={{ width: '100%', padding: 14, marginTop: 20, background: !cajaAbierta ? '#9ca3af' : '#111827', color: 'white', border: 'none', borderRadius: 8, fontSize: 16, cursor: cobrando ? 'wait' : 'pointer', opacity: cobrando ? 0.7 : 1 }}>
+        <button onClick={() => { setMostrarCombinar(true); setPagoCombinadoMonto(''); }} style={{ width: '100%', padding: 10, marginTop: 12, background: pagosCombinados.length > 1 ? '#059669' : '#e5e7eb', color: pagosCombinados.length > 1 ? 'white' : '#111827', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>
+          {pagosCombinados.length > 1 ? `✓ Pago combinado (${pagosCombinados.length} partes)` : 'Combinar pagos (efectivo + virtual)'}
+        </button>
+        {pagosCombinados.length > 1 && (
+          <div style={{ marginTop: 8, fontSize: 12, color: '#059669' }}>
+            {pagosCombinados.map((p, i) => (
+              <div key={i}>{METODOS_PAGO.find(m => m.value === p.metodo)?.label}: ${p.monto.toFixed(0)}</div>
+            ))}
+            <button onClick={() => setPagosCombinados([])} style={{ marginTop: 4, padding: '4px 8px', background: '#fee2e2', color: '#b91c1c', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 11 }}>Limpiar combinación</button>
+          </div>
+        )}
+        <button onClick={iniciarCobro} disabled={(items.length === 0 && comboGroups.length === 0) || cobrando || !cajaAbierta} style={{ width: '100%', padding: 14, marginTop: 12, background: !cajaAbierta ? '#9ca3af' : '#111827', color: 'white', border: 'none', borderRadius: 8, fontSize: 16, cursor: cobrando ? 'wait' : 'pointer', opacity: cobrando ? 0.7 : 1 }}>
           {cobrando ? 'Cobrando...' : `COBRAR ${canal === 1 ? '(F12)' : ''}`.trim()}
         </button>
         {!cajaAbierta && <small style={{ color: '#dc2626' }}>Abrí la caja para cobrar</small>}
@@ -709,6 +727,52 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
                 <div style={{ color: '#065f46', fontSize: 12, marginTop: 4 }}>${Number(c.precioVenta).toFixed(0)} (lista ${Number(c.totalLista).toFixed(0)})</div>
               </div>
             ))}
+          </div>
+        </div>
+      </div>
+    )}
+
+    {mostrarCombinar && (
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'grid', placeItems: 'center', zIndex: 95 }} onClick={() => setMostrarCombinar(false)}>
+        <div style={{ background: 'white', padding: 24, borderRadius: 12, width: 420 }} onClick={e => e.stopPropagation()}>
+          <h3 style={{ margin: 0 }}>Combinar pagos</h3>
+          <p style={{ color: '#6b7280', fontSize: 13, marginTop: 4 }}>Total a cobrar: ${total.toFixed(0)}</p>
+          <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>Método
+              <select value={pagoCombinadoMetodo} onChange={e => setPagoCombinadoMetodo(e.target.value)} style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }}>
+                {METODOS_PAGO.filter(m => m.value !== 'CUENTA_CORRIENTE').map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+              </select>
+            </label>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>Monto
+              <input type="number" min="0" step="1" value={pagoCombinadoMonto} onChange={e => setPagoCombinadoMonto(e.target.value)} style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }} />
+            </label>
+            <button onClick={() => {
+              const m = Math.round(parseFloat(pagoCombinadoMonto) || 0);
+              if (m <= 0) return;
+              setPagosCombinados(prev => [...prev, { metodo: pagoCombinadoMetodo, monto: m }]);
+              setPagoCombinadoMonto('');
+            }} style={{ padding: '8px 16px', background: '#059669', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Agregar parte</button>
+          </div>
+          {pagosCombinados.length > 0 && (
+            <div style={{ marginTop: 12, padding: 10, background: '#f3f4f6', borderRadius: 6, fontSize: 13 }}>
+              {pagosCombinados.map((p, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span>{METODOS_PAGO.find(m => m.value === p.metodo)?.label}</span>
+                  <span>${p.monto.toFixed(0)} <button onClick={() => setPagosCombinados(prev => prev.filter((_, idx) => idx !== i))} style={{ marginLeft: 8, color: 'red', border: 'none', background: 'none', cursor: 'pointer' }}>✕</button></span>
+                </div>
+              ))}
+              <div style={{ fontWeight: 'bold', borderTop: '1px solid #d1d5db', paddingTop: 4, marginTop: 4 }}>
+                Total: ${pagosCombinados.reduce((a, p) => a + p.monto, 0).toFixed(0)} / ${total.toFixed(0)}
+              </div>
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+            <button onClick={() => {
+              const sum = pagosCombinados.reduce((a, p) => a + p.monto, 0);
+              if (Math.abs(sum - total) > 1) { alert('La suma debe ser igual al total'); return; }
+              setMostrarCombinar(false);
+            }} style={{ flex: 1, padding: 10, background: '#111827', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Confirmar</button>
+            <button onClick={() => setMostrarCombinar(false)} style={{ padding: '10px 16px', background: '#e5e7eb', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Cancelar</button>
           </div>
         </div>
       </div>

@@ -311,7 +311,8 @@ model Venta {
   total      Float
   descuento  Float       @default(0)
   estado     EstadoVenta @default(COMPLETADA)
-  metodoPago String      @default("EFECTIVO") // EFECTIVO, TARJETA, TRANSFERENCIA, CUENTA_CORRIENTE
+  metodoPago String      @default("EFECTIVO") // EFECTIVO, TARJETA, TRANSFERENCIA, CUENTA_CORRIENTE, MIXTO
+  pagos      Json?       // Desglose de pagos combinados: [{ metodo: string, monto: number }]
 
   empresaId String
   empresa   Empresa @relation(fields: [empresaId], references: [id])

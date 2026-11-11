@@ -170,11 +170,15 @@ export class VentasService {
     const descuento = Math.round(dto.descuento ?? 0);
     total = Math.max(0, total - descuento);
 
+    const metodoPago = dto.metodoPago ?? 'EFECTIVO';
+    const pagos = dto.pagos && dto.pagos.length > 0 ? dto.pagos : null;
+
     const venta = await tx.venta.create({
       data: {
         total,
         descuento,
-        metodoPago: dto.metodoPago ?? 'EFECTIVO',
+        metodoPago,
+        pagos: pagos ? pagos : undefined,
         sucursalId: dto.sucursalId,
         clienteId: dto.clienteId,
         usuarioId,
@@ -186,10 +190,18 @@ export class VentasService {
     });
 
     // Movimiento de caja (cuenta corriente no entra: el cliente no paga ahora)
-    if (dto.metodoPago !== 'CUENTA_CORRIENTE') {
-      await tx.movimientoCaja.create({
-        data: { cajaId: cajaId!, tipo: 'VENTA', monto: total, descripcion: `Venta N° ${venta.nroComprobante}`, empresaId },
-      });
+    if (metodoPago !== 'CUENTA_CORRIENTE') {
+      if (pagos && pagos.length > 1) {
+        for (const p of pagos) {
+          await tx.movimientoCaja.create({
+            data: { cajaId: cajaId!, tipo: 'VENTA', monto: Math.round(p.monto), metodoPago: p.metodo, descripcion: `Venta N° ${venta.nroComprobante} (${p.metodo})`, empresaId },
+          });
+        }
+      } else {
+        await tx.movimientoCaja.create({
+          data: { cajaId: cajaId!, tipo: 'VENTA', monto: total, metodoPago, descripcion: `Venta N° ${venta.nroComprobante}`, empresaId },
+        });
+      }
     }
 
     // Si es cuenta corriente, incrementar saldo

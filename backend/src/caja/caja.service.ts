@@ -107,10 +107,38 @@ export class CajaService {
     });
     if (!caja) throw new NotFoundException('Caja no encontrada');
     const totalVentas = caja.ventas.filter(v => v.estado === 'COMPLETADA').reduce((a, v) => a + v.total, 0);
-    const totalVentasEfectivo = caja.ventas.filter(v => v.estado === 'COMPLETADA' && esEfectivoCobrado(v.metodoPago)).reduce((a, v) => a + v.total, 0);
-    const totalVentasVirtual = caja.ventas.filter(v => v.estado === 'COMPLETADA' && esVirtual(v.metodoPago)).reduce((a, v) => a + v.total, 0);
-    const totalVentasTransferencia = caja.ventas.filter(v => v.estado === 'COMPLETADA' && v.metodoPago === 'TRANSFERENCIA').reduce((a, v) => a + v.total, 0);
-    const totalVentasTarjeta = caja.ventas.filter(v => v.estado === 'COMPLETADA' && v.metodoPago === 'TARJETA').reduce((a, v) => a + v.total, 0);
+    const totalVentasEfectivo = caja.ventas.filter(v => v.estado === 'COMPLETADA').reduce((a, v) => {
+      if (esEfectivoCobrado(v.metodoPago)) return a + v.total;
+      const pagos = (v as any).pagos;
+      if (Array.isArray(pagos)) {
+        return a + pagos.filter((p: any) => esEfectivoCobrado(p.metodo)).reduce((s: number, p: any) => s + (p.monto || 0), 0);
+      }
+      return a;
+    }, 0);
+    const totalVentasVirtual = caja.ventas.filter(v => v.estado === 'COMPLETADA').reduce((a, v) => {
+      if (esVirtual(v.metodoPago)) return a + v.total;
+      const pagos = (v as any).pagos;
+      if (Array.isArray(pagos)) {
+        return a + pagos.filter((p: any) => esVirtual(p.metodo)).reduce((s: number, p: any) => s + (p.monto || 0), 0);
+      }
+      return a;
+    }, 0);
+    const totalVentasTransferencia = caja.ventas.filter(v => v.estado === 'COMPLETADA').reduce((a, v) => {
+      if (v.metodoPago === 'TRANSFERENCIA') return a + v.total;
+      const pagos = (v as any).pagos;
+      if (Array.isArray(pagos)) {
+        return a + pagos.filter((p: any) => p.metodo === 'TRANSFERENCIA').reduce((s: number, p: any) => s + (p.monto || 0), 0);
+      }
+      return a;
+    }, 0);
+    const totalVentasTarjeta = caja.ventas.filter(v => v.estado === 'COMPLETADA').reduce((a, v) => {
+      if (v.metodoPago === 'TARJETA') return a + v.total;
+      const pagos = (v as any).pagos;
+      if (Array.isArray(pagos)) {
+        return a + pagos.filter((p: any) => p.metodo === 'TARJETA').reduce((s: number, p: any) => s + (p.monto || 0), 0);
+      }
+      return a;
+    }, 0);
     const totalVentasCuentaCorriente = caja.ventas.filter(v => v.estado === 'COMPLETADA' && v.metodoPago === 'CUENTA_CORRIENTE').reduce((a, v) => a + v.total, 0);
     const pagosEfectivo = caja.pagos.filter((p: any) => esEfectivoCobrado(p.metodoPago)).reduce((a: number, p: any) => a + p.monto, 0);
     const pagosVirtuales = caja.pagos.filter((p: any) => esVirtual(p.metodoPago)).reduce((a: number, p: any) => a + p.monto, 0);
