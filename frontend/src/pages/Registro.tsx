@@ -6,7 +6,7 @@ export default function Registro() {
   const navigate = useNavigate();
   const [modo, setModo] = useState<'registro' | 'login'>('registro');
   const [nombre, setNombre] = useState('');
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
@@ -17,8 +17,8 @@ export default function Registro() {
     setError(''); setMsg(''); setLoading(true);
     try {
       const res = modo === 'registro'
-        ? await registerCompany(nombre, email, password)
-        : await loginCompany(email, password);
+        ? await registerCompany(nombre, username, password)
+        : await loginCompany(username, password);
       if (res.ok) {
         setMsg(res.message);
         setTimeout(() => navigate('/'), 1500);
@@ -63,8 +63,8 @@ export default function Registro() {
             </label>
           )}
           <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            Email
-            <input value={email} onChange={e => setEmail(e.target.value)} required type="email" placeholder="tu@email.com" style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }} />
+            Usuario
+            <input value={username} onChange={e => setUsername(e.target.value)} required placeholder="Ej: panaderiaelsol" style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }} />
           </label>
           <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             Contraseña

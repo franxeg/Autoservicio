@@ -63,12 +63,22 @@ export function isRegistered(): boolean {
   return !!localStorage.getItem(STORAGE_KEY_TOKEN);
 }
 
-export async function registerCompany(nombre: string, email: string, password: string): Promise<{ ok: boolean; message: string }> {
+export async function checkUsername(username: string): Promise<{ available: boolean; message: string }> {
+  try {
+    const res = await fetch(`${LICENSE_SERVER_URL}/api/auth/check-username/${encodeURIComponent(username)}`);
+    const data = await res.json();
+    return { available: data.available, message: data.message };
+  } catch {
+    return { available: true, message: 'No se pudo verificar (modo offline)' };
+  }
+}
+
+export async function registerCompany(nombre: string, username: string, password: string): Promise<{ ok: boolean; message: string }> {
   try {
     const res = await fetch(`${LICENSE_SERVER_URL}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre, email, password }),
+      body: JSON.stringify({ nombre, username, password }),
     });
     const data = await res.json();
     if (!res.ok) return { ok: false, message: data.message || 'Error al registrar' };
@@ -90,12 +100,12 @@ export async function registerCompany(nombre: string, email: string, password: s
   }
 }
 
-export async function loginCompany(email: string, password: string): Promise<{ ok: boolean; message: string }> {
+export async function loginCompany(username: string, password: string): Promise<{ ok: boolean; message: string }> {
   try {
     const res = await fetch(`${LICENSE_SERVER_URL}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ username, password }),
     });
     const data = await res.json();
     if (!res.ok) return { ok: false, message: data.message || 'Error al iniciar sesión' };

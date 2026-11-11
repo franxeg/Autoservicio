@@ -55,6 +55,7 @@ if (!$cfg.ContainsKey('JWT_SECRET'))            { $cfg.JWT_SECRET = (New-Secret 
 if (!$cfg.ContainsKey('JWT_EXPIRES_IN'))        { $cfg.JWT_EXPIRES_IN = '30d' }
 if (!$cfg.ContainsKey('PROVIDER_USER'))         { $cfg.PROVIDER_USER = 'Jupiter' }
 if (!$cfg.ContainsKey('PROVIDER_PASSWORD'))     { $cfg.PROVIDER_PASSWORD = 'Proveedor21' }
+if (!$cfg.ContainsKey('LICENSE_SERVER_URL'))    { $cfg.LICENSE_SERVER_URL = 'https://autoservicio-license-server.onrender.com' }
 ($cfg.GetEnumerator() | Sort-Object Name | ForEach-Object { "$($_.Key)=$($_.Value)" }) | Set-Content -Path $configPath -Encoding ASCII
 
 $versionActual = $cfg.APP_VERSION
@@ -165,6 +166,7 @@ $env:JWT_SECRET      = $cfg.JWT_SECRET
 $env:JWT_EXPIRES_IN  = $cfg.JWT_EXPIRES_IN
 $env:PROVIDER_USER   = $cfg.PROVIDER_USER
 $env:PROVIDER_PASSWORD = $cfg.PROVIDER_PASSWORD
+$env:LICENSE_SERVER_URL = $cfg.LICENSE_SERVER_URL
 $env:PORT            = $cfg.APP_PORT
 $env:WEB_DIR         = Join-Path $appDir 'public'
 $env:NODE_ENV        = 'production'
