@@ -10,7 +10,7 @@ datasource db {
 model Company {
   id            String    @id @default(cuid())
   nombre        String
-  username      String    @unique
+  username      String?   @unique
   email         String?
   password      String
   licenseKey    String    @unique @default(cuid())
