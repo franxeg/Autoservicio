@@ -68,4 +68,9 @@ export class CreateVentaDto {
   @IsOptional()
   @IsString()
   cajaId?: string;
+
+  @ApiPropertyOptional({ description: 'Desglose de pagos combinados: [{ metodo: string, monto: number }]' })
+  @IsOptional()
+  @IsArray()
+  pagos?: { metodo: string; monto: number }[];
 }
