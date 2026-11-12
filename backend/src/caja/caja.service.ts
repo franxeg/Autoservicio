@@ -80,7 +80,7 @@ export class CajaService {
     const caja = await tx.caja.findUnique({ where: { id: cajaId } });
     if (!caja) throw new NotFoundException('Caja no encontrada');
     if (caja.estado === 'CERRADA') throw new BadRequestException('Caja cerrada');
-    const tiposValidos = ['VENTA', 'COMPRA', 'GASTO', 'RETIRO', 'APERTURA', 'CIERRE'];
+    const tiposValidos = ['VENTA', 'COMPRA', 'GASTO', 'RETIRO', 'APERTURA', 'CIERRE', 'AJUSTE', 'PAGO_PROVEEDOR', 'PAGO_CUENTA'];
     if (!tiposValidos.includes(tipo)) throw new BadRequestException(`Tipo inválido: ${tipo}`);
     return tx.movimientoCaja.create({ data: { cajaId, tipo: tipo as any, monto: Math.round(monto), descripcion, metodoPago: metodoPago || 'EFECTIVO', empresaId: this.prisma.empresaId! } });
   }

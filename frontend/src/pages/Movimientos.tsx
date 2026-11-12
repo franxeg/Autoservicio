@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { api } from '../lib/api';
 import { useAuthStore } from '../lib/store';
 import { fechaCorta, horaCorta } from '../lib/fecha';
@@ -152,22 +152,23 @@ export default function Movimientos() {
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 24, marginBottom: 8 }}>
-                    <h4 style={{ margin: 0, color: '#9a3412' }}>1. Gastos (movimientos de caja que no son compra ni venta)</h4>
-                    {data.gastos.length > 0 && <button onClick={() => imprimirLista('Gastos', data.gastos.map((g: any) => fechaCorta(g.fecha) + ' ' + horaCorta(g.fecha) + ' | ' + g.tipo + ' | ' + (g.descripcion || '-') + ' | $' + Math.round(g.monto)))} style={{ padding: '4px 10px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 12 }}>Imprimir</button>}
+                    <h4 style={{ margin: 0, color: '#059669' }}>1. Ventas del período</h4>
+                    {data.ventas.length > 0 && <button onClick={() => imprimirLista('Ventas', data.ventas.map((v: any) => fechaCorta(v.fecha) + ' ' + horaCorta(v.fecha) + ' | #' + v.nro + ' | ' + v.metodoPago + ' | ' + v.items + ' items | $' + Math.round(v.total)))} style={{ padding: '4px 10px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 12 }}>Imprimir</button>}
                   </div>
-                  {data.gastos.length === 0 ? <p style={{ color: '#9ca3af', fontSize: 13 }}>Sin gastos en el período.</p> : (
+                  {data.ventas.length === 0 ? <p style={{ color: '#9ca3af', fontSize: 13 }}>Sin ventas en el período.</p> : (
                     <div style={{ maxHeight: 360, overflowY: 'auto', border: '1px solid #e5e7eb', borderRadius: 6 }}>
                       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead><tr><th style={th}>Fecha</th><th style={th}>Hora</th><th style={th}>Tipo</th><th style={th}>Descripción</th><th style={{ ...th, textAlign: 'right' }}>Importe</th></tr></thead>
-                        <tbody>
-                          {data.gastos.map((g: any) => (
-                            <tr key={g.id}><td style={td}>{fechaCorta(g.fecha)}</td><td style={td}>{horaCorta(g.fecha)}</td><td style={td}>{g.tipo}</td><td style={td}>{g.descripcion || '-'}</td><td style={{ ...td, textAlign: 'right', fontWeight: 'bold', color: '#dc2626' }}>${Math.round(g.monto).toFixed(0)}</td></tr>
-                          ))}
-                        </tbody>
+                      <thead><tr><th style={th}>Fecha</th><th style={th}>Hora</th><th style={th}>Comprobante</th><th style={th}>Medio</th><th style={th}>Items</th><th style={{ ...th, textAlign: 'right' }}>Total</th></tr></thead>
+                      <tbody>
+                        {data.ventas.map((v: any) => (
+                          <tr key={v.id}><td style={td}>{fechaCorta(v.fecha)}</td><td style={td}>{horaCorta(v.fecha)}</td><td style={td}>N° {v.nro}</td><td style={td}>{v.metodoPago}</td><td style={td}>{v.items}</td><td style={{ ...td, textAlign: 'right', fontWeight: 'bold', color: '#059669' }}>${Math.round(v.total).toFixed(0)}</td></tr>
+                        ))}
+                      </tbody>
                       </table>
                     </div>
                   )}
 
+                  <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginTop: 24 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 24, marginBottom: 8 }}>
                     <h4 style={{ margin: 0, color: '#0284c7' }}>2. Compras del período</h4>
                     {data.compras.length > 0 && <button onClick={() => imprimirLista('Compras', data.compras.map((c: any) => fechaCorta(c.fecha) + ' | ' + c.proveedor + ' | ' + (c.nroFactura || '-') + ' | ' + c.metodoPago + ' | ' + c.items + ' items | $' + Math.round(c.total)))} style={{ padding: '4px 10px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 12 }}>Imprimir</button>}
@@ -186,23 +187,22 @@ export default function Movimientos() {
                   )}
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 24, marginBottom: 8 }}>
-                    <h4 style={{ margin: 0, color: '#059669' }}>3. Ventas del período</h4>
-                    {data.ventas.length > 0 && <button onClick={() => imprimirLista('Ventas', data.ventas.map((v: any) => fechaCorta(v.fecha) + ' ' + horaCorta(v.fecha) + ' | #' + v.nro + ' | ' + v.metodoPago + ' | ' + v.items + ' items | $' + Math.round(v.total)))} style={{ padding: '4px 10px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 12 }}>Imprimir</button>}
+                    <h4 style={{ margin: 0, color: '#9a3412' }}>3. Gastos (movimientos de caja que no son compra ni venta)</h4>
+                    {data.gastos.length > 0 && <button onClick={() => imprimirLista('Gastos', data.gastos.map((g: any) => fechaCorta(g.fecha) + ' ' + horaCorta(g.fecha) + ' | ' + g.tipo + ' | ' + (g.descripcion || '-') + ' | $' + Math.round(g.monto)))} style={{ padding: '4px 10px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 12 }}>Imprimir</button>}
                   </div>
-                  {data.ventas.length === 0 ? <p style={{ color: '#9ca3af', fontSize: 13 }}>Sin ventas en el período.</p> : (
+                  {data.gastos.length === 0 ? <p style={{ color: '#9ca3af', fontSize: 13 }}>Sin gastos en el período.</p> : (
                     <div style={{ maxHeight: 360, overflowY: 'auto', border: '1px solid #e5e7eb', borderRadius: 6 }}>
                       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                      <thead><tr><th style={th}>Fecha</th><th style={th}>Hora</th><th style={th}>Comprobante</th><th style={th}>Medio</th><th style={th}>Items</th><th style={{ ...th, textAlign: 'right' }}>Total</th></tr></thead>
-                      <tbody>
-                        {data.ventas.map((v: any) => (
-                          <tr key={v.id}><td style={td}>{fechaCorta(v.fecha)}</td><td style={td}>{horaCorta(v.fecha)}</td><td style={td}>N° {v.nro}</td><td style={td}>{v.metodoPago}</td><td style={td}>{v.items}</td><td style={{ ...td, textAlign: 'right', fontWeight: 'bold', color: '#059669' }}>${Math.round(v.total).toFixed(0)}</td></tr>
-                        ))}
-                      </tbody>
+                        <thead><tr><th style={th}>Fecha</th><th style={th}>Hora</th><th style={th}>Tipo</th><th style={th}>Descripción</th><th style={{ ...th, textAlign: 'right' }}>Importe</th></tr></thead>
+                        <tbody>
+                          {data.gastos.map((g: any) => (
+                            <tr key={g.id}><td style={td}>{fechaCorta(g.fecha)}</td><td style={td}>{horaCorta(g.fecha)}</td><td style={td}>{g.tipo}</td><td style={td}>{g.descripcion || '-'}</td><td style={{ ...td, textAlign: 'right', fontWeight: 'bold', color: '#dc2626' }}>${Math.round(g.monto).toFixed(0)}</td></tr>
+                          ))}
+                        </tbody>
                       </table>
                     </div>
                   )}
 
-                  <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginTop: 24 }}>
                     <div style={{ flex: 1, minWidth: 300 }}>
                       <h4 style={{ margin: '0 0 8px' }}>4. Productos más vendidos</h4>
                       {data.topProductos.length === 0 ? <p style={{ color: '#9ca3af', fontSize: 13 }}>Sin ventas en el período.</p> : (
