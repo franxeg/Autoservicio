@@ -167,7 +167,7 @@ export class ReportesService {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   }
 
-  private rangoDias(desde?: string, hasta?: string, horaDesde?: string, horaHasta?: string) {
+  private rangoDias(desde?: string, hasta?: string) {
     const parse = (s?: string) => {
       if (!s) return null;
       const [y, m, d] = String(s).slice(0, 10).split('-').map(Number);
@@ -176,36 +176,37 @@ export class ReportesService {
       return date;
     };
     const ini = parse(desde) || new Date();
-    // Aplicar hora de inicio si se proporciona
-    if (horaDesde) {
-      const parts = horaDesde.split(':').map(Number);
-      const hh = parts[0];
-      const mm = parts.length > 1 ? parts[1] : 0;
-      if (!isNaN(hh)) ini.setHours(hh, isNaN(mm) ? 0 : mm, 0, 0);
-      else ini.setHours(0, 0, 0, 0);
-    } else {
-      ini.setHours(0, 0, 0, 0);
-    }
+    ini.setHours(0, 0, 0, 0);
     const fin = parse(hasta) || new Date(ini);
-    if (horaHasta) {
-      const parts = horaHasta.split(':').map(Number);
-      const hh = parts[0];
-      const mm = parts.length > 1 ? parts[1] : 59;
-      if (!isNaN(hh)) fin.setHours(hh, isNaN(mm) ? 59 : mm, 59, 999);
-      else fin.setHours(23, 59, 59, 999);
-    } else {
-      fin.setHours(23, 59, 59, 999);
-    }
+    fin.setHours(23, 59, 59, 999);
     return { ini, fin };
+  }
+
+  private filtrarPorHora<T>(items: T[], getFecha: (item: T) => Date | string | null | undefined, horaDesde?: string, horaHasta?: string): T[] {
+    if (!horaDesde && !horaHasta) return items;
+    const parseH = (s?: string, def = 0) => {
+      if (!s) return def;
+      const h = parseInt(String(s).split(':')[0], 10);
+      return isNaN(h) ? def : h;
+    };
+    const hIni = parseH(horaDesde, 0);
+    const hFin = parseH(horaHasta, 23);
+    return items.filter(item => {
+      const f = getFecha(item);
+      if (!f) return false;
+      const d = new Date(f);
+      const h = d.getHours();
+      return h >= hIni && h <= hFin;
+    });
   }
 
   // Informe para la pestaña Movimientos: gastos, compras, ventas y tops del día/mes elegido
   async movimientos(sucursalId?: string, desde?: string, hasta?: string, horaDesde?: string, horaHasta?: string) {
-    const r = this.rangoDias(desde, hasta, horaDesde, horaHasta);
+    const r = this.rangoDias(desde, hasta);
     const rango = { gte: r.ini, lte: r.fin };
     const whereSucursal = sucursalId ? { sucursalId } : {};
 
-    const [gastos, compras, ventas, movimientosStock] = await Promise.all([
+    let [gastos, compras, ventas, movimientosStock] = await Promise.all([
       // Todo movimiento de caja que no sea compra ni venta (gastos, retiros)
       this.prisma.tenant.movimientoCaja.findMany({
         where: {
@@ -238,6 +239,13 @@ export class ReportesService {
         orderBy: { fecha: 'desc' },
       }),
     ]);
+
+    if (horaDesde || horaHasta) {
+      gastos = this.filtrarPorHora(gastos, g => g.createdAt, horaDesde, horaHasta);
+      compras = this.filtrarPorHora(compras, c => c.fecha, horaDesde, horaHasta);
+      ventas = this.filtrarPorHora(ventas, v => v.fecha, horaDesde, horaHasta);
+      movimientosStock = this.filtrarPorHora(movimientosStock, m => m.fecha, horaDesde, horaHasta);
+    }
 
     const mermasTotal = movimientosStock.filter(m => m.tipo === 'MERMA').reduce((a, m) => a + Math.round(Math.abs(m.cantidad) * m.costoUnitario), 0);
     const ajustesTotal = movimientosStock.filter(m => m.tipo === 'AJUSTE').reduce((a, m) => a + Math.round(Math.abs(m.cantidad) * m.costoUnitario), 0);
