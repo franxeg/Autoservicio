@@ -23,7 +23,20 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ sucursalId: id });
   },
   logout: () => {
+    // Preservar preferencias de tema por usuario
+    const keep: Record<string, string> = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && (k.startsWith('tema_color_') || k.startsWith('tema_fontSize_'))) {
+        keep[k] = localStorage.getItem(k) || '';
+      }
+    }
     localStorage.clear();
-    set({ token: null, user: null });
+    Object.entries(keep).forEach(([k, v]) => localStorage.setItem(k, v));
+    // Limpiar tema aplicado en memoria para que no arrastre al siguiente usuario
+    localStorage.removeItem('tema_color');
+    localStorage.removeItem('tema_fontSize');
+    localStorage.removeItem('tema_modo');
+    set({ token: null, user: null, sucursalId: null });
   },
 }));

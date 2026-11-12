@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../lib/store';
 import { api } from '../lib/api';
 import { getPremiumStatus } from '../lib/premium';
@@ -8,7 +7,6 @@ const TABS = [
   { id: 'premium', label: 'Suscribirse a Premium' },
   { id: 'tema', label: 'Cambiar tema' },
   { id: 'empresa', label: 'Datos de la empresa' },
-  { id: 'backup', label: 'Backup' },
   { id: 'documentacion', label: 'Documentación' },
   { id: 'error', label: 'Informar un error' },
   { id: 'actualizaciones', label: 'Actualizaciones' },
@@ -18,8 +16,11 @@ const TABS = [
 
 const VERSION_ACTUAL = '1.0';
 
+function userPrefKey(base: string, userId?: string | null) {
+  return userId ? `${base}_${userId}` : base;
+}
+
 export default function Configuracion() {
-  const navigate = useNavigate();
   const [tab, setTab] = useState('premium');
 
   return (
@@ -30,7 +31,6 @@ export default function Configuracion() {
           {tab === 'premium' && <TabPremium />}
           {tab === 'tema' && <TabTema />}
           {tab === 'empresa' && <TabEmpresa />}
-          {tab === 'backup' && <TabBackup />}
           {tab === 'documentacion' && <TabDocumentacion />}
           {tab === 'error' && <TabError />}
           {tab === 'actualizaciones' && <TabActualizaciones />}
@@ -78,7 +78,7 @@ function TabPremium() {
         <a href="https://mpago.la/1XcoPQc" target="_blank" rel="noreferrer" style={{ padding: '12px 20px', background: '#009ee3', color: 'white', borderRadius: 8, textDecoration: 'none', fontWeight: 600 }}>
           Pagar con Mercado Pago
         </a>
-        <button onClick={() => { navigator.clipboard?.writeText('https://mpago.la/...'); alert('Link copiado'); }} style={{ padding: '12px 20px', background: '#e5e7eb', border: 'none', borderRadius: 8, cursor: 'pointer' }}>
+        <button onClick={() => { navigator.clipboard?.writeText('https://mpago.la/1XcoPQc'); alert('Link copiado'); }} style={{ padding: '12px 20px', background: '#e5e7eb', border: 'none', borderRadius: 8, cursor: 'pointer' }}>
           Copiar link de pago
         </button>
       </div>
@@ -86,41 +86,51 @@ function TabPremium() {
         ⚠️ Después de pagar, enviame el comprobante por WhatsApp/Instagram y te activo Premium manualmente dentro de las 24 hs.
       </div>
       <div style={{ marginTop: 16, padding: 12, background: '#f0f9ff', border: '1px solid #bfdbfe', borderRadius: 6 }}>
-        <h4 style={{ marginTop: 0 }}>Vincular cuenta</h4>
-        <p style={{ fontSize: 13, color: '#6b7280' }}>Registrate o iniciá sesión para vincular este sistema a tu cuenta y activar el Premium online.</p>
-        <a href="/registro" style={{ display: 'inline-block', padding: '8px 16px', background: '#2563eb', color: 'white', borderRadius: 6, textDecoration: 'none', fontSize: 13 }}>Ir a registro / login</a>
-      </div>
-      <div style={{ marginTop: 16, padding: 12, background: '#f0f9ff', border: '1px solid #bfdbfe', borderRadius: 6 }}>
         <h4 style={{ marginTop: 0 }}>Activación de Premium</h4>
-        <p style={{ fontSize: 13, color: '#6b7280' }}>El Premium se activa desde el panel de proveedor una vez confirmado el pago. Si ya pagaste, esperá a que te lo activen (dentro de las 24 hs).</p>
+        <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 0 }}>El Premium se activa desde el panel de proveedor una vez confirmado el pago. Si ya pagaste, esperá a que te lo activen (dentro de las 24 hs).</p>
       </div>
     </div>
   );
 }
 
+function applyTheme(color: string, fontSize: string) {
+  const root = document.documentElement;
+  root.style.setProperty('--color-primario', color);
+  root.style.setProperty('--font-size-base', fontSize + 'px');
+  document.body.classList.remove('tema-oscuro');
+  document.body.style.background = '';
+  document.body.style.color = '';
+  document.body.style.fontSize = fontSize + 'px';
+  let styleTag = document.getElementById('tema-global');
+  if (!styleTag) { styleTag = document.createElement('style'); styleTag.id = 'tema-global'; document.head.appendChild(styleTag); }
+  styleTag.textContent = `
+    :root { --color-primario: ${color}; --font-size-base: ${fontSize}px; }
+    body { font-size: ${fontSize}px; }
+  `;
+}
+
 function TabTema() {
-  const [modo, setModo] = useState(() => localStorage.getItem('tema_modo') || 'claro');
-  const [colorPrimario, setColorPrimario] = useState(() => localStorage.getItem('tema_color') || '#111827');
-  const [fontSize, setFontSize] = useState(() => localStorage.getItem('tema_fontSize') || '14');
+  const { user } = useAuthStore();
+  const uid = user?.id || user?.username || null;
+  const [colorPrimario, setColorPrimario] = useState(() => localStorage.getItem(userPrefKey('tema_color', uid)) || localStorage.getItem('tema_color') || '#111827');
+  const [fontSize, setFontSize] = useState(() => localStorage.getItem(userPrefKey('tema_fontSize', uid)) || localStorage.getItem('tema_fontSize') || '14');
   const [aplicado, setAplicado] = useState(false);
 
+  useEffect(() => {
+    const c = localStorage.getItem(userPrefKey('tema_color', uid)) || localStorage.getItem('tema_color') || '#111827';
+    const f = localStorage.getItem(userPrefKey('tema_fontSize', uid)) || localStorage.getItem('tema_fontSize') || '14';
+    setColorPrimario(c);
+    setFontSize(f);
+  }, [uid]);
+
   const aplicar = () => {
-    localStorage.setItem('tema_modo', modo);
+    localStorage.setItem(userPrefKey('tema_color', uid), colorPrimario);
+    localStorage.setItem(userPrefKey('tema_fontSize', uid), fontSize);
     localStorage.setItem('tema_color', colorPrimario);
     localStorage.setItem('tema_fontSize', fontSize);
-    const root = document.documentElement;
-    root.style.setProperty('--color-primario', colorPrimario);
-    root.style.setProperty('--font-size-base', fontSize + 'px');
-    if (modo === 'oscuro') document.body.classList.add('tema-oscuro'); else document.body.classList.remove('tema-oscuro');
-    // Inyectar estilo global
-    let styleTag = document.getElementById('tema-global');
-    if (!styleTag) { styleTag = document.createElement('style'); styleTag.id = 'tema-global'; document.head.appendChild(styleTag); }
-    styleTag.textContent = `
-      :root { --color-primario: ${colorPrimario}; --font-size-base: ${fontSize}px; }
-      body { font-size: ${fontSize}px; }
-      body.tema-oscuro { background: #1f2937; color: #f9fafb; }
-      button, a.btn { background: var(--color-primario); }
-    `;
+    localStorage.removeItem('tema_modo');
+    applyTheme(colorPrimario, fontSize);
+    window.dispatchEvent(new Event('storage'));
     setAplicado(true);
   };
 
@@ -136,15 +146,8 @@ function TabTema() {
   return (
     <div>
       <h3>Cambiar tema</h3>
-      <p style={{ color: '#6b7280', fontSize: 13 }}>Los cambios se aplican al instante, sin necesidad de reiniciar.</p>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 12 }}>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <span style={{ fontWeight: 600 }}>Modo</span>
-          <select value={modo} onChange={e => setModo(e.target.value)} style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }}>
-            <option value="claro">Claro</option>
-            <option value="oscuro">Oscuro</option>
-          </select>
-        </label>
+      <p style={{ color: '#6b7280', fontSize: 13 }}>Elegí el color y el tamaño de fuente. Los cambios se aplican al instante y se guardan para tu usuario.</p>
+      <div style={{ marginTop: 12, maxWidth: 320 }}>
         <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <span style={{ fontWeight: 600 }}>Tamaño de fuente</span>
           <select value={fontSize} onChange={e => setFontSize(e.target.value)} style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }}>
@@ -167,37 +170,57 @@ function TabTema() {
         </div>
       </div>
       <button onClick={aplicar} style={{ marginTop: 20, padding: '10px 20px', background: colorPrimario, color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Aplicar tema</button>
-      {aplicado && <small style={{ color: '#059669', marginLeft: 12 }}>Tema aplicado ✅</small>}
+      {aplicado && <small style={{ color: '#059669', marginLeft: 12 }}>Tema guardado y aplicado ✅</small>}
     </div>
   );
 }
 
 function TabEmpresa() {
-  const user = useAuthStore(s => s.user);
-  const [nombre, setNombre] = useState(() => localStorage.getItem('empresa_nombre') || '');
-  const [direccion, setDireccion] = useState(() => localStorage.getItem('empresa_direccion') || '');
-  const [cuit, setCuit] = useState(() => localStorage.getItem('empresa_cuit') || '');
-  const [telefono, setTelefono] = useState(() => localStorage.getItem('empresa_telefono') || '');
+  const { user, token, setAuth } = useAuthStore();
+  const [nombre, setNombre] = useState('');
+  const [direccion, setDireccion] = useState('');
+  const [cuit, setCuit] = useState('');
+  const [telefono, setTelefono] = useState('');
   const [msg, setMsg] = useState('');
 
+  useEffect(() => {
+    const n = user?.empresa?.nombre || localStorage.getItem('empresa_nombre') || localStorage.getItem('nombreEmpresa') || '';
+    const d = user?.empresa?.direccion || user?.sucursal?.direccion || localStorage.getItem('empresa_direccion') || '';
+    const c = user?.empresa?.cuit || localStorage.getItem('empresa_cuit') || '';
+    const t = user?.empresa?.telefono || user?.sucursal?.telefono || localStorage.getItem('empresa_telefono') || '';
+    setNombre(n || ''); setDireccion(d || ''); setCuit(c || ''); setTelefono(t || '');
+  }, [user]);
+
   const guardar = () => {
-    localStorage.setItem('empresa_nombre', nombre);
-    localStorage.setItem('empresa_direccion', direccion);
-    localStorage.setItem('empresa_cuit', cuit);
-    localStorage.setItem('empresa_telefono', telefono);
-    setMsg('Datos guardados. El nombre aparecerá en el menú lateral.');
+    const n = nombre.trim();
+    localStorage.setItem('empresa_nombre', n);
+    localStorage.setItem('nombreEmpresa', n);
+    localStorage.setItem('empresa_direccion', direccion.trim());
+    localStorage.setItem('empresa_cuit', cuit.trim());
+    localStorage.setItem('empresa_telefono', telefono.trim());
+    try {
+      if (user) {
+        const updated = {
+          ...user,
+          empresa: { ...(user.empresa || {}), nombre: n, cuit: cuit.trim(), direccion: direccion.trim(), telefono: telefono.trim() },
+        };
+        if (token) setAuth(token, updated);
+        else localStorage.setItem('user', JSON.stringify(updated));
+      }
+    } catch {}
+    window.dispatchEvent(new Event('storage'));
+    setMsg('Datos guardados. El nombre se actualizará en el menú e impresiones (para usuarios Premium).');
   };
 
-  // Solo mostrar nombre de empresa en sidebar si es premium
-  const esPremium = (typeof window !== 'undefined') ? (localStorage.getItem('premium_activo') === 'true' || localStorage.getItem('license_status_cache')?.includes('"isPremium":true') || localStorage.getItem('premium_trial_start')) : false;
+  const esPremium = (typeof window !== 'undefined') ? (localStorage.getItem('premium_activo') === 'true' || localStorage.getItem('license_status_cache')?.includes('"isPremium":true') || !!localStorage.getItem('premium_trial_start')) : false;
 
   return (
     <div>
-      <h3>Datos de la empresa</h3>
-      <p style={{ color: '#6b7280', fontSize: 13 }}>Estos datos se usan en los tickets y comprobantes.</p>
+      <h3>Editar datos de la empresa</h3>
+      <p style={{ color: '#6b7280', fontSize: 13 }}>Estos datos se usan en el menú (Premium), tickets y comprobantes.</p>
       {!esPremium && (
         <div style={{ background: '#fffbeb', border: '1px solid #fde68a', padding: 10, borderRadius: 6, marginBottom: 12, fontSize: 13, color: '#92400e' }}>
-          ⚠️ La personalización del nombre en el menú lateral está disponible solo para usuarios Premium.
+          ⚠️ La personalización del nombre en el menú lateral y comprobantes está disponible solo para usuarios Premium (en plan Free se muestra "Autoservicio").
         </div>
       )}
       <div style={{ display: 'grid', gap: 12, marginTop: 12, maxWidth: 500 }}>
@@ -208,28 +231,6 @@ function TabEmpresa() {
         <button onClick={guardar} style={{ padding: '10px 20px', background: '#111827', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', width: 'fit-content' }}>Guardar</button>
         {msg && <small style={{ color: '#059669' }}>{msg}</small>}
       </div>
-    </div>
-  );
-}
-
-function TabBackup() {
-  const [msg, setMsg] = useState('');
-  const hacerBackup = async () => {
-    setMsg('Iniciando backup...');
-    try {
-      await api.post('/backup', {}).catch(() => {});
-      setMsg('Backup solicitado. Revisá la carpeta backups/.');
-    } catch (e: any) {
-      setMsg('Error: ' + (e.response?.data?.message || e.message));
-    }
-  };
-  return (
-    <div>
-      <h3>Backup manual</h3>
-      <p style={{ color: '#6b7280', fontSize: 13 }}>Hacer una copia de seguridad de la base de datos ahora.</p>
-      <button onClick={hacerBackup} style={{ padding: '10px 20px', background: '#059669', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', marginTop: 12 }}>Hacer backup ahora</button>
-      {msg && <div style={{ marginTop: 12, padding: 10, background: '#f3f4f6', borderRadius: 6, fontSize: 13 }}>{msg}</div>}
-      <small style={{ color: '#6b7280', marginTop: 8, display: 'block' }}>El backup automático se ejecuta todos los días a las 22:00 (si tenés autoarranque activado).</small>
     </div>
   );
 }
@@ -340,7 +341,6 @@ function TabPassword() {
     try {
       const res = await api.post('/auth/cambiar-password', { passwordActual: actual, passwordNueva: nueva });
       setMsg(res.data?.message || 'Contraseña actualizada correctamente');
-      // Sincronizar con license-server (si está registrado)
       const token = localStorage.getItem('license_token');
       const lsUrl = localStorage.getItem('ls_url') || 'https://autoservicio-license-server.onrender.com';
       if (token) {

@@ -285,25 +285,7 @@ export default function Productos() {
         {!search.trim() && (
           <button type="button" onClick={() => {
             const items = filtered;
-            const nombreEmp = (function(){
-              try {
-                const keys = ['nombreEmpresa', 'empresaNombre', 'empresa', 'razonSocial', 'razon_social', 'configEmpresa', 'empresa_config', 'nombre'];
-                for (const k of keys) {
-                  const v = localStorage.getItem(k);
-                  if (v && v.trim()) {
-                    try {
-                      const parsed = JSON.parse(v);
-                      if (parsed && typeof parsed === 'object') {
-                        const cands = [parsed.nombre, parsed.razonSocial, parsed.empresa, parsed.nombreEmpresa];
-                        for (const cc of cands) if (cc && String(cc).trim()) return String(cc).trim();
-                      } else return v.trim();
-                    } catch { return v.trim(); }
-                  }
-                }
-                for (let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(!k) continue; const kl=k.toLowerCase(); if(kl.includes('empresa')||kl.includes('razon')){ const v=localStorage.getItem(k); if(!v) continue; try{ const p=JSON.parse(v); if(p&&typeof p==='object'){ const cands=[p.nombre,p.razonSocial,p.empresa,p.nombreEmpresa]; for(const cc of cands) if(cc&&String(cc).trim()) return String(cc).trim(); } else return v.trim(); }catch{return v.trim();}} }
-              } catch {}
-              return 'Autoservicio';
-            })();
+            const nombreEmp = getNombreEmpresa();
             const catNombre = catFiltro === 'ALL' ? 'Todas las categorías' : (catFiltro === '' ? 'Sin categoría' : (categorias.find(c=>c.id===catFiltro)?.nombre || catFiltro));
             const win = window.open('', '_blank', 'width=900,height=700');
             if (!win) return;

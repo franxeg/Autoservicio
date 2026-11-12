@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import { useAuthStore } from '../lib/store';
 import { fechaCorta, fechaHora, horaCorta } from '../lib/fecha';
+import { getNombreEmpresa } from '../lib/empresa';
 
 export default function Caja() {
   const user = useAuthStore(s => s.user);
@@ -100,7 +101,7 @@ export default function Caja() {
       const { data } = await api.get(`/caja/${id}`);
       const win = window.open('', '_blank', 'width=500,height=700');
       if (!win) return;
-      const nombreEmp = (function(){ try { const u = JSON.parse(localStorage.getItem('user') || 'null'); return u?.empresa?.nombre || localStorage.getItem('empresa_nombre') || 'Autoservicio'; } catch { return 'Autoservicio'; } })();
+      const nombreEmp = getNombreEmpresa();
       const empleado = data.usuario?.nombre || '-';
       const inicialEf = Number(data.montoInicial || 0);
       const inicialVirt = Number(data.montoInicialVirtual || 0);

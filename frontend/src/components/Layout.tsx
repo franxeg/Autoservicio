@@ -8,28 +8,26 @@ export default function Layout() {
   const location = useLocation();
   const rol = user?.rol;
 
-  // Tema reactivo
+  // Tema reactivo (por usuario)
   const [temaColor, setTemaColor] = useState(() => localStorage.getItem('tema_color') || '#111827');
   const [temaFontSize, setTemaFontSize] = useState(() => localStorage.getItem('tema_fontSize') || '14');
-  const [temaModo, setTemaModo] = useState(() => localStorage.getItem('tema_modo') || 'claro');
 
   const aplicarTema = () => {
-    const color = localStorage.getItem('tema_color') || '#111827';
-    const fs = localStorage.getItem('tema_fontSize') || '14';
-    const modo = localStorage.getItem('tema_modo') || 'claro';
+    const uid = user?.id || user?.username || null;
+    const color = (uid && localStorage.getItem(`tema_color_${uid}`)) || localStorage.getItem('tema_color') || '#111827';
+    const fs = (uid && localStorage.getItem(`tema_fontSize_${uid}`)) || localStorage.getItem('tema_fontSize') || '14';
     setTemaColor(color);
     setTemaFontSize(fs);
-    setTemaModo(modo);
     document.documentElement.style.setProperty('--color-primario', color);
     document.documentElement.style.setProperty('--font-size-base', fs + 'px');
-    if (modo === 'oscuro') document.body.classList.add('tema-oscuro'); else document.body.classList.remove('tema-oscuro');
-    // Inyectar estilo global para aplicar color a botones y sidebar
+    document.body.classList.remove('tema-oscuro');
+    document.body.style.fontSize = fs + 'px';
+    // Inyectar estilo global para aplicar color y fuente
     let styleTag = document.getElementById('tema-global');
     if (!styleTag) { styleTag = document.createElement('style'); styleTag.id = 'tema-global'; document.head.appendChild(styleTag); }
     styleTag.textContent = `
       :root { --color-primario: ${color}; --font-size-base: ${fs}px; }
       body { font-size: ${fs}px; }
-      body.tema-oscuro { background: #1f2937; color: #f9fafb; }
     `;
   };
 
@@ -39,7 +37,7 @@ export default function Layout() {
     window.addEventListener('storage', handler);
     const interval = setInterval(aplicarTema, 2000);
     return () => { window.removeEventListener('storage', handler); clearInterval(interval); };
-  }, []);
+  }, [user?.id, user?.username]);
 
   // Nombre de empresa reactivo (solo premium)
   const [nombreEmpresaSidebar, setNombreEmpresaSidebar] = useState('Autoservicio');
@@ -62,8 +60,8 @@ export default function Layout() {
         } catch { return false; }
       })();
       if (!esPremium) { setNombreEmpresaSidebar('Autoservicio'); return; }
-      const name = localStorage.getItem('empresa_nombre') || user?.empresa?.nombre || 'Autoservicio';
-      setNombreEmpresaSidebar(name);
+      const name = user?.empresa?.nombre || localStorage.getItem('empresa_nombre') || localStorage.getItem('nombreEmpresa') || 'Autoservicio';
+      setNombreEmpresaSidebar(name || 'Autoservicio');
     };
     update();
     const interval = setInterval(update, 2000);

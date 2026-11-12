@@ -1,4 +1,4 @@
-DOCUMENTACION - AUTOSERVICIO
+﻿DOCUMENTACION - AUTOSERVICIO
 ============================
 
 1. POS / VENTAS
@@ -28,8 +28,9 @@ DOCUMENTACION - AUTOSERVICIO
 -------
 - Abrir caja al empezar el dia (saldo inicial se precarga con el ultimo cierre).
 - Cerrar caja al terminar.
+- Ajuste de caja (ingreso/egreso) con caja abierta.
 - Ver movimientos con medio de pago.
-- Historial de cajas.
+- Historial de cajas: al cerrar, los movimientos quedan guardados y al imprimir una caja desde el historial se incluye la lista completa de movimientos.
 
 5. STOCK
 --------
@@ -51,21 +52,22 @@ DOCUMENTACION - AUTOSERVICIO
 
 8. MOVIMIENTOS
 --------------
-- Historial de todas las ventas.
+- Historial de ventas, compras y gastos por periodo.
+- Filtro por fecha y franja horaria.
 - Desglose por producto y categoria.
-- Filtro por fecha.
+- Impresion de listados.
 
 9. EMPLEADOS
 ------------
 - Gestion de usuarios con roles: Admin, Cajero, Repositor, Elaboracion.
 - Permisos diferenciados por rol.
+- El administrador puede cambiar la contraseña de los empleados.
 
 10. CONFIGURACION
 -----------------
 - Suscripcion a Premium.
-- Cambio de tema (colores, fuentes).
-- Datos de la empresa (nombre, direccion, CUIT, telefono).
-- Backup manual.
+- Cambiar tema: color primario y tamaño de fuente (se guardan por usuario y se mantienen al cerrar y volver a abrir).
+- Editar datos de la empresa (nombre, direccion, CUIT, telefono). Los datos se precargan con los registrados y el nombre se usa en menu e impresiones para usuarios Premium.
 - Documentacion.
 - Acerca de.
 - Informar un error.
@@ -84,14 +86,9 @@ DOCUMENTACION - AUTOSERVICIO
 - Codigo de barras: se genera como PNG para descargar e imprimir.
 - Etiqueta de precio: se genera como PNG con nombre de empresa, nombre del producto y precio.
 - Ticket de venta: se imprime al cobrar.
+- Caja (historial): imprime resumen y lista completa de movimientos.
 
-13. BACKUP
-----------
-- Backup automatico diario a las 22:00 (si autoarranque esta activado).
-- Backup manual desde Configuracion.
-- Los backups se guardan en la carpeta "backups/".
-
-14. SOPORTE
+13. SOPORTE
 -----------
 Email: jupitertecnologias@gmail.com
 Instagram: @jupiterinformatica
