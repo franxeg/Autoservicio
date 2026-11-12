@@ -31,7 +31,7 @@ export class CerrarCajaDto {
 }
 
 export class MovimientoCajaDto {
-  @ApiProperty({ enum: ['VENTA', 'COMPRA', 'GASTO', 'RETIRO'], example: 'GASTO' })
+  @ApiProperty({ enum: ['VENTA', 'COMPRA', 'GASTO', 'RETIRO', 'AJUSTE', 'PAGO_PROVEEDOR'], example: 'GASTO' })
   @IsString()
   tipo: string;
 

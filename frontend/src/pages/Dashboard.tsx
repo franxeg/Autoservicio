@@ -121,9 +121,9 @@ export default function Dashboard() {
           </div>
           <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
             {[{ v: 'hoy', l: 'Hoy' }, { v: '7d', l: '7 días' }, { v: 'mes', l: 'Este mes' }].map(o => {
-              const sel = periodo === o.v && !mesSel;
+              const sel = periodo === o.v && !mesSel && !diaSel;
               return (
-                <button key={o.v} onClick={() => { setPeriodo(o.v); setMesSel(''); }} style={{
+                <button key={o.v} onClick={() => { setPeriodo(o.v); setMesSel(''); setDiaSel(''); }} style={{
                   padding: '6px 12px', borderRadius: 6, cursor: 'pointer', fontSize: 13, fontWeight: sel ? 'bold' : 'normal',
                   border: sel ? '2px solid #111827' : '1px solid #d1d5db',
                   background: sel ? '#111827' : 'white',
@@ -138,6 +138,7 @@ export default function Dashboard() {
                 if (!m) { setMesSel(''); return; }
                 const y = mesSel ? mesSel.slice(0, 4) : String(new Date().getFullYear());
                 setMesSel(`${y}-${String(m).padStart(2, '0')}`);
+                setDiaSel('');
               }}
               title="Elegir mes"
               style={{ padding: '5px 8px', borderRadius: 6, border: mesSel ? '2px solid #111827' : '1px solid #d1d5db', fontSize: 13, background: 'white' }}
@@ -152,6 +153,7 @@ export default function Dashboard() {
                 if (!y) { setMesSel(''); return; }
                 const m = mesSel ? mesSel.slice(5, 7) : String(new Date().getMonth() + 1).padStart(2, '0');
                 setMesSel(`${y}-${m}`);
+                setDiaSel('');
               }}
               title="Elegir año"
               style={{ padding: '5px 8px', borderRadius: 6, border: mesSel ? '2px solid #111827' : '1px solid #d1d5db', fontSize: 13, background: 'white' }}
@@ -160,12 +162,8 @@ export default function Dashboard() {
               {Array.from({ length: new Date().getFullYear() - 2019 }, (_, i) => new Date().getFullYear() - i).map(a => <option key={a} value={a}>{a}</option>)}
             </select>
             {mesSel && <button onClick={() => setMesSel('')} style={{ padding: '5px 10px', background: '#e5e7eb', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}>✕</button>}
-            <input type="date" value={diaSel} onChange={e => setDiaSel(e.target.value)} title="Filtrar por día" style={{ padding: '5px 8px', borderRadius: 6, border: diaSel ? '2px solid #111827' : '1px solid #d1d5db', fontSize: 13, background: 'white' }} />
+            <input type="date" value={diaSel} onChange={e => { setDiaSel(e.target.value); if (e.target.value) setMesSel(''); }} title="Filtrar por día" style={{ padding: '5px 8px', borderRadius: 6, border: diaSel ? '2px solid #111827' : '1px solid #d1d5db', fontSize: 13, background: 'white' }} />
             {diaSel && <button onClick={() => setDiaSel('')} style={{ padding: '5px 10px', background: '#e5e7eb', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}>✕</button>}
-            <select value={catFiltroTop} onChange={e => setCatFiltroTop(e.target.value)} title="Filtrar por categoría" style={{ padding: '5px 8px', borderRadius: 6, border: catFiltroTop ? '2px solid #111827' : '1px solid #d1d5db', fontSize: 13, background: 'white' }}>
-              <option value="">Todas las categorías</option>
-              {categorias.map((c: any) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-            </select>
           </div>
         </div>
 
@@ -200,7 +198,7 @@ export default function Dashboard() {
                 { v: desglose.aporteVenta, c: '#059669' },
               ].map((s, i) => s.v > 0 ? <div key={i} title={`$${Number(s.v).toFixed(0)}`} style={{ width: `${(s.v / desglose.vendido) * 100}%`, background: s.c }} /> : null)}
             </div>
-            <div style={{ fontSize: 14, fontWeight: 'bold', marginTop: 6 }}>Total vendido: ${Number(desglose.vendido).toFixed(0)}</div>
+            <div style={{ fontSize: 14, fontWeight: 'bold', marginTop: 6 }}>Total vendido: ${Number(desglose.vendido).toFixed(0)} <span style={{ fontWeight: 'normal', color: '#6b7280', fontSize: 13 }}>({diaSel ? diaSel.split('-').reverse().join('/') : mesSel ? (MESES[Number(mesSel.slice(5,7))-1] + ' ' + mesSel.slice(0,4)) : (periodo === 'hoy' ? 'Hoy' : periodo === '7d' ? 'Últimos 7 días' : 'Este mes')})</span></div>
 
             <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 16, fontSize: 13 }}>
               <thead><tr style={{ borderBottom: '2px solid #e5e7eb', textAlign: 'left' }}>

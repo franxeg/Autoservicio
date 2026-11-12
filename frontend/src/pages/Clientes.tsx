@@ -84,6 +84,8 @@ export default function Clientes() {
     try {
       await api.patch(`/clientes/${selected.id}`, editForm);
       setEditForm(null);
+      setSelected(null);
+      setCuenta(null);
       fetch(); fetchCumple(cumpleMes);
     } catch (e: any) { setError(e.response?.data?.message || e.message); }
     finally { setGuardandoEdit(false); }

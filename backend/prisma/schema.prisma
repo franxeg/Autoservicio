@@ -30,6 +30,7 @@ enum TipoMovimientoCaja {
   CIERRE
   PAGO_CUENTA
   PAGO_PROVEEDOR
+  AJUSTE
 }
 
 enum TipoMovimientoStock {

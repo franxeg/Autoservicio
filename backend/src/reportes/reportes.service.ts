@@ -44,12 +44,12 @@ export class ReportesService {
       orderBy: { _sum: { cantidad: 'desc' } },
       take: 5,
     });
-    const topConNombres = await Promise.all(
+    const topConNombres = (await Promise.all(
       topProductos.map(async (t) => {
         const prod = await this.prisma.tenant.producto.findUnique({ where: { id: t.productoId }, select: { nombre: true, codigoBarras: true, categoria: { select: { id: true, nombre: true } } } });
         return { productoId: t.productoId, nombre: prod?.nombre || 'Desconocido', codigoBarras: prod?.codigoBarras, categoriaId: prod?.categoria?.id || null, categoria: prod?.categoria?.nombre || 'Sin categoría', cantidad: t._sum.cantidad, total: t._sum.subtotal };
       }),
-    );
+    )).sort((a: any, b: any) => (Number(b.total) || 0) - (Number(a.total) || 0));
 
     return {
       ventasHoy: { total: ventasHoyAgg._sum.total || 0, cantidad: ventasHoyAgg._count },
@@ -178,16 +178,20 @@ export class ReportesService {
     const ini = parse(desde) || new Date();
     // Aplicar hora de inicio si se proporciona
     if (horaDesde) {
-      const [hh, mm] = horaDesde.split(':').map(Number);
-      if (!isNaN(hh)) ini.setHours(hh, mm || 0, 0, 0);
+      const parts = horaDesde.split(':').map(Number);
+      const hh = parts[0];
+      const mm = parts.length > 1 ? parts[1] : 0;
+      if (!isNaN(hh)) ini.setHours(hh, isNaN(mm) ? 0 : mm, 0, 0);
       else ini.setHours(0, 0, 0, 0);
     } else {
       ini.setHours(0, 0, 0, 0);
     }
     const fin = parse(hasta) || new Date(ini);
     if (horaHasta) {
-      const [hh, mm] = horaHasta.split(':').map(Number);
-      if (!isNaN(hh)) fin.setHours(hh, mm || 0, 59, 999);
+      const parts = horaHasta.split(':').map(Number);
+      const hh = parts[0];
+      const mm = parts.length > 1 ? parts[1] : 59;
+      if (!isNaN(hh)) fin.setHours(hh, isNaN(mm) ? 59 : mm, 59, 999);
       else fin.setHours(23, 59, 59, 999);
     } else {
       fin.setHours(23, 59, 59, 999);
