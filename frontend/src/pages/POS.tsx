@@ -498,7 +498,19 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
         items: ventaItems,
         pagos,
       });
-      setUltimoVenta({ ...data, items: ventaItems, metodoPago: pagos ? 'MIXTO' : metodoPago, clienteSearch, pagos: pagos || undefined });
+      setUltimoVenta({
+        ...data,
+        items: ventaItems,
+        metodoPago: pagos ? 'MIXTO' : metodoPago,
+        clienteSearch,
+        pagos: pagos || undefined,
+        combos: comboGroups.map(g => ({
+          nombre: g.combo.nombre,
+          veces: g.veces || 1,
+          precio: Math.round((g.combo.precioVenta || g.combo.totalLista || 0) * (g.veces || 1)),
+          totalLista: Math.round(g.combo.totalLista || 0) * (g.veces || 1),
+        })),
+      });
       setSuccess(`Venta #${data.nroComprobante} por $${Number(data.total).toFixed(0)} registrada`);
       limpiar();
       checkCaja();
@@ -927,11 +939,18 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
               const win = window.open('', '_blank', 'width=400,height=600');
               if (win) {
                 const nombreEmp = getNombreEmpresa();
+                const combosTicket = (v.combos && v.combos.length > 0)
+                  ? v.combos
+                  : comboGroups.map(g => ({ nombre: g.combo.nombre, veces: g.veces || 1, precio: Math.round((g.combo.precioVenta || g.combo.totalLista || 0) * (g.veces || 1)), totalLista: Math.round(g.combo.totalLista || 0) * (g.veces || 1) }));
+                const descuentoCombos = combosTicket.reduce((acc: number, c: any) => acc + Math.max(0, (c.totalLista || 0) - (c.precio || 0)), 0);
+                const combosHtml = combosTicket.length > 0
+                  ? `<div class="line"></div><div style="font-weight:bold;margin-bottom:4px">Ofertas/Combos</div>` + combosTicket.map((c: any) => `<div class="row"><span>${(c.nombre || '').substring(0,18).replace(/</g,'&lt;').replace(/>/g,'&gt;')}${(c.veces || 1) > 1 ? ` x${c.veces}` : ''}</span><span>$${Math.round(c.precio || 0)}</span></div>`).join('') + (descuentoCombos > 0 ? `<div class="row"><span>Ahorro por combos</span><span>-$${Math.round(descuentoCombos)}</span></div>` : '')
+                  : '';
                 const pagosTicket = v.pagos && v.pagos.length > 1 ? v.pagos : (pagosCombinados.length > 1 ? pagosCombinados : null);
                 const pagoHtml = pagosTicket
                   ? `<div class="row"><span>Pago</span><span>Combinado</span></div>` + pagosTicket.map((p:any)=>`<div class="row"><span>${(METODOS_PAGO.find(m=>m.value===p.metodo)?.label||p.metodo).replace(/</g,'&lt;')}</span><span>$${Math.round(p.monto)}</span></div>`).join('')
                   : `<div class="row"><span>Pago</span><span>${METODOS_PAGO.find(m=>m.value===(v.metodoPago||metodoPago))?.label||''}</span></div>`;
-                win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Ticket</title><style>body{font-family:monospace;font-size:12px;margin:0;padding:10px}h2{text-align:center;margin:4px}p{margin:2px 0}.line{border-top:1px dashed #000;margin:6px 0}.row{display:flex;justify-content:space-between}.tot{font-weight:bold;font-size:14px}</style></head><body><div style="text-align:center;font-weight:bold;font-size:14px;margin:4px">${nombreEmp.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div><p style="text-align:center">Comprobante: ${v.nroComprobante}</p><p style="text-align:center">${new Date().toLocaleString()}</p><div class="line"></div>${ticketItems.map((it:any)=>`<div class="row"><span>${Number(it.cantidad).toFixed(it.cantidad%1===0?0:3)} x ${(it.nombre||'').substring(0,18).replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span><span>$${Math.round((it.precioUnitario||0)*it.cantidad)}</span></div>`).join('')}<div class="line"></div><div class="row tot"><span>TOTAL</span><span>$${Number(v.total||total).toFixed(0)}</span></div>${pagoHtml}${(v.clienteSearch||clienteSearch)?`<p>Cliente: ${(v.clienteSearch||clienteSearch).replace(/</g,'&lt;').replace(/>/g,'&gt;')}</p>`:''}<div class="line"></div><p style="text-align:center">¡Gracias por su compra!</p><script>window.onload=function(){window.print();setTimeout(function(){window.close();},500);};</script></body></html>`);
+                win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Ticket</title><style>body{font-family:monospace;font-size:12px;margin:0;padding:10px}h2{text-align:center;margin:4px}p{margin:2px 0}.line{border-top:1px dashed #000;margin:6px 0}.row{display:flex;justify-content:space-between}.tot{font-weight:bold;font-size:14px}</style></head><body><div style="text-align:center;font-weight:bold;font-size:14px;margin:4px">${nombreEmp.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div><p style="text-align:center">Comprobante: ${v.nroComprobante}</p><p style="text-align:center">${new Date().toLocaleString()}</p><div class="line"></div>${ticketItems.map((it:any)=>`<div class="row"><span>${Number(it.cantidad).toFixed(it.cantidad%1===0?0:3)} x ${(it.nombre||'').substring(0,18).replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span><span>$${Math.round((it.precioUnitario||0)*it.cantidad)}</span></div>`).join('')}${combosHtml}<div class="line"></div><div class="row tot"><span>TOTAL</span><span>$${Number(v.total||total).toFixed(0)}</span></div>${pagoHtml}${(v.clienteSearch||clienteSearch)?`<p>Cliente: ${(v.clienteSearch||clienteSearch).replace(/</g,'&lt;').replace(/>/g,'&gt;')}</p>`:''}<div class="line"></div><p style="text-align:center">¡Gracias por su compra!</p><script>window.onload=function(){window.print();setTimeout(function(){window.close();},500);};</script></body></html>`);
                 win.document.close();
               }
               setMostrarConfirmacion(false);
