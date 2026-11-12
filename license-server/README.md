@@ -22,23 +22,31 @@ npm run dev
 ## Endpoints
 
 ### Auth
-- `POST /api/auth/register` - `{ nombre, email, password }` → crea empresa + trial 30 días
-- `POST /api/auth/login` - `{ email, password }` → JWT + datos de empresa
-- `POST /api/auth/admin/login` - `{ username, password }` → JWT admin
+- `GET /api/auth/check-username/:username` → disponibilidad de usuario
+- `POST /api/auth/register` - `{ nombre, username, password }` → crea empresa + trial 30 días (devuelve `licenseKey`, `token`, datos de empresa)
+- `POST /api/auth/login` - `{ username, password }` → `access_token` + datos de empresa/licencia
+- `POST /api/auth/admin/login` - `{ username, password }` → JWT admin (valida `ADMIN_USER`/`ADMIN_PASSWORD` del servidor)
 
-### License (requiere auth)
-- `GET /api/license/status` → estado de licencia
-- `POST /api/license/activate` - `{ code }` → activa premium
+### License (requiere auth de empresa)
+- `GET /api/license/status` → estado de licencia (premium/trial, días restantes, vencimientos)
+- `POST /api/license/change-password` - `{ passwordActual, passwordNueva }` → cambia contraseña de la empresa
+- `POST /api/license/activate` - `{ code }` → activa premium (30 días)
 
-### Admin (requiere admin auth)
-- `GET /api/admin/companies` → lista de empresas
+### Admin (requiere auth admin)
+- `GET /api/admin/companies` → lista de empresas registradas
 - `PATCH /api/admin/companies/:id/premium` - `{ isPremium, days }` → activar/desactivar premium
 - `PATCH /api/admin/companies/:id/activo` - `{ activo }` → bloquear/desbloquear
+- `PATCH /api/admin/companies/:id/password` - `{ password }` → resetear contraseña de la empresa en el LS
 
 ## Flujo del cliente
-1. El cliente se registra con nombre de empresa + email + contraseña.
-2. Recibe 30 días de prueba gratis.
-3. El sistema local guarda el `licenseKey` y el token.
-4. Al iniciar, consulta `/api/license/status` (con grace period de 7 días offline).
-5. Si el trial vence o no paga, las pestañas premium se bloquean.
-6. Vos (admin) activás premium desde el panel cuando recibís el pago.
+1. El cliente configura su empresa en el Setup del sistema y se registra con `nombre` + `username` + `password` en el servidor de licencias.
+2. Recibe 30 días de prueba gratis (`trialEnd`).
+3. El sistema local guarda el `licenseKey` y el token (`license_token`, `license_key`, cache de estado).
+4. Periódicamente consulta `GET /api/license/status`. Si no hay conexión, usa el último estado cacheado dentro de un grace period de 7 días; fuera de grace degrada a modo free.
+5. Si el trial vence o no paga, las funciones/pestañas premium se bloquean.
+6. Vos (admin del LS) activás/desactivás Premium desde el panel de proveedor (sección "Gestión Premium - License Server") al recibir el pago (30 días por activación, renovable).
+
+## Deploy / actualización (Render + Neon)
+- Variables de entorno: `DATABASE_URL` (Neon), `JWT_SECRET`, `ADMIN_USER`, `ADMIN_PASSWORD`, `CORS_ORIGIN` (o `*` según config), `PORT`.
+- En cada deploy con cambios de esquema: `npx prisma generate` y aplicar migraciones (`npx prisma migrate deploy`) o `npx prisma db push` según estrategia. Verificar que la tabla `Company` exista en Neon.
+- Tras actualizar, confirmar `GET /health` responde `{ ok: true, service: "autoservicio-license-server" }`. Si Render está en plan free puede tardar en "despertar" (primer request con 503/latencia).

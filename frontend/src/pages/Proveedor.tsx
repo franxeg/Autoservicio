@@ -17,13 +17,7 @@ export default function Proveedor() {
   const [empresas, setEmpresas] = useState<any[] | null>(null);
   const [listError, setListError] = useState('');
 
-  // Formulario de creación
-  const [nombreEmpresa, setNombreEmpresa] = useState('');
-  const [cuit, setCuit] = useState('');
-  const [usuarioSetup, setUsuarioSetup] = useState('');
-  const [creando, setCreando] = useState(false);
-  const [error, setError] = useState('');
-  const [creada, setCreada] = useState<any | null>(null);
+  // (Las empresas se registran automáticamente desde el Setup de cada instalación)
 
   // Cambio de contraseña
   const [passActual, setPassActual] = useState('');
@@ -185,36 +179,6 @@ export default function Proveedor() {
     }
   };
 
-  const crearEmpresa = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setCreada(null);
-    if (!nombreEmpresa.trim()) {
-      setError('El nombre de la empresa es obligatorio.');
-      return;
-    }
-    setCreando(true);
-    try {
-      const { data } = await api.post(
-        '/auth/crear-empresa',
-        {
-          nombreEmpresa: nombreEmpresa.trim(),
-          cuit: cuit.trim() || null,
-          usuarioSetup: usuarioSetup.trim() || undefined,
-        },
-        headers(),
-      );
-      setCreada(data);
-      setNombreEmpresa('');
-      setCuit('');
-      setUsuarioSetup('');
-      cargarEmpresas();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al crear la empresa.');
-    } finally {
-      setCreando(false);
-    }
-  };
 
   const cerrarSesion = () => {
     localStorage.removeItem(TOKEN_STORAGE);
@@ -334,32 +298,9 @@ export default function Proveedor() {
             )}
 
             <div style={{ display: 'flex', gap: 20, marginBottom: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-              <div style={{ background: '#f0f9ff', padding: 16, borderRadius: 12, border: '1px solid #bfdbfe', flex: 1, minWidth: 300 }}>
-                <h3 style={{ marginTop: 0, color: '#1e40af' }}>ℹ️ Las empresas se registran automáticamente</h3>
-                <p style={{ color: '#1e3a8a', fontSize: 13, margin: 0 }}>Los clientes crean su empresa al instalar el sistema. Acá solo gestionás las suscripciones Premium.</p>
-                <h2 style={{ marginTop: 0 }}>Crear nueva empresa</h2>
-                {error && <div style={{ background: '#fee2e2', color: '#dc2626', padding: 10, borderRadius: 6, marginBottom: 12, fontSize: 14 }}>{error}</div>}
-                <label>Nombre de la empresa *</label>
-                <input value={nombreEmpresa} onChange={e => setNombreEmpresa(e.target.value)} placeholder="Ej: Verdulería Los Gómez" style={{ width: '100%', padding: 10, margin: '6px 0 12px', borderRadius: 6, border: '1px solid #d1d5db', boxSizing: 'border-box' }} />
-                <label>CUIT (opcional)</label>
-                <input value={cuit} onChange={e => setCuit(e.target.value)} placeholder="Ej: 20-12345678-9" style={{ width: '100%', padding: 10, margin: '6px 0 12px', borderRadius: 6, border: '1px solid #d1d5db', boxSizing: 'border-box' }} />
-                <label>Usuario temporal (opcional)</label>
-                <input value={usuarioSetup} onChange={e => setUsuarioSetup(e.target.value)} placeholder="Enter para autogenerar" style={{ width: '100%', padding: 10, margin: '6px 0 16px', borderRadius: 6, border: '1px solid #d1d5db', boxSizing: 'border-box' }} />
-                <button type="submit" disabled={creando} style={{ width: '100%', padding: 12, background: '#047857', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', opacity: creando ? 0.7 : 1 }}>{creando ? 'Creando...' : 'Crear empresa y generar credenciales'}</button>
-                {creada && (
-                  <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', padding: 12, borderRadius: 8, marginTop: 16 }}>
-                    <strong style={{ color: '#065f46' }}>Empresa creada. Credenciales para entregar al cliente:</strong>
-                    <div style={{ marginTop: 10, fontSize: 14 }}>
-                      <div>Usuario temporal: <b>{creada.credenciales.usuario}</b> <button onClick={() => copiar(creada.credenciales.usuario)} style={{ marginLeft: 6, fontSize: 12, cursor: 'pointer' }}>Copiar</button></div>
-                      <div style={{ marginTop: 6 }}>Contraseña: <b>{creada.credenciales.password}</b> <button onClick={() => copiar(creada.credenciales.password)} style={{ marginLeft: 6, fontSize: 12, cursor: 'pointer' }}>Copiar</button></div>
-                    </div>
-                    <small style={{ color: '#065f46', display: 'block', marginTop: 10 }}>El cliente creará su propio administrador al primer ingreso. Esta contraseña no volverá a mostrarse.</small>
-                  </div>
-                )}
-              </div>
-
               <div style={{ background: 'white', padding: 24, borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', flex: 1, minWidth: 300 }}>
-                <h2 style={{ marginTop: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>Empresas <button onClick={cargarEmpresas} style={{ fontSize: 13, padding: '6px 10px', cursor: 'pointer' }}>Actualizar</button></h2>
+                <h2 style={{ marginTop: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>Instalaciones locales <button onClick={cargarEmpresas} style={{ fontSize: 13, padding: '6px 10px', cursor: 'pointer' }}>Actualizar</button></h2>
+                <p style={{ color: '#6b7280', fontSize: 13, marginTop: 0 }}>Empresas en la base de datos local de esta instalación (soporte/provisionamiento). La gestión de suscripciones Premium se hace en "Gestión Premium (License Server)".</p>
                 {listError && <div style={{ background: '#fee2e2', color: '#dc2626', padding: 10, borderRadius: 6, marginBottom: 12, fontSize: 14 }}>{listError}</div>}
                 {empresas === null && <p style={{ color: '#6b7280' }}>Cargando...</p>}
                 {empresas !== null && empresas.length === 0 && <p style={{ color: '#6b7280' }}>Todavía no hay empresas.</p>}
@@ -425,14 +366,15 @@ export default function Proveedor() {
             </div>
 
             <div style={{ background: 'white', padding: 24, borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginTop: 20 }}>
-              <h2 style={{ marginTop: 0 }}>Gestión Premium (License Server)</h2>
-              <p style={{ color: '#6b7280', fontSize: 13, marginBottom: 16 }}>Conectate al servidor de licencias para gestionar las suscripciones de los clientes.</p>
+              <h2 style={{ marginTop: 0 }}>Gestión Premium — Empresas registradas (License Server)</h2>
+              <p style={{ color: '#6b7280', fontSize: 13, marginBottom: 8 }}>Acá aparecen las empresas que los usuarios registraron al instalar/configurar el sistema (cuando hubo conexión con el servidor de licencias). Desde esta lista podés activar o desactivar Premium por empresa.</p>
+              <p style={{ color: '#6b7280', fontSize: 12, marginBottom: 16 }}>Ingresá con las credenciales de <b>administrador del License Server</b> (configuradas en el servidor, ej. <code>ADMIN_USER</code>/<code>ADMIN_PASSWORD</code>). No son las credenciales que crea cada cliente para su empresa.</p>
 
               {!lsToken ? (
                 <form onSubmit={lsLogin} style={{ display: 'grid', gap: 10, maxWidth: 400 }}>
                   <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>URL del License Server<input value={lsUrl} onChange={e => setLsUrl(e.target.value)} style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>Usuario admin<input value={lsUser} onChange={e => setLsUser(e.target.value)} style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>Contraseña<input type="password" value={lsPass} onChange={e => setLsPass(e.target.value)} style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>Usuario admin (License Server)<input value={lsUser} onChange={e => setLsUser(e.target.value)} placeholder="ADMIN_USER del servidor" style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>Contraseña (License Server)<input type="password" value={lsPass} onChange={e => setLsPass(e.target.value)} placeholder="ADMIN_PASSWORD del servidor" style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
                   <button type="submit" disabled={lsLoading} style={{ padding: '10px 16px', background: '#111827', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', width: 'fit-content' }}>{lsLoading ? 'Conectando...' : 'Conectar'}</button>
                   {lsError && <div style={{ color: '#dc2626', fontSize: 13 }}>{lsError}</div>}
                 </form>
@@ -448,7 +390,7 @@ export default function Proveedor() {
                   {lsError && <div style={{ color: '#dc2626', fontSize: 13, marginBottom: 8 }}>{lsError}</div>}
                   {lsMsg && <div style={{ color: '#059669', fontSize: 13, marginBottom: 8 }}>{lsMsg}</div>}
                   {lsLoading && <p style={{ color: '#6b7280' }}>Cargando...</p>}
-                  {lsCompanies && lsCompanies.length === 0 && <p style={{ color: '#6b7280' }}>No hay empresas registradas.</p>}
+                  {lsCompanies && lsCompanies.length === 0 && <p style={{ color: '#6b7280' }}>No hay empresas registradas en el servidor de licencias. Las empresas aparecen acá cuando se registran desde el Setup (o desde Configuración) con conexión al servidor.</p>}
                   {lsCompanies && lsCompanies.length > 0 && (
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                       <thead><tr style={{ borderBottom: '2px solid #e5e7eb', textAlign: 'left' }}><th>Empresa</th><th>Usuario</th><th>Premium</th><th>Vencimiento</th><th>Acciones</th></tr></thead>
