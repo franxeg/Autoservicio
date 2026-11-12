@@ -1,4 +1,4 @@
-services:
+﻿services:
   postgres:
     image: postgres:16-alpine
     container_name: autoservicio_db
@@ -19,9 +19,10 @@ services:
     env_file:
       - ./backend/.env
     environment:
+      TZ: America/Argentina/Buenos_Aires
       # URL de la app: rol dedicado sin superuser para que RLS aplique
       DATABASE_URL: "postgresql://${POSTGRES_APP_USER}:${POSTGRES_APP_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public"
-      # URL de administración: rol superuser para migraciones, RLS y seed
+      # URL de administraciÃ³n: rol superuser para migraciones, RLS y seed
       MIGRATE_DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public"
     ports:
       - "3000:3000"

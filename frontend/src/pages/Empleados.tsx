@@ -8,6 +8,9 @@ export default function Empleados() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showInfo, setShowInfo] = useState(false);
+  const [pwdModal, setPwdModal] = useState<{ id: string; nombre: string } | null>(null);
+  const [pwdNueva, setPwdNueva] = useState('');
+  const [pwdShow, setPwdShow] = useState(false);
 
   const fetchEmpleados = async () => {
     const { data } = await api.get('/usuarios');
@@ -49,6 +52,19 @@ export default function Empleados() {
       await api.patch(`/usuarios/${emp.id}`, { rol });
       setSuccess(`Rol de ${emp.nombre} actualizado a ${rol}`);
       fetchEmpleados();
+    } catch (e: any) { setError(e.response?.data?.message || e.message); }
+  };
+
+  const cambiarPassword = async () => {
+    if (!pwdModal) return;
+    setError(''); setSuccess('');
+    if (!pwdNueva || pwdNueva.length < 4) { setError('La contraseña debe tener al menos 4 caracteres'); return; }
+    try {
+      await api.patch(`/usuarios/${pwdModal.id}`, { password: pwdNueva });
+      setSuccess(`Contraseña de ${pwdModal.nombre} actualizada`);
+      setPwdModal(null);
+      setPwdNueva('');
+      setPwdShow(false);
     } catch (e: any) { setError(e.response?.data?.message || e.message); }
   };
 
@@ -102,7 +118,8 @@ export default function Empleados() {
               </td>
               <td>{emp.activo ? '🟢 Activo' : '🔴 Inactivo'}</td>
               <td>
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <button onClick={() => { setPwdModal({ id: emp.id, nombre: emp.username || emp.nombre }); setPwdNueva(''); setPwdShow(false); setError(''); setSuccess(''); }} style={{ padding: '6px 10px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 12 }}>Contraseña</button>
                   <button onClick={() => toggleActivo(emp)} disabled={emp.rol === 'ADMIN'} title={emp.rol === 'ADMIN' ? 'El ADMIN no se puede desactivar' : ''} style={{ padding: '6px 10px', background: emp.activo ? '#fee2e2' : '#ecfdf5', color: emp.activo ? '#b91c1c' : '#065f46', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 12, opacity: emp.rol === 'ADMIN' ? 0.5 : 1 }}>
                     {emp.activo ? 'Desactivar' : 'Activar'}
                   </button>
@@ -114,6 +131,23 @@ export default function Empleados() {
           {empleados.length === 0 && <tr><td colSpan={4} style={{ textAlign: 'center', padding: 20, color: '#9ca3af' }}>Sin empleados</td></tr>}
         </tbody>
       </table>
+
+      {pwdModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'grid', placeItems: 'center', zIndex: 50 }} onClick={() => setPwdModal(null)}>
+          <div style={{ background: 'white', padding: 24, borderRadius: 12, width: 420 }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ marginTop: 0 }}>Cambiar contraseña</h3>
+            <p style={{ color: '#6b7280', fontSize: 13, marginBottom: 12 }}>Nueva contraseña para <strong>{pwdModal.nombre}</strong>. El empleado deberá usarla en su próximo inicio de sesión.</p>
+            <div style={{ position: 'relative', marginBottom: 12 }}>
+              <input type={pwdShow ? 'text' : 'password'} value={pwdNueva} onChange={e => setPwdNueva(e.target.value)} placeholder="Nueva contraseña*" minLength={4} style={{ width: '100%', padding: 10, paddingRight: 40, borderRadius: 6, border: '1px solid #d1d5db', boxSizing: 'border-box' }} />
+              <button type="button" onClick={() => setPwdShow(!pwdShow)} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer' }}>{pwdShow ? '🙈' : '👁️'}</button>
+            </div>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button onClick={() => setPwdModal(null)} style={{ padding: '8px 14px', background: '#e5e7eb', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Cancelar</button>
+              <button onClick={cambiarPassword} style={{ padding: '8px 14px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Guardar</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showInfo && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'grid', placeItems: 'center', zIndex: 50 }} onClick={() => setShowInfo(false)}>
