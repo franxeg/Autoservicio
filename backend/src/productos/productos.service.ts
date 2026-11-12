@@ -12,7 +12,7 @@ export class ProductosService {
 
   async findAll(query: { search?: string; codigoBarras?: string; categoriaId?: string; page?: number; limit?: number; sucursalId?: string; esElaborado?: boolean }) {
     const { search, codigoBarras, categoriaId, page = 1, limit = 20, sucursalId, esElaborado } = query;
-    const where: any = { empresaId: this.prisma.empresaId };
+    const where: any = { empresaId: this.prisma.empresaId, activo: true };
     if (search) where.nombre = { contains: search, mode: 'insensitive' };
     if (codigoBarras) where.codigoBarras = codigoBarras;
     if (categoriaId) where.categoriaId = categoriaId;
@@ -43,7 +43,7 @@ export class ProductosService {
 
   async findByCodigo(codigo: string) {
     const producto = await this.prisma.tenant.producto.findFirst({
-      where: { empresaId: this.prisma.empresaId, OR: [{ codigoBarras: codigo }, { codigoInterno: codigo }] },
+      where: { empresaId: this.prisma.empresaId, activo: true, OR: [{ codigoBarras: codigo }, { codigoInterno: codigo }] },
       include: { categoria: true, stocks: true },
     });
     if (!producto) throw new NotFoundException('Producto no encontrado por código');
@@ -190,8 +190,56 @@ export class ProductosService {
   }
 
   async remove(id: string) {
-    await this.findOne(id);
-    return this.prisma.tenant.producto.update({ where: { id }, data: { activo: false } });
+    const producto = await this.findOne(id);
+    const empresaId = this.prisma.empresaId!;
+    const tx = this.prisma.tenant;
+
+    // Si pertenece a combos/ofertas, eliminar esos combos (pedido explícito)
+    const combosQueLoIncluyen = await tx.comboItem.findMany({ where: { productoId: id }, select: { comboId: true } });
+    const comboIds = [...new Set(combosQueLoIncluyen.map(c => c.comboId))];
+    for (const comboId of comboIds) {
+      await tx.producto.delete({ where: { id: comboId } }).catch(() => tx.producto.update({ where: { id: comboId }, data: { activo: false, nombre: `__del__${comboId}` } }));
+    }
+
+    // Quitar de recetas donde se use como insumo y recalcular esos elaborados
+    const recetasUsado = await tx.recetaItem.findMany({ where: { insumoId: id }, select: { elaboradoId: true } });
+    const elaboradosAfectados = [...new Set(recetasUsado.map(r => r.elaboradoId))];
+    if (recetasUsado.length > 0) {
+      await tx.recetaItem.deleteMany({ where: { insumoId: id } });
+      for (const elabId of elaboradosAfectados) {
+        await this.recalcularElaborado(elabId).catch(() => null);
+      }
+    }
+
+    // Intentar eliminación física completa
+    try {
+      // Si es elaborado, su receta (como elaborado) tiene cascade; stocks/movimientos pueden bloquear -> limpiar si es posible
+      return await tx.$transaction(async (prisma) => {
+        // limpiar dependencias sin valor histórico crítico si existen (stock del producto)
+        await (prisma as any).stock.deleteMany({ where: { productoId: id } }).catch(() => null);
+        await (prisma as any).movimientoStock.deleteMany({ where: { productoId: id } }).catch(() => null);
+        // receta como elaborado tiene onDelete Cascade en schema, pero por si acaso
+        await (prisma as any).recetaItem.deleteMany({ where: { elaboradoId: id } }).catch(() => null);
+        return await (prisma as any).producto.delete({ where: { id } });
+      });
+    } catch {
+      // Tiene referencias históricas (ventas/compras, etc.) que no se pueden borrar: purgar del catálogo
+      const suffix = `__del__${id}`;
+      await tx.stock.deleteMany({ where: { productoId: id } }).catch(() => null);
+      try {
+        return await tx.producto.update({
+          where: { id },
+          data: {
+            activo: false,
+            nombre: suffix,
+            codigoBarras: null,
+            codigoInterno: null,
+          },
+        });
+      } catch {
+        return await tx.producto.update({ where: { id }, data: { activo: false } });
+      }
+    }
   }
 
   // Stock por sucursal
@@ -617,6 +665,10 @@ export class ProductosService {
   async removeCombo(id: string) {
     const combo = await this.prisma.tenant.producto.findUnique({ where: { id } });
     if (!combo || !combo.esCombo) throw new NotFoundException('Combo no encontrado');
-    return this.prisma.tenant.producto.update({ where: { id }, data: { activo: false } });
+    try {
+      return await this.prisma.tenant.producto.delete({ where: { id } });
+    } catch {
+      return await this.prisma.tenant.producto.update({ where: { id }, data: { activo: false, nombre: `__del__${id}`, codigoBarras: null, codigoInterno: null } });
+    }
   }
 }

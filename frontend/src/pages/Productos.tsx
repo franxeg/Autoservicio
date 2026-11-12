@@ -37,6 +37,8 @@ export default function Productos() {
   const [editForm, setEditForm] = useState({ codigoBarras: '', nombre: '', precioCosto: '', porcentajeVenta: '', porcentajeCrecimiento: '', categoriaId: '', stock: '', stockMinimo: '', unidad: 'UNIDAD' });
   const [newCategoria, setNewCategoria] = useState('');
   const [showCatModal, setShowCatModal] = useState(false);
+  const [editCatId, setEditCatId] = useState<string | null>(null);
+  const [editCatNombre, setEditCatNombre] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [createPrecio, setCreatePrecio] = useState({ precioCosto: '', porcentajeCrecimiento: '10', porcentajeVenta: '30' });
   const [vista, setVista] = useState<'productos' | 'elaborados' | 'combos'>('productos');
@@ -89,7 +91,18 @@ export default function Productos() {
       await api.delete(`/categorias/${id}`);
       setCategorias(categorias.filter(c => c.id !== id));
       if (form.categoriaId === id) setForm({ ...form, categoriaId: '' });
+      if (editForm.categoriaId === id) setEditForm(f => ({ ...f, categoriaId: '' }));
+      if (editCatId === id) { setEditCatId(null); setEditCatNombre(''); }
     } catch (e: any) { setError(e.response?.data?.message || 'Error al eliminar'); }
+  };
+  const handleUpdateCategoria = async () => {
+    if (!editCatId || !editCatNombre.trim()) return;
+    try {
+      const { data } = await api.patch(`/categorias/${editCatId}`, { nombre: editCatNombre.trim() });
+      setCategorias(categorias.map(c => c.id === editCatId ? { ...c, ...data, nombre: editCatNombre.trim() } : c));
+      setEditCatId(null); setEditCatNombre('');
+      fetchProductos(search);
+    } catch (e: any) { setError(e.response?.data?.message || 'Error al editar categoría'); }
   };
   useEffect(() => { fetchProductos(); fetchCategorias(); }, []);
 
@@ -457,22 +470,37 @@ export default function Productos() {
         </div>
       )}
       {showCatModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'grid', placeItems: 'center', zIndex: 60 }} onClick={() => setShowCatModal(false)}>
-          <div style={{ background: 'white', padding: 20, borderRadius: 12, width: 420 }} onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><h3>Gestionar categorías</h3><button onClick={() => setShowCatModal(false)} style={{ border: 'none', background: '#e5e7eb', padding: '6px 10px', borderRadius: 6, cursor: 'pointer' }}>✕</button></div>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'grid', placeItems: 'center', zIndex: 60 }} onClick={() => { setShowCatModal(false); setEditCatId(null); setEditCatNombre(''); }}>
+          <div style={{ background: 'white', padding: 20, borderRadius: 12, width: 460 }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><h3>Gestionar categorías</h3><button onClick={() => { setShowCatModal(false); setEditCatId(null); setEditCatNombre(''); }} style={{ border: 'none', background: '#e5e7eb', padding: '6px 10px', borderRadius: 6, cursor: 'pointer' }}>✕</button></div>
             <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
               <input placeholder="Nueva categoría..." value={newCategoria} onChange={e => setNewCategoria(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAddCategoria()} style={{ flex: 1, padding: 8, borderRadius: 6, border: '1px solid #d1d5db' }} />
               <button onClick={handleAddCategoria} style={{ padding: '8px 14px', background: '#111827', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Agregar</button>
             </div>
-            <div style={{ marginTop: 16, maxHeight: 260, overflow: 'auto', border: '1px solid #e5e7eb', borderRadius: 6 }}>
+            <div style={{ marginTop: 16, maxHeight: 280, overflow: 'auto', border: '1px solid #e5e7eb', borderRadius: 6 }}>
               {categorias.length === 0 ? <p style={{ padding: 12, color: '#9ca3af', textAlign: 'center' }}>Sin categorías</p> : categorias.map(c => (
-                <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderBottom: '1px solid #f3f4f6' }}>
-                  <span>{c.nombre}{c.esSistema && <small style={{ color: '#6b7280' }}> (sistema)</small>}</span>
-                  {!c.esSistema && <button onClick={() => handleDeleteCategoria(c.id)} style={{ background: '#fee2e2', color: '#b91c1c', border: 'none', padding: '4px 8px', borderRadius: 6, cursor: 'pointer', fontSize: 12 }}>Eliminar</button>}
+                <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderBottom: '1px solid #f3f4f6', gap: 8 }}>
+                  {editCatId === c.id ? (
+                    <>
+                      <input value={editCatNombre} onChange={e => setEditCatNombre(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleUpdateCategoria(); if (e.key === 'Escape') { setEditCatId(null); setEditCatNombre(''); } }} style={{ flex: 1, padding: 6, borderRadius: 6, border: '1px solid #d1d5db' }} autoFocus />
+                      <button onClick={handleUpdateCategoria} style={{ background: '#059669', color: 'white', border: 'none', padding: '4px 8px', borderRadius: 6, cursor: 'pointer', fontSize: 12 }}>Guardar</button>
+                      <button onClick={() => { setEditCatId(null); setEditCatNombre(''); }} style={{ background: '#e5e7eb', color: '#111827', border: 'none', padding: '4px 8px', borderRadius: 6, cursor: 'pointer', fontSize: 12 }}>Cancelar</button>
+                    </>
+                  ) : (
+                    <>
+                      <span style={{ flex: 1 }}>{c.nombre}{c.esSistema && <small style={{ color: '#6b7280' }}> (sistema)</small>}</span>
+                      {!c.esSistema && (
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button onClick={() => { setEditCatId(c.id); setEditCatNombre(c.nombre); }} style={{ background: '#dbeafe', color: '#1d4ed8', border: 'none', padding: '4px 8px', borderRadius: 6, cursor: 'pointer', fontSize: 12 }}>Editar</button>
+                          <button onClick={() => handleDeleteCategoria(c.id)} style={{ background: '#fee2e2', color: '#b91c1c', border: 'none', padding: '4px 8px', borderRadius: 6, cursor: 'pointer', fontSize: 12 }}>Eliminar</button>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
               ))}
             </div>
-            <small style={{ color: '#6b7280', display: 'block', marginTop: 8 }}>Al eliminar, los productos quedarán sin categoría.</small>
+            <small style={{ color: '#6b7280', display: 'block', marginTop: 8 }}>Al renombrar, los productos mantienen su categoría. Al eliminar, los productos quedarán sin categoría.</small>
           </div>
         </div>
       )}
