@@ -214,14 +214,10 @@ export class ProductosService {
     // Intentar eliminación física completa
     try {
       // Si es elaborado, su receta (como elaborado) tiene cascade; stocks/movimientos pueden bloquear -> limpiar si es posible
-      return await tx.$transaction(async (prisma) => {
-        // limpiar dependencias sin valor histórico crítico si existen (stock del producto)
-        await (prisma as any).stock.deleteMany({ where: { productoId: id } }).catch(() => null);
-        await (prisma as any).movimientoStock.deleteMany({ where: { productoId: id } }).catch(() => null);
-        // receta como elaborado tiene onDelete Cascade en schema, pero por si acaso
-        await (prisma as any).recetaItem.deleteMany({ where: { elaboradoId: id } }).catch(() => null);
-        return await (prisma as any).producto.delete({ where: { id } });
-      });
+      await tx.stock.deleteMany({ where: { productoId: id } }).catch(() => null);
+      await tx.movimientoStock.deleteMany({ where: { productoId: id } }).catch(() => null);
+      await tx.recetaItem.deleteMany({ where: { elaboradoId: id } }).catch(() => null);
+      return await tx.producto.delete({ where: { id } });
     } catch {
       // Tiene referencias históricas (ventas/compras, etc.) que no se pueden borrar: purgar del catálogo
       const suffix = `__del__${id}`;
