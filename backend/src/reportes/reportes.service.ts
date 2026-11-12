@@ -183,10 +183,12 @@ export class ReportesService {
   }
 
   private filtrarPorHora<T>(items: T[], getFecha: (item: T) => Date | string | null | undefined, horaDesde?: string, horaHasta?: string): T[] {
-    if (!horaDesde && !horaHasta) return items;
-    const parseH = (s?: string, def = 0) => {
-      if (!s) return def;
-      const h = parseInt(String(s).split(':')[0], 10);
+    const hasDesde = horaDesde !== undefined && horaDesde !== null && String(horaDesde).trim() !== '';
+    const hasHasta = horaHasta !== undefined && horaHasta !== null && String(horaHasta).trim() !== '';
+    if (!hasDesde && !hasHasta) return items;
+    const parseH = (s: string | undefined, def: number) => {
+      if (s === undefined || s === null || String(s).trim() === '') return def;
+      const h = parseInt(String(s).trim().split(':')[0], 10);
       return isNaN(h) ? def : h;
     };
     const hIni = parseH(horaDesde, 0);
@@ -196,7 +198,9 @@ export class ReportesService {
       if (!f) return false;
       const d = new Date(f);
       const h = d.getHours();
-      return h >= hIni && h <= hFin;
+      if (hasDesde && h < hIni) return false;
+      if (hasHasta && h > hFin) return false;
+      return true;
     });
   }
 
