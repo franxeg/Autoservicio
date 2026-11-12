@@ -106,6 +106,7 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
   const [pagosCombinados, setPagosCombinados] = useState<{ metodo: string; monto: number }[]>([]);
   const [pagoCombinadoMetodo, setPagoCombinadoMetodo] = useState('EFECTIVO');
   const [pagoCombinadoMonto, setPagoCombinadoMonto] = useState('');
+  const [pagoCombinadoMetodo2, setPagoCombinadoMetodo2] = useState('TRANSFERENCIA');
   const [ultimoVenta, setUltimoVenta] = useState<any>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const pesoRef = useRef<HTMLInputElement>(null);
@@ -494,7 +495,7 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
         items: ventaItems,
         pagos,
       });
-      setUltimoVenta({ ...data, items: ventaItems, metodoPago, clienteSearch });
+      setUltimoVenta({ ...data, items: ventaItems, metodoPago: pagos ? 'MIXTO' : metodoPago, clienteSearch, pagos: pagos || undefined });
       setSuccess(`Venta #${data.nroComprobante} por $${Number(data.total).toFixed(0)} registrada`);
       limpiar();
       checkCaja();
@@ -604,24 +605,32 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
         <div style={{ fontSize: 36, fontWeight: 'bold', margin: '16px 0' }}>${total.toFixed(0)}</div>
         <div style={{ marginTop: 12 }}>
           <div style={{ fontWeight: 'bold', marginBottom: 8 }}>Tipo de cobro</div>
+          {pagosCombinados.length > 1 && <div style={{ marginBottom: 8, fontSize: 12, color: '#059669' }}>Pago combinado activo. Cancelá la combinación para elegir un método único.</div>}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            {METODOS_PAGO.map(({ value, label }) => (
-              <button
-                key={value}
-                onClick={() => {
-                  setMetodoPago(value);
-                  if (value !== 'CUENTA_CORRIENTE') { setClienteId(''); setClienteSearch(''); setClientes([]); }
-                }}
-                style={{
-                  padding: '12px 8px', borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: metodoPago === value ? 'bold' : 'normal',
-                  border: metodoPago === value ? '2px solid #111827' : '1px solid #d1d5db',
-                  background: metodoPago === value ? '#111827' : 'white',
-                  color: metodoPago === value ? 'white' : '#111827',
-                }}
-              >
-                {metodoPago === value ? '✓ ' : ''}{label}
-              </button>
-            ))}
+            {METODOS_PAGO.map(({ value, label }) => {
+              const combinado = pagosCombinados.length > 1;
+              const selected = !combinado && metodoPago === value;
+              return (
+                <button
+                  key={value}
+                  disabled={combinado}
+                  onClick={() => {
+                    if (combinado) return;
+                    setMetodoPago(value);
+                    if (value !== 'CUENTA_CORRIENTE') { setClienteId(''); setClienteSearch(''); setClientes([]); }
+                  }}
+                  style={{
+                    padding: '12px 8px', borderRadius: 6, cursor: combinado ? 'not-allowed' : 'pointer', fontSize: 14, fontWeight: selected ? 'bold' : 'normal',
+                    border: selected ? '2px solid #111827' : '1px solid #d1d5db',
+                    background: selected ? '#111827' : (combinado ? '#f3f4f6' : 'white'),
+                    color: selected ? 'white' : (combinado ? '#9ca3af' : '#111827'),
+                    opacity: combinado ? 0.7 : 1,
+                  }}
+                >
+                  {selected ? '✓ ' : ''}{label}
+                </button>
+              );
+            })}
           </div>
         </div>
         {metodoPago === 'CUENTA_CORRIENTE' && (
@@ -734,45 +743,48 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
 
     {mostrarCombinar && (
       <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'grid', placeItems: 'center', zIndex: 95 }} onClick={() => setMostrarCombinar(false)}>
-        <div style={{ background: 'white', padding: 24, borderRadius: 12, width: 420 }} onClick={e => e.stopPropagation()}>
+        <div style={{ background: 'white', padding: 24, borderRadius: 12, width: 440 }} onClick={e => e.stopPropagation()}>
           <h3 style={{ margin: 0 }}>Combinar pagos</h3>
           <p style={{ color: '#6b7280', fontSize: 13, marginTop: 4 }}>Total a cobrar: ${total.toFixed(0)}</p>
           <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
-            <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>Método
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>Primer método
               <select value={pagoCombinadoMetodo} onChange={e => setPagoCombinadoMetodo(e.target.value)} style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }}>
                 {METODOS_PAGO.filter(m => m.value !== 'CUENTA_CORRIENTE').map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
               </select>
             </label>
-            <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>Monto
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>Monto primera parte
               <input type="number" min="0" step="1" value={pagoCombinadoMonto} onChange={e => setPagoCombinadoMonto(e.target.value)} style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }} />
             </label>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>Completar con (segundo método)
+              <select value={pagoCombinadoMetodo2} onChange={e => setPagoCombinadoMetodo2(e.target.value)} style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }}>
+                {METODOS_PAGO.filter(m => m.value !== 'CUENTA_CORRIENTE').map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+              </select>
+            </label>
             <button onClick={() => {
-              const m = Math.round(parseFloat(pagoCombinadoMonto) || 0);
-              if (m <= 0) return;
-              setPagosCombinados(prev => [...prev, { metodo: pagoCombinadoMetodo, monto: m }]);
-              setPagoCombinadoMonto('');
-            }} style={{ padding: '8px 16px', background: '#059669', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Agregar parte</button>
+              const m1 = Math.round(parseFloat(pagoCombinadoMonto) || 0);
+              const m2 = Math.round(total - m1);
+              if (m1 <= 0 || m1 >= Math.round(total)) { alert('Ingresá un monto válido para la primera parte (menor al total).'); return; }
+              if (pagoCombinadoMetodo === pagoCombinadoMetodo2) { alert('Elegí un segundo método distinto.'); return; }
+              setPagosCombinados([
+                { metodo: pagoCombinadoMetodo, monto: m1 },
+                { metodo: pagoCombinadoMetodo2, monto: m2 },
+              ]);
+              setMostrarCombinar(false);
+            }} style={{ padding: '10px 16px', background: '#059669', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}>Completar con</button>
           </div>
-          {pagosCombinados.length > 0 && (
+          {pagosCombinados.length > 1 && (
             <div style={{ marginTop: 12, padding: 10, background: '#f3f4f6', borderRadius: 6, fontSize: 13 }}>
+              <div style={{ fontWeight: 600, marginBottom: 6 }}>Combinación actual</div>
               {pagosCombinados.map((p, i) => (
                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                   <span>{METODOS_PAGO.find(m => m.value === p.metodo)?.label}</span>
-                  <span>${p.monto.toFixed(0)} <button onClick={() => setPagosCombinados(prev => prev.filter((_, idx) => idx !== i))} style={{ marginLeft: 8, color: 'red', border: 'none', background: 'none', cursor: 'pointer' }}>✕</button></span>
+                  <span>${p.monto.toFixed(0)}</span>
                 </div>
               ))}
-              <div style={{ fontWeight: 'bold', borderTop: '1px solid #d1d5db', paddingTop: 4, marginTop: 4 }}>
-                Total: ${pagosCombinados.reduce((a, p) => a + p.monto, 0).toFixed(0)} / ${total.toFixed(0)}
-              </div>
             </div>
           )}
           <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-            <button onClick={() => {
-              const sum = pagosCombinados.reduce((a, p) => a + p.monto, 0);
-              if (Math.abs(sum - total) > 1) { alert('La suma debe ser igual al total'); return; }
-              setMostrarCombinar(false);
-            }} style={{ flex: 1, padding: 10, background: '#111827', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Confirmar</button>
-            <button onClick={() => setMostrarCombinar(false)} style={{ padding: '10px 16px', background: '#e5e7eb', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Cancelar</button>
+            <button onClick={() => setMostrarCombinar(false)} style={{ flex: 1, padding: '10px 16px', background: '#e5e7eb', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Cerrar</button>
           </div>
         </div>
       </div>
@@ -828,8 +840,19 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
               <span>${total.toFixed(0)}</span>
             </div>
             <div style={{ marginTop: 6, color: '#6b7280' }}>
-              Método: {METODOS_PAGO.find(m => m.value === metodoPago)?.label}
-              {metodoPago === 'CUENTA_CORRIENTE' && clienteSearch && <div>Cliente: {clienteSearch}</div>}
+              {pagosCombinados.length > 1 ? (
+                <div>
+                  <div style={{ fontWeight: 600, color: '#111827', marginBottom: 4 }}>Método: Pago combinado</div>
+                  {pagosCombinados.map((p, i) => (
+                    <div key={i}>{METODOS_PAGO.find(m => m.value === p.metodo)?.label}: ${p.monto.toFixed(0)}</div>
+                  ))}
+                </div>
+              ) : (
+                <>
+                  Método: {METODOS_PAGO.find(m => m.value === metodoPago)?.label}
+                  {metodoPago === 'CUENTA_CORRIENTE' && clienteSearch && <div>Cliente: {clienteSearch}</div>}
+                </>
+              )}
             </div>
           </div>
           
@@ -878,7 +901,7 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
             <button onClick={() => {
               // Generar ticket para impresión
               if (!ultimoVenta && !(items.length > 0 || comboGroups.length > 0)) return;
-              const v = ultimoVenta || { nroComprobante: '---', total, items: [], metodoPago, clienteSearch };
+              const v = ultimoVenta || { nroComprobante: '---', total, items: [], metodoPago: pagosCombinados.length > 1 ? 'MIXTO' : metodoPago, clienteSearch, pagos: pagosCombinados.length > 1 ? pagosCombinados : undefined };
               const ticketItems = v.items && v.items.length > 0 ? v.items : (() => {
                 const list: any[] = [];
                 for (const group of comboGroups) {
@@ -896,7 +919,11 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
               const win = window.open('', '_blank', 'width=400,height=600');
               if (win) {
                 const nombreEmp = getNombreEmpresa();
-                win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Ticket</title><style>body{font-family:monospace;font-size:12px;margin:0;padding:10px}h2{text-align:center;margin:4px}p{margin:2px 0}.line{border-top:1px dashed #000;margin:6px 0}.row{display:flex;justify-content:space-between}.tot{font-weight:bold;font-size:14px}</style></head><body><div style="text-align:center;font-weight:bold;font-size:14px;margin:4px">${nombreEmp.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div><p style="text-align:center">Comprobante: ${v.nroComprobante}</p><p style="text-align:center">${new Date().toLocaleString()}</p><div class="line"></div>${ticketItems.map((it:any)=>`<div class="row"><span>${Number(it.cantidad).toFixed(it.cantidad%1===0?0:3)} x ${(it.nombre||'').substring(0,18).replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span><span>$${Math.round((it.precioUnitario||0)*it.cantidad)}</span></div>`).join('')}<div class="line"></div><div class="row tot"><span>TOTAL</span><span>$${Number(v.total||total).toFixed(0)}</span></div><div class="row"><span>Pago</span><span>${METODOS_PAGO.find(m=>m.value===(v.metodoPago||metodoPago))?.label||''}</span></div>${(v.clienteSearch||clienteSearch)?`<p>Cliente: ${(v.clienteSearch||clienteSearch).replace(/</g,'&lt;').replace(/>/g,'&gt;')}</p>`:''}<div class="line"></div><p style="text-align:center">¡Gracias por su compra!</p><script>window.onload=function(){window.print();setTimeout(function(){window.close();},500);};</script></body></html>`);
+                const pagosTicket = v.pagos && v.pagos.length > 1 ? v.pagos : (pagosCombinados.length > 1 ? pagosCombinados : null);
+                const pagoHtml = pagosTicket
+                  ? `<div class="row"><span>Pago</span><span>Combinado</span></div>` + pagosTicket.map((p:any)=>`<div class="row"><span>${(METODOS_PAGO.find(m=>m.value===p.metodo)?.label||p.metodo).replace(/</g,'&lt;')}</span><span>$${Math.round(p.monto)}</span></div>`).join('')
+                  : `<div class="row"><span>Pago</span><span>${METODOS_PAGO.find(m=>m.value===(v.metodoPago||metodoPago))?.label||''}</span></div>`;
+                win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Ticket</title><style>body{font-family:monospace;font-size:12px;margin:0;padding:10px}h2{text-align:center;margin:4px}p{margin:2px 0}.line{border-top:1px dashed #000;margin:6px 0}.row{display:flex;justify-content:space-between}.tot{font-weight:bold;font-size:14px}</style></head><body><div style="text-align:center;font-weight:bold;font-size:14px;margin:4px">${nombreEmp.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div><p style="text-align:center">Comprobante: ${v.nroComprobante}</p><p style="text-align:center">${new Date().toLocaleString()}</p><div class="line"></div>${ticketItems.map((it:any)=>`<div class="row"><span>${Number(it.cantidad).toFixed(it.cantidad%1===0?0:3)} x ${(it.nombre||'').substring(0,18).replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span><span>$${Math.round((it.precioUnitario||0)*it.cantidad)}</span></div>`).join('')}<div class="line"></div><div class="row tot"><span>TOTAL</span><span>$${Number(v.total||total).toFixed(0)}</span></div>${pagoHtml}${(v.clienteSearch||clienteSearch)?`<p>Cliente: ${(v.clienteSearch||clienteSearch).replace(/</g,'&lt;').replace(/>/g,'&gt;')}</p>`:''}<div class="line"></div><p style="text-align:center">¡Gracias por su compra!</p><script>window.onload=function(){window.print();setTimeout(function(){window.close();},500);};</script></body></html>`);
                 win.document.close();
               }
               setMostrarConfirmacion(false);
