@@ -33,6 +33,7 @@ interface ComboGroup {
   id: string;
   combo: Combo;
   aplicadoEn: number;
+  veces?: number;
   itemsAsignados: Array<{ productoId: string; cantidad: number; precioUnitarioLista: number }>;
 }
 
@@ -219,19 +220,19 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
 
       let maxCantidad = Number.POSITIVE_INFINITY;
       for (const ci of combo.items) {
-        const requerido = Math.max(1, Number(ci.cantidad) || 1);
+        const requerido = Math.max(0.001, Number(ci.cantidad) || 1);
         const disponible = restantes.get(ci.productoId) ?? 0;
-        if (disponible < requerido) {
+        if (disponible + 1e-9 < requerido) {
           maxCantidad = 0;
           break;
         }
-        maxCantidad = Math.min(maxCantidad, Math.floor(disponible / requerido));
+        maxCantidad = Math.min(maxCantidad, Math.floor((disponible + 1e-9) / requerido));
       }
 
-      if (maxCantidad <= 0) continue;
+      if (!isFinite(maxCantidad) || maxCantidad <= 0) continue;
 
       const itemsAsignados = combo.items.map(ci => {
-        const requerido = Math.max(1, Number(ci.cantidad) || 1);
+        const requerido = Math.max(0.001, Number(ci.cantidad) || 1);
         const cantidad = requerido * maxCantidad;
         const disponibleActual = restantes.get(ci.productoId) ?? 0;
         restantes.set(ci.productoId, Math.max(0, disponibleActual - cantidad));
@@ -239,11 +240,13 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
       });
 
       grupos.push({
+        ...entry,
         id: entry.id,
         combo,
         aplicadoEn: entry.aplicadoEn,
+        veces: maxCantidad,
         itemsAsignados,
-      });
+      } as any);
     }
 
     return grupos;
@@ -378,10 +381,10 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
     }
   }
 
-  const productosSueltos = items.filter(item => (freeAmountByProduct.get(item.id) ?? 0) > 0);
+  const productosSueltos = items.filter(item => (freeAmountByProduct.get(item.id) ?? 0) > 1e-9);
   const totalBruto = items.reduce((acc, i) => acc + Math.round(i.precio * i.cantidad), 0);
-  const totalListaCombo = comboGroups.reduce((acc, group) => acc + Math.round(group.combo.totalLista || 0), 0);
-  const totalCombo = comboGroups.reduce((acc, group) => acc + Math.round(group.combo.precioVenta || group.combo.totalLista || 0), 0);
+  const totalListaCombo = comboGroups.reduce((acc, group) => acc + Math.round(group.combo.totalLista || 0) * (group.veces || 1), 0);
+  const totalCombo = comboGroups.reduce((acc, group) => acc + Math.round(group.combo.precioVenta || group.combo.totalLista || 0) * (group.veces || 1), 0);
   const totalSueltos = productosSueltos.reduce((acc, item) => acc + Math.round(item.precio * (freeAmountByProduct.get(item.id) ?? 0)), 0);
   const total = Math.max(0, totalCombo + totalSueltos);
 
@@ -438,7 +441,7 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
           return acc + Math.round(precioListaUnit * ia.cantidad);
         }, 0);
 
-        const precioCombo = Math.round(group.combo.precioVenta || totalLista);
+        const precioCombo = Math.round(group.combo.precioVenta || (group.combo.totalLista || totalLista)) * (group.veces || 1);
         const factor = totalLista > 0 ? precioCombo / totalLista : 1;
 
         for (const ia of itemsAsignados) {
@@ -588,7 +591,7 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
               <div style={{ fontWeight: 700 }}>Ofertas aplicadas</div>
               {comboGroups.map((group) => (
                 <div key={group.id} style={{ marginTop: 6 }}>
-                  • {group.combo.nombre} · ${Math.round(group.combo.precioVenta || group.combo.totalLista || 0).toFixed(0)}
+                  • {group.combo.nombre}{(group.veces || 1) > 1 ? ` x${group.veces}` : ''} — ${Math.round((group.combo.precioVenta || group.combo.totalLista || 0) * (group.veces || 1)).toFixed(0)}
                 </div>
               ))}
               <div style={{ marginTop: 8 }}>Total ofertas: ${totalCombo.toFixed(0)}</div>
@@ -720,17 +723,15 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
                     if (!prod) continue;
                     const requerido = Math.max(0.001, Number(ci.cantidad) || 1);
                     const existente = next.find(i => i.id === ci.productoId);
+                    const precioUnit = Number(prod.precioVenta) || 0;
                     if (existente) {
-                      if (existente.cantidad + 1e-9 < requerido) {
-                        if (esPeso(prod)) {
-                          const precioUnit = Number(prod.precioVenta) || 0;
-                          next = next.map(p => p.id === ci.productoId ? { ...p, cantidad: requerido, precio: precioUnit } : p);
-                        } else {
-                          next = next.map(p => p.id === ci.productoId ? { ...p, cantidad: requerido } : p);
-                        }
+                      const nuevaCant = (Number(existente.cantidad) || 0) + requerido;
+                      if (esPeso(prod)) {
+                        next = next.map(p => p.id === ci.productoId ? { ...p, cantidad: nuevaCant, precio: precioUnit, unidad: prod.unidad } : p);
+                      } else {
+                        next = next.map(p => p.id === ci.productoId ? { ...p, cantidad: nuevaCant } : p);
                       }
                     } else {
-                      const precioUnit = Number(prod.precioVenta) || 0;
                       next = [...next, { id: prod.id, codigo: prod.codigoBarras || prod.nombre, nombre: prod.nombre, precio: precioUnit, cantidad: requerido, ...(esPeso(prod) ? { unidad: prod.unidad } : {}) } as any];
                     }
                   }
@@ -808,8 +809,8 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
               {comboGroups.map(group => (
                 <div key={group.id} style={{ background: '#ecfdf5', padding: 10, borderRadius: 6, marginBottom: 6 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <strong>{group.combo.nombre}</strong>
-                    <strong>${Math.round(group.combo.precioVenta || group.combo.totalLista || 0).toFixed(0)}</strong>
+                    <strong>{group.combo.nombre}{(group.veces || 1) > 1 ? ` x${group.veces}` : ''}</strong>
+                    <strong>${Math.round((group.combo.precioVenta || group.combo.totalLista || 0) * (group.veces || 1)).toFixed(0)}</strong>
                   </div>
                   {group.itemsAsignados.map(ia => {
                     const ci = group.combo.items.find(c => c.productoId === ia.productoId);
@@ -913,7 +914,8 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
                 for (const group of comboGroups) {
                   for (const ia of group.itemsAsignados || []) {
                     const prod = catalog.find(p => p.id === ia.productoId) || items.find(i => i.id === ia.productoId);
-                    list.push({ productoId: ia.productoId, cantidad: ia.cantidad, precioUnitario: ia.precioUnitarioLista, nombre: prod?.nombre || group.combo.nombre });
+                    const precioUnit = (ia.precioUnitarioLista || 0) * ((group.combo.precioVenta || group.combo.totalLista || 0) / (group.combo.totalLista || (group.combo.precioVenta || 1)));
+                    list.push({ productoId: ia.productoId, cantidad: ia.cantidad, precioUnitario: Math.round(precioUnit), nombre: prod?.nombre || group.combo.nombre });
                   }
                 }
                 for (const item of productosSueltos) {
