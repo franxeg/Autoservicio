@@ -322,7 +322,7 @@ export class ReportesService {
         cantidad: Math.abs(m.cantidad),
         valor: Math.round(Math.abs(m.cantidad) * m.costoUnitario),
       })),
-      topProductos: [...porProducto.values()].sort((a, b) => b.unidades - a.unidades).slice(0, 10),
+      topProductos: [...porProducto.values()].sort((a, b) => b.total - a.total).slice(0, 10),
       topCategorias: [...porCategoria.values()].sort((a, b) => b.total - a.total),
     };
   }
