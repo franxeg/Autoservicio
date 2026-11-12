@@ -713,23 +713,29 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
           <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
             {combos.map(c => (
               <div key={c.id} onClick={() => {
-                for (const ci of c.items || []) {
-                  const prod = catalog.find(p => p.id === ci.productoId);
-                  if (!prod) continue;
-                  const existente = items.find(i => i.id === ci.productoId);
-                  const requerido = Math.max(1, Number(ci.cantidad) || 1);
-                  if (existente) {
-                    if (existente.cantidad < requerido) {
-                      setItems(prev => prev.map(p => p.id === ci.productoId ? { ...p, cantidad: requerido } : p));
-                    }
-                  } else {
-                    if (esPeso(prod)) {
-                      abrirPeso(prod, prod.codigoBarras || prod.nombre);
+                setItems(prev => {
+                  let next = [...prev];
+                  for (const ci of c.items || []) {
+                    const prod = catalog.find(p => p.id === ci.productoId);
+                    if (!prod) continue;
+                    const requerido = Math.max(0.001, Number(ci.cantidad) || 1);
+                    const existente = next.find(i => i.id === ci.productoId);
+                    if (existente) {
+                      if (existente.cantidad + 1e-9 < requerido) {
+                        if (esPeso(prod)) {
+                          const precioUnit = Number(prod.precioVenta) || 0;
+                          next = next.map(p => p.id === ci.productoId ? { ...p, cantidad: requerido, precio: precioUnit } : p);
+                        } else {
+                          next = next.map(p => p.id === ci.productoId ? { ...p, cantidad: requerido } : p);
+                        }
+                      }
                     } else {
-                      setItems(prev => [...prev, { id: prod.id, codigo: prod.codigoBarras || prod.nombre, nombre: prod.nombre, precio: Number(prod.precioVenta), cantidad: requerido }]);
+                      const precioUnit = Number(prod.precioVenta) || 0;
+                      next = [...next, { id: prod.id, codigo: prod.codigoBarras || prod.nombre, nombre: prod.nombre, precio: precioUnit, cantidad: requerido, ...(esPeso(prod) ? { unidad: prod.unidad } : {}) } as any];
                     }
                   }
-                }
+                  return next;
+                });
                 setMostrarCombosModal(false);
               }} style={{ padding: '10px 12px', cursor: 'pointer', border: '1px solid #e5e7eb', borderRadius: 8, background: '#f9fafb' }}>
                 <div style={{ fontWeight: 600 }}>{c.nombre}</div>
