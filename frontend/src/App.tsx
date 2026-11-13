@@ -22,17 +22,7 @@ const RESTRICTED_ROLE_PATHS = ['/', '/pos', '/movimientos', '/proveedores', '/cl
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = useAuthStore(s => s.token);
-  const user = useAuthStore(s => s.user);
   if (!token) return <Navigate to="/login" replace />;
-  if (user?.rol === 'SETUP') return <Navigate to="/setup" replace />;
-  return <>{children}</>;
-}
-
-function SetupRoute({ children }: { children: React.ReactNode }) {
-  const token = useAuthStore(s => s.token);
-  const user = useAuthStore(s => s.user);
-  if (!token) return <Navigate to="/login" replace />;
-  if (user?.rol !== 'SETUP') return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 
@@ -58,7 +48,7 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/registro" element={<Registro />} />
-        <Route path="/setup" element={<SetupRoute><Setup /></SetupRoute>} />
+        <Route path="/setup" element={<Setup />} />
         <Route path="/proveedor" element={<Proveedor />} />
         <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
           <Route index element={<RequireRole roles={['ADMIN']}><PremiumGate titulo="Dashboard"><Dashboard /></PremiumGate></RequireRole>} />

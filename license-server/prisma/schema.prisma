@@ -14,9 +14,11 @@ model Company {
   email         String?
   password      String
   licenseKey    String    @unique @default(cuid())
-  isPremium     Boolean   @default(false)
-  premiumExpiry DateTime?
-  trialStart    DateTime  @default(now())
+  isPremium       Boolean   @default(false)
+  premiumExpiry   DateTime?
+  resetCode       String?
+  resetCodeExpiry DateTime?
+  trialStart      DateTime  @default(now())
   trialEnd      DateTime
   activo        Boolean   @default(true)
   createdAt     DateTime  @default(now())

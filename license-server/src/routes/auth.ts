@@ -42,11 +42,7 @@ export default function authRoutes(prisma: PrismaClient) {
         return res.status(409).json({ message: 'El usuario ya está en uso. Elegí otro.' });
       }
 
-      // Verificar que el nombre de empresa no esté tomado
-      const nameExists = await prisma.company.findFirst({ where: { nombre } });
-      if (nameExists) {
-        return res.status(409).json({ message: 'Ya existe una empresa con ese nombre. Agregá algo para diferenciarla.' });
-      }
+      // El nombre de empresa es local y no se valida por duplicado.
 
       const hashed = await bcrypt.hash(password, 10);
       const trialEnd = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
@@ -128,6 +124,44 @@ export default function authRoutes(prisma: PrismaClient) {
           premiumExpiry: company.premiumExpiry,
         },
       });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Recuperar contraseña con código generado por el proveedor.
+  // Valida el código de 4 dígitos, cambia la contraseña en el license-server
+  // (para mantenerla sincronizada) y consume el código.
+  router.post('/reset-password', async (req, res, next) => {
+    try {
+      const { username, code, newPassword } = req.body;
+      if (!username || !code || !newPassword) {
+        return res.status(400).json({ message: 'Usuario, código y nueva contraseña son requeridos' });
+      }
+      if (String(newPassword).length < 4) {
+        return res.status(400).json({ message: 'La contraseña debe tener al menos 4 caracteres' });
+      }
+
+      const company = await prisma.company.findUnique({ where: { username } });
+      if (!company) {
+        return res.status(400).json({ message: 'Código inválido o expirado' });
+      }
+      const codigoValido =
+        !!company.resetCode &&
+        company.resetCode === String(code).trim() &&
+        !!company.resetCodeExpiry &&
+        company.resetCodeExpiry.getTime() > Date.now();
+      if (!codigoValido) {
+        return res.status(400).json({ message: 'Código inválido o expirado' });
+      }
+
+      const hashed = await bcrypt.hash(newPassword, 10);
+      await prisma.company.update({
+        where: { id: company.id },
+        data: { password: hashed, resetCode: null, resetCodeExpiry: null },
+      });
+
+      res.json({ ok: true, message: 'Contraseña actualizada correctamente' });
     } catch (err) {
       next(err);
     }

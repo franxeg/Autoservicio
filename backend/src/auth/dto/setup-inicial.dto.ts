@@ -5,16 +5,16 @@ export class SetupInicialDto {
   @IsNotEmpty()
   nombreEmpresa: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  nombre: string; // nombre y apellido del admin
+  nombre?: string; // nombre visible del administrador (opcional)
 
   @IsString()
   @IsNotEmpty()
   usuario: string;
 
   @IsString()
-  @MinLength(6)
+  @MinLength(4)
   password: string;
 
   @IsOptional()

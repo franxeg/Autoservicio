@@ -17,7 +17,8 @@ export class TenantInterceptor implements NestInterceptor {
     if (user.proveedor === true) {
       const rutasProveedor = ['/api/auth/empresas', '/api/auth/crear-empresa', '/api/auth/cambiar-password-proveedor', '/api/auth/resetear-credenciales', '/api/auth/cambiar-password-admin'];
       const path = (req.originalUrl || '').split('?')[0];
-      if (!rutasProveedor.includes(path)) {
+      const esProxyProveedor = path.startsWith('/api/auth/proveedor/');
+      if (!esProxyProveedor && !rutasProveedor.includes(path)) {
         throw new ForbiddenException('Acceso exclusivo del proveedor.');
       }
       return next.handle();

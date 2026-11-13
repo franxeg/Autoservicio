@@ -179,37 +179,57 @@ function TabEmpresa() {
   const { user, token, setAuth } = useAuthStore();
   const [nombre, setNombre] = useState('');
   const [direccion, setDireccion] = useState('');
-  const [cuit, setCuit] = useState('');
   const [telefono, setTelefono] = useState('');
   const [msg, setMsg] = useState('');
+  const [error, setError] = useState('');
+  const [guardando, setGuardando] = useState(false);
 
   useEffect(() => {
     const n = user?.empresa?.nombre || localStorage.getItem('empresa_nombre') || localStorage.getItem('nombreEmpresa') || '';
     const d = user?.empresa?.direccion || user?.sucursal?.direccion || localStorage.getItem('empresa_direccion') || '';
-    const c = user?.empresa?.cuit || localStorage.getItem('empresa_cuit') || '';
     const t = user?.empresa?.telefono || user?.sucursal?.telefono || localStorage.getItem('empresa_telefono') || '';
-    setNombre(n || ''); setDireccion(d || ''); setCuit(c || ''); setTelefono(t || '');
-  }, [user]);
+    setNombre(n || ''); setDireccion(d || ''); setTelefono(t || '');
+    if (token) {
+      api.get('/auth/empresa')
+        .then(({ data }) => {
+          if (!data) return;
+          setNombre(data.nombre || '');
+          setDireccion(data.direccion || '');
+          setTelefono(data.telefono || '');
+        })
+        .catch(() => {});
+    }
+  }, [user, token]);
 
-  const guardar = () => {
+  const guardar = async () => {
     const n = nombre.trim();
-    localStorage.setItem('empresa_nombre', n);
-    localStorage.setItem('nombreEmpresa', n);
-    localStorage.setItem('empresa_direccion', direccion.trim());
-    localStorage.setItem('empresa_cuit', cuit.trim());
-    localStorage.setItem('empresa_telefono', telefono.trim());
+    if (!n) { setError('El nombre de la empresa es obligatorio.'); return; }
+    setError('');
+    setMsg('');
+    setGuardando(true);
     try {
-      if (user) {
-        const updated = {
-          ...user,
-          empresa: { ...(user.empresa || {}), nombre: n, cuit: cuit.trim(), direccion: direccion.trim(), telefono: telefono.trim() },
-        };
-        if (token) setAuth(token, updated);
-        else localStorage.setItem('user', JSON.stringify(updated));
-      }
-    } catch {}
-    window.dispatchEvent(new Event('storage'));
-    setMsg('Datos guardados. El nombre se actualizará en el menú e impresiones (para usuarios Premium).');
+      await api.patch('/auth/empresa', { nombre: n, direccion: direccion.trim(), telefono: telefono.trim() });
+      localStorage.setItem('empresa_nombre', n);
+      localStorage.setItem('nombreEmpresa', n);
+      localStorage.setItem('empresa_direccion', direccion.trim());
+      localStorage.setItem('empresa_telefono', telefono.trim());
+      try {
+        if (user) {
+          const updated = {
+            ...user,
+            empresa: { ...(user.empresa || {}), nombre: n, direccion: direccion.trim(), telefono: telefono.trim() },
+          };
+          if (token) setAuth(token, updated);
+          else localStorage.setItem('user', JSON.stringify(updated));
+        }
+      } catch {}
+      window.dispatchEvent(new Event('storage'));
+      setMsg('Datos guardados. Se usarán en el menú e impresiones (para usuarios Premium o en trial).');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'No se pudieron guardar los datos de la empresa.');
+    } finally {
+      setGuardando(false);
+    }
   };
 
   const esPremium = (typeof window !== 'undefined') ? (localStorage.getItem('premium_activo') === 'true' || localStorage.getItem('license_status_cache')?.includes('"isPremium":true') || !!localStorage.getItem('premium_trial_start')) : false;
@@ -217,19 +237,19 @@ function TabEmpresa() {
   return (
     <div>
       <h3>Editar datos de la empresa</h3>
-      <p style={{ color: '#6b7280', fontSize: 13 }}>Estos datos se usan en el menú (Premium), tickets y comprobantes.</p>
+      <p style={{ color: '#6b7280', fontSize: 13 }}>Estos datos se usan en el menú (Premium) y en los tickets/comprobantes.</p>
       {!esPremium && (
         <div style={{ background: '#fffbeb', border: '1px solid #fde68a', padding: 10, borderRadius: 6, marginBottom: 12, fontSize: 13, color: '#92400e' }}>
-          ⚠️ La personalización del nombre en el menú lateral y comprobantes está disponible solo para usuarios Premium (en plan Free se muestra "Autoservicio").
+          ⚠️ La personalización del nombre en el menú lateral y comprobantes está disponible solo para usuarios Premium o en período de prueba (en plan Free se muestra "Autoservicio").
         </div>
       )}
       <div style={{ display: 'grid', gap: 12, marginTop: 12, maxWidth: 500 }}>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>Nombre<input value={nombre} onChange={e => setNombre(e.target.value)} style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>Dirección<input value={direccion} onChange={e => setDireccion(e.target.value)} style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>CUIT<input value={cuit} onChange={e => setCuit(e.target.value)} style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>Teléfono<input value={telefono} onChange={e => setTelefono(e.target.value)} style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
-        <button onClick={guardar} style={{ padding: '10px 20px', background: '#111827', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', width: 'fit-content' }}>Guardar</button>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>Nombre de la empresa<input value={nombre} onChange={e => setNombre(e.target.value)} style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>Teléfono<input value={telefono} onChange={e => setTelefono(e.target.value)} placeholder="Ej: 1122334455" style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>Dirección<input value={direccion} onChange={e => setDireccion(e.target.value)} placeholder="Ej: Av. Principal 123" style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
+        <button onClick={guardar} disabled={guardando} style={{ padding: '10px 20px', background: '#111827', color: 'white', border: 'none', borderRadius: 6, cursor: guardando ? 'wait' : 'pointer', width: 'fit-content', opacity: guardando ? 0.7 : 1 }}>{guardando ? 'Guardando...' : 'Guardar'}</button>
         {msg && <small style={{ color: '#059669' }}>{msg}</small>}
+        {error && <small style={{ color: '#dc2626' }}>{error}</small>}
       </div>
     </div>
   );

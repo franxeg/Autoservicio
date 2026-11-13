@@ -17,6 +17,8 @@ export default function adminRoutes(prisma: PrismaClient) {
           licenseKey: true,
           isPremium: true,
           premiumExpiry: true,
+          resetCode: true,
+          resetCodeExpiry: true,
           trialEnd: true,
           activo: true,
           createdAt: true,
@@ -57,6 +59,27 @@ export default function adminRoutes(prisma: PrismaClient) {
         data: { activo: req.body.activo !== false },
       });
       res.json({ id: company.id, nombre: company.nombre, activo: company.activo });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Generar código de recuperación de contraseña (4 dígitos, válido 30 minutos)
+  router.post('/companies/:id/reset-code', requireAdmin, async (req, res, next) => {
+    try {
+      const code = String(Math.floor(1000 + Math.random() * 9000));
+      const resetCodeExpiry = new Date(Date.now() + 30 * 60 * 1000);
+      const company = await prisma.company.update({
+        where: { id: req.params.id },
+        data: { resetCode: code, resetCodeExpiry },
+      });
+      res.json({
+        id: company.id,
+        nombre: company.nombre,
+        username: company.username,
+        resetCode: company.resetCode,
+        resetCodeExpiry: company.resetCodeExpiry,
+      });
     } catch (err) {
       next(err);
     }

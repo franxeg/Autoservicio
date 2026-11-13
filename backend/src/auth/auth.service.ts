@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException, ForbiddenException, BadRequestException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, ForbiddenException, BadRequestException, InternalServerErrorException, NotFoundException, BadGatewayException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { Rol, Prisma } from '@prisma/client';
@@ -7,6 +7,8 @@ import { SetupAdminDto } from './dto/setup-admin.dto';
 import { SetupInicialDto } from './dto/setup-inicial.dto';
 import { ResetearCredencialesDto } from './dto/resetear-credenciales.dto';
 import { CambiarPasswordAdminDto } from './dto/cambiar-password-admin.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ActualizarEmpresaDto } from './dto/actualizar-empresa.dto';
 import * as bcrypt from 'bcryptjs';
 import { randomBytes, timingSafeEqual } from 'crypto';
 import { readFileSync, writeFileSync } from 'fs';
@@ -29,6 +31,160 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
   ) {}
+
+  private lsTokenCache: { token: string; expires: number } | null = null;
+
+  private getLicenseUrl(): string {
+    return process.env.LICENSE_SERVER_URL || 'https://autoservicio-license-server.onrender.com';
+  }
+
+  /**
+   * Token de administrador del license-server para que el backend actúe como
+   * proxy autenticado del panel de proveedor (las credenciales admin nunca
+   * viajan al frontend).
+   */
+  private async lsAdminToken(): Promise<string> {
+    if (this.lsTokenCache && this.lsTokenCache.expires > Date.now()) {
+      return this.lsTokenCache.token;
+    }
+    const adminUser = process.env.LICENSE_SERVER_ADMIN_USER || process.env.ADMIN_USER || 'admin';
+    const adminPass = process.env.LICENSE_SERVER_ADMIN_PASSWORD || process.env.ADMIN_PASSWORD || 'admin';
+    let res: any;
+    try {
+      res = await fetch(`${this.getLicenseUrl()}/api/auth/admin/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: adminUser, password: adminPass }),
+      });
+    } catch {
+      throw new BadGatewayException('No se pudo conectar con el servidor de licencias. Verificá tu conexión a internet.');
+    }
+    if (!res.ok) {
+      throw new BadGatewayException('No se pudo autenticar con el servidor de licencias. Revisá las credenciales de administrador configuradas.');
+    }
+    const data = await res.json();
+    this.lsTokenCache = { token: data.access_token, expires: Date.now() + 5 * 60 * 1000 };
+    return data.access_token;
+  }
+
+  private async lsRequest(path: string, init: any = {}): Promise<any> {
+    const token = await this.lsAdminToken();
+    let res: any;
+    try {
+      res = await fetch(`${this.getLicenseUrl()}${path}`, {
+        ...init,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(init.headers || {}),
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    } catch {
+      throw new BadGatewayException('No se pudo conectar con el servidor de licencias. Verificá tu conexión a internet.');
+    }
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      if (res.status === 401 || res.status === 403) this.lsTokenCache = null;
+      throw new BadGatewayException(data?.message || 'El servidor de licencias devolvió un error.');
+    }
+    return data;
+  }
+
+  /** Indica si la instalación local ya tiene usuarios (para decidir setup o login). */
+  async hasUsers() {
+    const count = await this.prisma.runAsSystem((tx) => tx.usuario.count());
+    return { hasUsers: count > 0 };
+  }
+
+  /** Cambio de contraseña local validando el código generado por el proveedor. */
+  async forgotPassword(dto: ForgotPasswordDto) {
+    const usuario = dto.usuario.trim();
+    const codigo = dto.codigo.trim();
+    if (!usuario || !codigo) throw new BadRequestException('Ingresá tu usuario y el código de recuperación.');
+
+    const user = await this.prisma.runAsSystem((tx) =>
+      tx.usuario.findFirst({ where: { OR: [{ username: usuario }, { email: usuario }] } }),
+    );
+    if (!user || !user.activo) {
+      throw new BadRequestException('Código inválido o expirado.');
+    }
+
+    // La validación del código se hace contra el license-server (fuera de la
+    // transacción para no bloquearla si el servidor tarda en responder).
+    let res: any;
+    try {
+      res = await fetch(`${this.getLicenseUrl()}/api/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: user.username, code: codigo, newPassword: dto.passwordNueva }),
+      });
+    } catch {
+      throw new BadRequestException('No se pudo validar el código. Verificá tu conexión a internet.');
+    }
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new BadRequestException(data?.message || 'Código inválido o expirado.');
+    }
+
+    const password = await bcrypt.hash(dto.passwordNueva, 10);
+    await this.prisma.runAsSystem((tx) => tx.usuario.update({ where: { id: user.id }, data: { password } }));
+    return { ok: true, message: 'Contraseña actualizada correctamente. Ya podés iniciar sesión.' };
+  }
+
+  async obtenerEmpresa(user: any) {
+    const empresa = await this.prisma.tenant.empresa.findUnique({ where: { id: user.empresaId } });
+    if (!empresa) throw new NotFoundException('Empresa no encontrada');
+    const sucursal = user.sucursalId
+      ? await this.prisma.tenant.sucursal.findUnique({ where: { id: user.sucursalId } })
+      : await this.prisma.tenant.sucursal.findFirst({ where: { empresaId: user.empresaId } });
+    return {
+      id: empresa.id,
+      nombre: empresa.nombre,
+      telefono: sucursal?.telefono || '',
+      direccion: sucursal?.direccion || '',
+    };
+  }
+
+  async actualizarEmpresa(user: any, dto: ActualizarEmpresaDto) {
+    const nombre = dto.nombre.trim();
+    if (!nombre) throw new BadRequestException('El nombre de la empresa es obligatorio.');
+    await this.prisma.tenant.empresa.update({
+      where: { id: user.empresaId },
+      data: { nombre },
+    });
+
+    let sucursalId = user.sucursalId;
+    if (!sucursalId) {
+      const sucursal = await this.prisma.tenant.sucursal.findFirst({ where: { empresaId: user.empresaId } });
+      sucursalId = sucursal?.id;
+    }
+    if (sucursalId) {
+      await this.prisma.tenant.sucursal.update({
+        where: { id: sucursalId },
+        data: { telefono: dto.telefono?.trim() || null, direccion: dto.direccion?.trim() || null },
+      });
+    }
+    return { ok: true, nombre, telefono: dto.telefono?.trim() || '', direccion: dto.direccion?.trim() || '' };
+  }
+
+  // --- Proxy de proveedor hacia el license-server ---
+
+  async proveedorListarEmpresas() {
+    return this.lsRequest('/api/admin/companies');
+  }
+
+  async proveedorCambiarPremium(id: string, isPremium: boolean, days = 30) {
+    return this.lsRequest(`/api/admin/companies/${encodeURIComponent(id)}/premium`, {
+      method: 'PATCH',
+      body: JSON.stringify({ isPremium, days }),
+    });
+  }
+
+  async proveedorGenerarCodigo(id: string) {
+    return this.lsRequest(`/api/admin/companies/${encodeURIComponent(id)}/reset-code`, {
+      method: 'POST',
+    });
+  }
 
   async login(usuario: string, password: string) {
     return this.prisma.runAsSystem(async (tx) => {
@@ -281,51 +437,107 @@ export class AuthService {
   }
 
   async setupInicial(dto: SetupInicialDto) {
-    // Verificar que no haya ya un admin configurado
-    const existingAdmin = await this.prisma.tenant.usuario.findFirst({ where: { rol: Rol.ADMIN } });
-    if (existingAdmin) throw new ConflictException('El sistema ya está configurado. No se puede ejecutar el setup inicial.');
+    /**
+     * Registro inicial obligatorio:
+     * 1) La empresa/usuario se registra en el license-server (requiere internet).
+     * 2) Recién después se crean empresa, sucursal y admin locales.
+     * Si ya existe el usuario en el license-server (reinstalación), se valida
+     * el login con la misma contraseña para poder continuar.
+     */
+    const usuario = dto.usuario.trim();
+    const nombreEmpresa = dto.nombreEmpresa.trim();
+    if (!usuario || !nombreEmpresa) throw new BadRequestException('Usuario y nombre de la empresa son obligatorios.');
 
-    const empresaId = 'empresa-principal';
-    const sucursalId = 'sucursal-central';
+    const existentes = await this.prisma.runAsSystem((tx) => tx.usuario.count());
+    if (existentes > 0) {
+      throw new ConflictException('El sistema ya está configurado. Iniciá sesión con tu usuario.');
+    }
+    const localExists = await this.prisma.runAsSystem((tx) =>
+      tx.usuario.findFirst({ where: { OR: [{ username: usuario }, { email: usuario }] } }),
+    );
+    if (localExists) throw new ConflictException(`El usuario '${usuario}' ya está en uso. Elegí otro.`);
 
-    // Crear empresa
-    const empresa = await this.prisma.tenant.empresa.upsert({
-      where: { id: empresaId },
-      update: { nombre: dto.nombreEmpresa, cuit: dto.cuit || null },
-      create: { id: empresaId, nombre: dto.nombreEmpresa, cuit: dto.cuit || null },
+    // 1) Registrar (o recuperar) la empresa en el license-server.
+    const licenseUrl = this.getLicenseUrl();
+    let license: { token: string; licenseKey: string | null; company: any } | null = null;
+
+    let registerRes: any;
+    try {
+      registerRes = await fetch(`${licenseUrl}/api/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre: nombreEmpresa, username: usuario, password: dto.password }),
+      });
+    } catch {
+      throw new BadRequestException('No se pudo conectar al servidor de licencias. Verificá tu conexión a internet e intentá nuevamente.');
+    }
+
+    if (registerRes.ok) {
+      const data = await registerRes.json();
+      license = { token: data.token, licenseKey: data.licenseKey, company: data.company };
+    } else if (registerRes.status === 409) {
+      // El usuario ya existe en el license-server: puede ser una reinstalación.
+      let loginRes: any;
+      try {
+        loginRes = await fetch(`${licenseUrl}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: usuario, password: dto.password }),
+        });
+      } catch {
+        throw new BadRequestException('No se pudo conectar al servidor de licencias. Verificá tu conexión a internet e intentá nuevamente.');
+      }
+      if (!loginRes.ok) {
+        throw new ConflictException('Ese usuario ya está registrado en el servidor de licencias con otra contraseña. Ingresá la contraseña original o elegí otro usuario.');
+      }
+      const data = await loginRes.json();
+      license = { token: data.access_token, licenseKey: data.company?.licenseKey ?? null, company: data.company };
+    } else {
+      const data = await registerRes.json().catch(() => ({}));
+      throw new BadRequestException(data?.message || 'No se pudo registrar en el servidor de licencias. Intentá nuevamente.');
+    }
+
+    // 2) Con el registro confirmado, creamos los datos locales.
+    return this.prisma.runAsSystem(async (tx) => {
+      const empresaId = 'empresa-principal';
+      const sucursalId = 'sucursal-central';
+
+      const empresa = await tx.empresa.upsert({
+        where: { id: empresaId },
+        update: { nombre: nombreEmpresa },
+        create: { id: empresaId, nombre: nombreEmpresa },
+      });
+
+      await tx.sucursal.upsert({
+        where: { id: sucursalId },
+        update: { nombre: 'Casa Central', direccion: dto.direccion?.trim() || null, telefono: dto.telefono?.trim() || null, empresaId: empresa.id },
+        create: { id: sucursalId, nombre: 'Casa Central', direccion: dto.direccion?.trim() || null, telefono: dto.telefono?.trim() || null, empresaId: empresa.id },
+      });
+
+      const password = await bcrypt.hash(dto.password, 10);
+      const admin = await tx.usuario.create({
+        data: {
+          username: usuario,
+          password,
+          nombre: dto.nombre?.trim() || usuario,
+          rol: Rol.ADMIN,
+          sucursalId,
+          empresaId: empresa.id,
+        },
+      });
+
+      const payload = {
+        sub: admin.id,
+        username: admin.username,
+        email: admin.email,
+        rol: admin.rol,
+        sucursalId: admin.sucursalId,
+        empresaId: admin.empresaId,
+      };
+      const access_token = this.jwtService.sign(payload);
+      const { password: _, ...result } = admin;
+      return { access_token, user: result, setupCompletado: true, license };
     });
-
-    // Crear sucursal
-    await this.prisma.tenant.sucursal.upsert({
-      where: { id: sucursalId },
-      update: { nombre: 'Casa Central', direccion: dto.direccion || null, telefono: dto.telefono || null, empresaId: empresa.id },
-      create: { id: sucursalId, nombre: 'Casa Central', direccion: dto.direccion || null, telefono: dto.telefono || null, empresaId: empresa.id },
-    });
-
-    // Crear admin
-    const password = await bcrypt.hash(dto.password, 10);
-    const admin = await this.prisma.tenant.usuario.create({
-      data: {
-        username: dto.usuario,
-        password,
-        nombre: dto.nombre,
-        rol: Rol.ADMIN,
-        sucursalId,
-        empresaId: empresa.id,
-      },
-    });
-
-    const payload = {
-      sub: admin.id,
-      username: admin.username,
-      email: admin.email,
-      rol: admin.rol,
-      sucursalId: admin.sucursalId,
-      empresaId: admin.empresaId,
-    };
-    const access_token = this.jwtService.sign(payload);
-    const { password: _, ...result } = admin;
-    return { access_token, user: result, setupCompletado: true };
   }
 
   async setupAdmin(userId: string, dto: SetupAdminDto) {

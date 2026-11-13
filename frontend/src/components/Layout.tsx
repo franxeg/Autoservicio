@@ -1,6 +1,7 @@
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../lib/store';
 import { useEffect, useState } from 'react';
+import { getTelefonoEmpresa, getDireccionEmpresa } from '../lib/empresa';
 
 export default function Layout() {
   const { user, logout } = useAuthStore();
@@ -41,6 +42,7 @@ export default function Layout() {
 
   // Nombre de empresa reactivo (solo premium)
   const [nombreEmpresaSidebar, setNombreEmpresaSidebar] = useState('Autoservicio');
+  const [contactoEmpresa, setContactoEmpresa] = useState({ telefono: '', direccion: '' });
   useEffect(() => {
     const update = () => {
       const esPremium = (() => {
@@ -59,9 +61,14 @@ export default function Layout() {
           return localStorage.getItem('premium_activo') === 'true';
         } catch { return false; }
       })();
-      if (!esPremium) { setNombreEmpresaSidebar('Autoservicio'); return; }
+      if (!esPremium) {
+        setNombreEmpresaSidebar('Autoservicio');
+        setContactoEmpresa({ telefono: '', direccion: '' });
+        return;
+      }
       const name = user?.empresa?.nombre || localStorage.getItem('empresa_nombre') || localStorage.getItem('nombreEmpresa') || 'Autoservicio';
       setNombreEmpresaSidebar(name || 'Autoservicio');
+      setContactoEmpresa({ telefono: getTelefonoEmpresa(), direccion: getDireccionEmpresa() });
     };
     update();
     const interval = setInterval(update, 2000);
@@ -94,7 +101,13 @@ export default function Layout() {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', fontFamily: 'sans-serif' }}>
       <aside style={{ width: 240, background: temaColor, color: 'white', padding: 20, display: 'flex', flexDirection: 'column', gap: 8, transition: 'background 0.3s' }}>
-        <h2 style={{ marginBottom: 20, fontSize: 18 }}>{nombreEmpresaSidebar}</h2>
+        <h2 style={{ marginBottom: contactoEmpresa.telefono || contactoEmpresa.direccion ? 4 : 20, fontSize: 18 }}>{nombreEmpresaSidebar}</h2>
+        {(contactoEmpresa.telefono || contactoEmpresa.direccion) && (
+          <div style={{ fontSize: 11, opacity: 0.75, marginBottom: 16, lineHeight: 1.4 }}>
+            {contactoEmpresa.telefono && <div>Tel: {contactoEmpresa.telefono}</div>}
+            {contactoEmpresa.direccion && <div>{contactoEmpresa.direccion}</div>}
+          </div>
+        )}
         {isAdmin && <Link to="/" style={linkStyle('/')}>📊 Dashboard</Link>}
         {!isRestricted && <Link to="/pos" style={linkStyle('/pos')}>🛒 POS / Ventas</Link>}
         <Link to="/productos" style={linkStyle('/productos')}>📦 Productos</Link>

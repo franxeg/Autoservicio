@@ -127,6 +127,29 @@ export async function loginCompany(username: string, password: string): Promise<
   }
 }
 
+/**
+ * Guarda en localStorage la sesión de licencia devuelta por el backend tras
+ * el registro inicial (el registro se hace en el backend para no exponer
+ * lógica de licencias en el frontend).
+ */
+export function saveLicenseSession(session: { token: string; licenseKey?: string | null; company?: any } | null | undefined) {
+  if (!session?.token) return;
+  const company = session.company || {};
+  localStorage.setItem(STORAGE_KEY_TOKEN, session.token);
+  if (session.licenseKey || company.licenseKey) {
+    localStorage.setItem(STORAGE_KEY_LICENSE_KEY, session.licenseKey || company.licenseKey);
+  }
+  localStorage.setItem(STORAGE_KEY_COMPANY, JSON.stringify(company));
+  setCachedStatus({
+    isPremium: !!company.isPremium,
+    isTrial: !!company.isTrial,
+    trialDaysLeft: Number(company.trialDaysLeft || 0),
+    expiryDate: company.premiumExpiry || company.trialEnd || null,
+    licenseKey: session.licenseKey || company.licenseKey || null,
+    nombre: company.nombre || null,
+  });
+}
+
 export async function checkLicenseStatus(): Promise<LicenseStatus> {
   const token = getLicenseToken();
 

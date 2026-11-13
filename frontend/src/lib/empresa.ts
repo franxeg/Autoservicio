@@ -75,5 +75,22 @@ export const getNombreEmpresa = (): string => {
   return 'Autoservicio';
 };
 
+const getDatoEmpresa = (clave: 'telefono' | 'direccion'): string => {
+  try {
+    const userRaw = localStorage.getItem('user');
+    if (userRaw) {
+      const u = JSON.parse(userRaw);
+      const valor = u?.empresa?.[clave] || u?.sucursal?.[clave];
+      if (valor && String(valor).trim()) return String(valor).trim();
+    }
+    const directo = localStorage.getItem(`empresa_${clave}`);
+    if (directo && directo.trim()) return directo.trim();
+  } catch {}
+  return '';
+};
+
+export const getTelefonoEmpresa = (): string => getDatoEmpresa('telefono');
+export const getDireccionEmpresa = (): string => getDatoEmpresa('direccion');
+
 export const NOMBRE_EMPRESA = getNombreEmpresa();
 

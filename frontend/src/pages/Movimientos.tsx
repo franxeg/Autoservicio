@@ -2,6 +2,7 @@
 import { api } from '../lib/api';
 import { useAuthStore } from '../lib/store';
 import { fechaCorta, horaCorta } from '../lib/fecha';
+import { getNombreEmpresa, getTelefonoEmpresa, getDireccionEmpresa } from '../lib/empresa';
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 const DIAS = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do'];
@@ -24,8 +25,12 @@ export default function Movimientos() {
   const imprimirLista = (titulo: string, lineas: string[]) => {
     const win = window.open('', '_blank', 'width=600,height=700');
     if (!win) return;
-    const nombreEmp = (function(){ try { const u = JSON.parse(localStorage.getItem('user') || 'null'); return u && u.empresa ? u.empresa.nombre : (localStorage.getItem('empresa_nombre') || 'Autoservicio'); } catch (e) { return 'Autoservicio'; } })();
-    win.document.write('<!doctype html><html><head><meta charset="utf-8"><title>' + titulo + '</title><style>body{font-family:monospace;font-size:12px;margin:0;padding:10px}h2{text-align:center;margin:4px}p{margin:2px 0}.line{border-top:1px dashed #000;margin:6px 0}</style></head><body><h2>' + nombreEmp + '</h2><h3 style="text-align:center">' + titulo + '</h3><p style="text-align:center">' + (seleccion ? seleccion.etiqueta : '') + '</p><div class="line"></div>' + lineas.map(function(l){ return '<p>' + l.replace(/</g,'&lt;') + '</p>'; }).join('') + '<div class="line"></div><script>window.onload=function(){window.print();setTimeout(function(){window.close();},500);};</script></body></html>');
+    const nombreEmp = getNombreEmpresa();
+    const telEmp = getTelefonoEmpresa();
+    const dirEmp = getDireccionEmpresa();
+    const escEmp = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const datosEmpHtml = (telEmp ? '<p style="text-align:center">Tel: ' + escEmp(telEmp) + '</p>' : '') + (dirEmp ? '<p style="text-align:center">' + escEmp(dirEmp) + '</p>' : '');
+    win.document.write('<!doctype html><html><head><meta charset="utf-8"><title>' + titulo + '</title><style>body{font-family:monospace;font-size:12px;margin:0;padding:10px}h2{text-align:center;margin:4px}p{margin:2px 0}.line{border-top:1px dashed #000;margin:6px 0}</style></head><body><h2>' + nombreEmp + '</h2>' + datosEmpHtml + '<h3 style="text-align:center">' + titulo + '</h3><p style="text-align:center">' + (seleccion ? seleccion.etiqueta : '') + '</p><div class="line"></div>' + lineas.map(function(l){ return '<p>' + l.replace(/</g,'&lt;') + '</p>'; }).join('') + '<div class="line"></div><script>window.onload=function(){window.print();setTimeout(function(){window.close();},500);};</script></body></html>');
     win.document.close();
   };
 

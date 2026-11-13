@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { api } from '../lib/api';
 import { useAuthStore } from '../lib/store';
-import { getNombreEmpresa } from '../lib/empresa';
+import { getNombreEmpresa, getTelefonoEmpresa, getDireccionEmpresa } from '../lib/empresa';
 import { calcularPrecioVenta } from '../lib/precio';
 import Elaborados from './Elaborados';
 import JsBarcode from 'jsbarcode';
@@ -299,10 +299,14 @@ export default function Productos() {
           <button type="button" onClick={() => {
             const items = filtered;
             const nombreEmp = getNombreEmpresa();
+            const telEmp = getTelefonoEmpresa();
+            const dirEmp = getDireccionEmpresa();
+            const escEmp = (s: string) => s.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            const datosEmpHtml = (telEmp ? `<p>Tel: ${escEmp(telEmp)}</p>` : '') + (dirEmp ? `<p>${escEmp(dirEmp)}</p>` : '');
             const catNombre = catFiltro === 'ALL' ? 'Todas las categorías' : (catFiltro === '' ? 'Sin categoría' : (categorias.find(c=>c.id===catFiltro)?.nombre || catFiltro));
             const win = window.open('', '_blank', 'width=900,height=700');
             if (!win) return;
-            win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Listado stock - ${catNombre}</title><style>body{font-family:Arial,sans-serif;font-size:12px}h2{margin:4px 0}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:6px;text-align:left}th{background:#f5f5f5}</style></head><body><h2>${nombreEmp.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</h2><h3>Listado de stock - ${catNombre.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</h3><p>Fecha: ${new Date().toLocaleString()}</p><table><thead><tr><th>Código</th><th>Producto</th><th>Categoría</th><th>Unidad</th><th>Stock</th><th>Stock Mínimo</th><th>Precio Venta</th></tr></thead><tbody>${items.map((p:any)=>{const stock=p.unidad==='KG'?'—':((p.stocks?.[0]?.cantidad??'-'));const stockMin=p.unidad==='KG'?'—':((p.stocks?.[0]?.stockMinimo??'-'));return `<tr><td>${(p.codigoBarras||'-').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td><td>${(p.nombre||'-').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td><td>${(p.categoria?.nombre||'-').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td><td>${p.unidad||'-'}</td><td>${stock}</td><td>${stockMin}</td><td>$${Number(p.precioVenta||0).toFixed(0)}</td></tr>`;}).join('')}</tbody></table><script>window.onload=function(){window.print();setTimeout(function(){window.close();},800);};</script></body></html>`);
+            win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Listado stock - ${catNombre}</title><style>body{font-family:Arial,sans-serif;font-size:12px}h2{margin:4px 0}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:6px;text-align:left}th{background:#f5f5f5}</style></head><body><h2>${nombreEmp.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</h2>${datosEmpHtml}<h3>Listado de stock - ${catNombre.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</h3><p>Fecha: ${new Date().toLocaleString()}</p><table><thead><tr><th>Código</th><th>Producto</th><th>Categoría</th><th>Unidad</th><th>Stock</th><th>Stock Mínimo</th><th>Precio Venta</th></tr></thead><tbody>${items.map((p:any)=>{const stock=p.unidad==='KG'?'—':((p.stocks?.[0]?.cantidad??'-'));const stockMin=p.unidad==='KG'?'—':((p.stocks?.[0]?.stockMinimo??'-'));return `<tr><td>${(p.codigoBarras||'-').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td><td>${(p.nombre||'-').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td><td>${(p.categoria?.nombre||'-').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td><td>${p.unidad||'-'}</td><td>${stock}</td><td>${stockMin}</td><td>$${Number(p.precioVenta||0).toFixed(0)}</td></tr>`;}).join('')}</tbody></table><script>window.onload=function(){window.print();setTimeout(function(){window.close();},800);};</script></body></html>`);
             win.document.close();
           }} style={{ padding: '8px 12px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}>
             Imprimir listado
