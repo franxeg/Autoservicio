@@ -48,5 +48,7 @@ npm run dev
 
 ## Deploy / actualización (Render + Neon)
 - Variables de entorno: `DATABASE_URL` (Neon), `JWT_SECRET`, `ADMIN_USER`, `ADMIN_PASSWORD`, `CORS_ORIGIN` (o `*` según config), `PORT`.
-- En cada deploy con cambios de esquema: `npx prisma generate` y aplicar migraciones (`npx prisma migrate deploy`) o `npx prisma db push` según estrategia. Verificar que la tabla `Company` exista en Neon.
+- Build (ejemplo): `npm install && npx prisma generate && npm run build`
+- **Start command recomendado:** `npm run start:render` (ejecuta `prisma db push --accept-data-loss` y luego arranca). Si usás `npx prisma db push && npm start`, Prisma puede abortar ante advertencias de esquema (p.ej. agregar `@unique` en `username`) y el servicio no levanta.
+- Si preferís migraciones formales: `npx prisma migrate deploy` en deploy y start solo `npm start`. Verificar que la tabla `Company` exista en Neon.
 - Tras actualizar, confirmar `GET /health` responde `{ ok: true, service: "autoservicio-license-server" }`. Si Render está en plan free puede tardar en "despertar" (primer request con 503/latencia).
