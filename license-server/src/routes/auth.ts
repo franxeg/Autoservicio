@@ -138,8 +138,8 @@ export default function authRoutes(prisma: PrismaClient) {
       if (!username || !code || !newPassword) {
         return res.status(400).json({ message: 'Usuario, código y nueva contraseña son requeridos' });
       }
-      if (String(newPassword).length < 4) {
-        return res.status(400).json({ message: 'La contraseña debe tener al menos 4 caracteres' });
+      if (String(newPassword).length < 6) {
+        return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres' });
       }
 
       const company = await prisma.company.findUnique({ where: { username } });

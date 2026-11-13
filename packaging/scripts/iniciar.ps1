@@ -57,7 +57,7 @@ if (!$cfg.ContainsKey('PROVIDER_USER'))         { $cfg.PROVIDER_USER = 'Jupiter'
 if (!$cfg.ContainsKey('PROVIDER_PASSWORD'))     { $cfg.PROVIDER_PASSWORD = 'Proveedor21' }
 if (!$cfg.ContainsKey('LICENSE_SERVER_URL'))    { $cfg.LICENSE_SERVER_URL = 'https://autoservicio-license-server.onrender.com' }
 if (!$cfg.ContainsKey('LICENSE_SERVER_ADMIN_USER'))     { $cfg.LICENSE_SERVER_ADMIN_USER = 'admin' }
-if (!$cfg.ContainsKey('LICENSE_SERVER_ADMIN_PASSWORD')) { $cfg.LICENSE_SERVER_ADMIN_PASSWORD = 'admin' }
+if (!$cfg.ContainsKey('LICENSE_SERVER_ADMIN_PASSWORD')) { $cfg.LICENSE_SERVER_ADMIN_PASSWORD = 'admin123' }
 ($cfg.GetEnumerator() | Sort-Object Name | ForEach-Object { "$($_.Key)=$($_.Value)" }) | Set-Content -Path $configPath -Encoding ASCII
 
 $versionActual = $cfg.APP_VERSION

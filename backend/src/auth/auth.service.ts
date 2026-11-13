@@ -60,7 +60,7 @@ export class AuthService {
       throw new BadGatewayException('No se pudo conectar con el servidor de licencias. Verificá tu conexión a internet.');
     }
     if (!res.ok) {
-      throw new BadGatewayException('No se pudo autenticar con el servidor de licencias. Revisá las credenciales de administrador configuradas.');
+      throw new BadGatewayException('No se pudo autenticar con el servidor de licencias. Configurá LICENSE_SERVER_ADMIN_USER y LICENSE_SERVER_ADMIN_PASSWORD en config.env con las credenciales de administrador del license-server (ADMIN_USER / ADMIN_PASSWORD).');
     }
     const data = await res.json();
     this.lsTokenCache = { token: data.access_token, expires: Date.now() + 5 * 60 * 1000 };

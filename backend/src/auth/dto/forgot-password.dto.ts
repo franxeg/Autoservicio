@@ -6,7 +6,7 @@ export class ForgotPasswordDto {
   usuario: string;
 
   @IsString()
-  @MinLength(4)
+  @MinLength(6)
   passwordNueva: string;
 
   @IsString()
