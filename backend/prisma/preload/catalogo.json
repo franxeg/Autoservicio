@@ -1,0 +1,4467 @@
+{
+ "generadoDesde": "autoservicio-20261111-152816.dump",
+ "categorias": [
+  {
+   "nombre": "Almacen",
+   "descripcion": null,
+   "esSistema": false
+  },
+  {
+   "nombre": "kiosco",
+   "descripcion": null,
+   "esSistema": false
+  },
+  {
+   "nombre": "Cigarrillos",
+   "descripcion": null,
+   "esSistema": false
+  },
+  {
+   "nombre": "Galletetitas",
+   "descripcion": null,
+   "esSistema": false
+  },
+  {
+   "nombre": "Bebida con alcohol",
+   "descripcion": null,
+   "esSistema": false
+  },
+  {
+   "nombre": "Bebida sin alcohol",
+   "descripcion": null,
+   "esSistema": false
+  },
+  {
+   "nombre": "Limpieza",
+   "descripcion": null,
+   "esSistema": false
+  },
+  {
+   "nombre": "Lacteos",
+   "descripcion": null,
+   "esSistema": false
+  },
+  {
+   "nombre": "Fiambrería",
+   "descripcion": null,
+   "esSistema": false
+  },
+  {
+   "nombre": "Perfumería",
+   "descripcion": null,
+   "esSistema": false
+  },
+  {
+   "nombre": "Verdulería",
+   "descripcion": null,
+   "esSistema": false
+  },
+  {
+   "nombre": "Snack",
+   "descripcion": null,
+   "esSistema": false
+  },
+  {
+   "nombre": "Aderezos",
+   "descripcion": null,
+   "esSistema": false
+  },
+  {
+   "nombre": "Elaborados",
+   "descripcion": "Productos elaborados (recetas). Categoría del sistema.",
+   "esSistema": true
+  },
+  {
+   "nombre": "Carniceria/Polleria",
+   "descripcion": null,
+   "esSistema": false
+  },
+  {
+   "nombre": "Congelados",
+   "descripcion": null,
+   "esSistema": false
+  },
+  {
+   "nombre": "Elaborado",
+   "descripcion": null,
+   "esSistema": false
+  }
+ ],
+ "productos": [
+  {
+   "nombre": "Hileret clásico 50 sobres",
+   "codigoBarras": "7790490998026",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "La Virginia Té Negro 25 saquitos",
+   "codigoBarras": "7790150211908",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "La Virginia Hierbas Boldo 25 saquitos",
+   "codigoBarras": "7790150310267",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "La Virginia Té Verde 25 saquitos",
+   "codigoBarras": "7790150355084",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "La Virginia Hierbas Tilo 25 saquitos",
+   "codigoBarras": "7790150320266",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "La Virginia Hierbas Manzanilla 25 saquitos",
+   "codigoBarras": "7790150330166",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "La Virginia Hierbas Mansanilla 25 saquitos",
+   "codigoBarras": "7790387800135",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Arlistán cafe suave y espumoso 50 g",
+   "codigoBarras": "7790070933652",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Arlistán Cafe Suave y Espumoso 100g",
+   "codigoBarras": "7790070933645",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "La Virnia Cappuccino Tradicional 125g",
+   "codigoBarras": "7790150160725",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "La Virginia café molido Torrado 125g",
+   "codigoBarras": "7790150006306",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "La Virginia Café Molido Torrado 20 saquitos",
+   "codigoBarras": "7790150079904",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "El Portillo malta 170g",
+   "codigoBarras": "7791118000503",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Nestle Nesquik Original 180g",
+   "codigoBarras": "8445291121867",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Toddy Cacao Original 180g",
+   "codigoBarras": "7790380023401",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "La Virginia Chocolino Granulado 180g",
+   "codigoBarras": "7790150830444",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Exquisita gelatina Sabor Durazno 40g",
+   "codigoBarras": "7790070432551",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Exquisita postre Vainilla 80g",
+   "codigoBarras": "7790070417893",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Emeth Gelatina Duzrazno 70 g",
+   "codigoBarras": "7791113001154",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Emeth Gelatina Frutilla 70g",
+   "codigoBarras": "7791113001178",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Emeth Gelatina Cereza 70g",
+   "codigoBarras": "7791113001147",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Knorr Sopa Zpallo Quick 5 sobres",
+   "codigoBarras": "7794000006911",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Knorr Sopa Vegetales Quick 5 sobres",
+   "codigoBarras": "7794000006942",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Knorr Sopa Choclo Quick 5 Sobres",
+   "codigoBarras": "7794000006928",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Bombonett tChocolate para taza 100g",
+   "codigoBarras": "7792430609719",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "La Serenisima Leche Chocolatada 200ml",
+   "codigoBarras": "7791337008410",
+   "categoria": "Lacteos"
+  },
+  {
+   "nombre": "La Serenisima L. larga vida clasica 3%",
+   "codigoBarras": "7790742363008",
+   "categoria": "Lacteos"
+  },
+  {
+   "nombre": "La Serenisima D. de Leche Clasico 400g",
+   "codigoBarras": "7790742625304",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "La Serenisima D. de Leche Repostero 400g",
+   "codigoBarras": "7790742067005",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "La Serenisima D. de Leche Colonial 400g",
+   "codigoBarras": "7790742625205",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Tonadita D. de Leche Clásico 250g",
+   "codigoBarras": "7798060853317",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Don Fausto D.de Leche Familiar 400g",
+   "codigoBarras": "7798107800526",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Amanda Yerba 500g",
+   "codigoBarras": "7792710000182",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "CBSÉ yerba saborizada Pomelo 500g",
+   "codigoBarras": "7790710334610",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "CBSÉ yerba Saborizada Naranja 500g",
+   "codigoBarras": "7790710334580",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Bárbara Bizcochuelo Chocolate 450g",
+   "codigoBarras": "7794270035451",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Bárbara Bizcochuelo Limón 450g",
+   "codigoBarras": "7794270000534",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Bárbara Bizcochuelo Vainilla 450g",
+   "codigoBarras": "7794270035475",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Emeth Esencia de Vainilla 120cm",
+   "codigoBarras": "7791113002571",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Cris- Jor Mani c/cober. sabor Jamón 980g",
+   "codigoBarras": "7798135900182",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Savora Original 60g",
+   "codigoBarras": "7794000006515",
+   "categoria": "Aderezos"
+  },
+  {
+   "nombre": "Hellmann´s Ketchup 60g",
+   "codigoBarras": "7794000006195",
+   "categoria": "Aderezos"
+  },
+  {
+   "nombre": "La Quesera queso rrallado 40g",
+   "codigoBarras": "7792882029448",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "La Serenicima queso rayado 35g",
+   "codigoBarras": "7790742222909",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Levex levadura sobre x 2",
+   "codigoBarras": "7798018850184",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Alícante Salsa Blanca 40 g",
+   "codigoBarras": "7790150580424",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Alícante Salsa 4 Quesos",
+   "codigoBarras": "7790150586044",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Knorr bolsa para horno Barbacoa",
+   "codigoBarras": "7794000004931",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Knorr Sopa vegetales c caracoles tri.",
+   "codigoBarras": "7794000005815",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Knorr sopa crema Vegetales",
+   "codigoBarras": "7794000005877",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Alícante Sabor en polvo Finas Hierbas",
+   "codigoBarras": "7790150434420",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Alícante Sabor en polvo Carne",
+   "codigoBarras": "7790150431436",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Alícante Sabor en polvo 4 Quesos",
+   "codigoBarras": "7790150439357",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Alícante Sabor en polvo Verdura",
+   "codigoBarras": "7790150433423",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Alícante Sabor en polvo Panceta y Hierbas",
+   "codigoBarras": "7790150434857",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Alícante Sabor en polvo Albahaca y ajo",
+   "codigoBarras": "7790150437773",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Natura Mayonesa 125",
+   "codigoBarras": "7791866001197",
+   "categoria": "Aderezos"
+  },
+  {
+   "nombre": "Clight sin azucar Sabor Naranja",
+   "codigoBarras": "7622201703110",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Arcor sabor Naranja Durazno",
+   "codigoBarras": "7790580141943",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Arcor sabor Anana",
+   "codigoBarras": "7790580141516",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Cris- Jor Mani c/cober. sabor Queso 980g",
+   "codigoBarras": "7798135900212",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Natura Mayonesa 500",
+   "codigoBarras": "7791866001364",
+   "categoria": "Aderezos"
+  },
+  {
+   "nombre": "Playadito Yerba 500g",
+   "codigoBarras": "7793704000911",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Arcor sabor Naranja Banana",
+   "codigoBarras": "7790580141509",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Arcor Sabor Naranja Dulce",
+   "codigoBarras": "7790580143008",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Mantecol clásico 41g",
+   "codigoBarras": "7622201816414",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Licoritas botellitas con licor",
+   "codigoBarras": "7790206007301",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Jackelin",
+   "codigoBarras": "7790206006359",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Vida agua Saborizada Naranja",
+   "codigoBarras": "7790036002118",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Vida saborizada sabor Pomelo",
+   "codigoBarras": "7790036002125",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Fresh agua saborizada Manzana",
+   "codigoBarras": "7790036001647",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Mentho Plus Miel",
+   "codigoBarras": "77958655",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Mentho Plus Menta",
+   "codigoBarras": "77958662",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Mentho Plus mentol",
+   "codigoBarras": "77958624",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Mentho Plus Cereza",
+   "codigoBarras": "77958631",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Beldent mentol frozen",
+   "codigoBarras": "77969095",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Beldent Menta power",
+   "codigoBarras": "77969088",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Chesterfield Blue sof 20",
+   "codigoBarras": "77983916",
+   "categoria": "Cigarrillos"
+  },
+  {
+   "nombre": "Pipas Gigantes",
+   "codigoBarras": "7798044151262",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Mentho Plus Strong",
+   "codigoBarras": "77958648",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Vida agua Saborizada Pera",
+   "codigoBarras": "7790036002156",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Dos Corazones chocolate con poesia",
+   "codigoBarras": "77907509",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Marroc",
+   "codigoBarras": "7790206006106",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Kiel 20",
+   "codigoBarras": "77978233",
+   "categoria": "Cigarrillos"
+  },
+  {
+   "nombre": "Playadito Yerba 1k",
+   "codigoBarras": "7793704000928",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Pier box 20",
+   "codigoBarras": "77990501",
+   "categoria": "Cigarrillos"
+  },
+  {
+   "nombre": "Philipmorris original 20",
+   "codigoBarras": "77912879",
+   "categoria": "Cigarrillos"
+  },
+  {
+   "nombre": "Chesterfield Purple box 20",
+   "codigoBarras": "77973887",
+   "categoria": "Cigarrillos"
+  },
+  {
+   "nombre": "Chesterfield original 12",
+   "codigoBarras": "77994059",
+   "categoria": "Cigarrillos"
+  },
+  {
+   "nombre": "Chesterfield original 20",
+   "codigoBarras": "77953513",
+   "categoria": "Cigarrillos"
+  },
+  {
+   "nombre": "Dolchester box",
+   "codigoBarras": "77990402",
+   "categoria": "Cigarrillos"
+  },
+  {
+   "nombre": "LUCKY RED ORIGINAL 20",
+   "codigoBarras": "77990921",
+   "categoria": "Cigarrillos"
+  },
+  {
+   "nombre": "Luckies red 20",
+   "codigoBarras": "77981028",
+   "categoria": "Cigarrillos"
+  },
+  {
+   "nombre": "Lucky Original Convertible",
+   "codigoBarras": "77990938",
+   "categoria": "Cigarrillos"
+  },
+  {
+   "nombre": "Marlboro Crafted mentolado",
+   "codigoBarras": "77993397",
+   "categoria": "Cigarrillos"
+  },
+  {
+   "nombre": "Marlboro box 12",
+   "codigoBarras": "77983343",
+   "categoria": "Cigarrillos"
+  },
+  {
+   "nombre": "Master x 20",
+   "codigoBarras": "77941558",
+   "categoria": "Cigarrillos"
+  },
+  {
+   "nombre": "Marlboro crafted red 20",
+   "codigoBarras": "77987303",
+   "categoria": "Cigarrillos"
+  },
+  {
+   "nombre": "Philpmorris Red selec. 20",
+   "codigoBarras": "77992536",
+   "categoria": "Cigarrillos"
+  },
+  {
+   "nombre": "Mantecol Salted Caramelo 111g",
+   "codigoBarras": "7790380270133",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Mantecol Cfe 111g",
+   "codigoBarras": "7790380270119",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Mantecol Marmolado 111g",
+   "codigoBarras": "7622201812676",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Hamlet blanco y cookies 46gr",
+   "codigoBarras": "7794612066310",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Hamlet chocolatoso 43gr",
+   "codigoBarras": "7794612066211",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Hamlet mani y avellanas",
+   "codigoBarras": "7790580102043",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Hamlet leche y cookies 43 g",
+   "codigoBarras": "7794612065917",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Georgalos chocolate c leche 25g",
+   "codigoBarras": "7790380024194",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Georgalos cholate blanco 25g",
+   "codigoBarras": "7790380024217",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Misky chocolate blaqnco 25g",
+   "codigoBarras": "7790580612917",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "La Linqueña alfajjor negro",
+   "codigoBarras": "7798481950015",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "La Linqueña alfajor blanco",
+   "codigoBarras": "7798481950022",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Oreo original 118g",
+   "codigoBarras": "7622201735296",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Dantelli Mini alfajor maicena",
+   "codigoBarras": "7794786900250",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Jorgito rellenos c fruta 150g",
+   "codigoBarras": "7790957000552",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Guaymallen blanco simple",
+   "codigoBarras": "77980212",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Arcor turrin y mani 25g",
+   "codigoBarras": "77940131",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Macao encendedor",
+   "codigoBarras": "6970772674454",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "MK encendedor 5g",
+   "codigoBarras": "694525100347",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Sonrisas 108g",
+   "codigoBarras": "7790040133488",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Mellizas 110g",
+   "codigoBarras": "7790040143548",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Tostalindo girasol slado",
+   "codigoBarras": "7798311420008",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Jorgelin Graceado 85g",
+   "codigoBarras": "77901736",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Jorgito sin gluten",
+   "codigoBarras": "7790957000408",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Jorgito Fruta",
+   "codigoBarras": "77905734",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Toddy alfajor simple mousse",
+   "codigoBarras": "7790380023579",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Toddy musso blanco",
+   "codigoBarras": "7790380023630",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Solitas Animacion 400g",
+   "codigoBarras": "7792684003516",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Solitas Chirolas 400g",
+   "codigoBarras": "7792684001383",
+   "categoria": null
+  },
+  {
+   "nombre": "Guaymallen blanco triple",
+   "codigoBarras": "77980267",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Fantoche tiple blanco",
+   "codigoBarras": "77991584",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Fantoche tiple negro",
+   "codigoBarras": "77991577",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Guaymallen negro simple",
+   "codigoBarras": "77980229",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "MK encendedor 9G",
+   "codigoBarras": "6945251003785",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Solitas Pepas 400g",
+   "codigoBarras": "7792684001505",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Celosas Tradicionales 350g",
+   "codigoBarras": "7798036830151",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Kokis membrillots 500g",
+   "codigoBarras": "7795733000139",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Kokis Cañomcitos membrillo 500g",
+   "codigoBarras": "7795733000184",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Valente Magdalena choc. c. d. de leche",
+   "codigoBarras": "7793890259124",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Valente Magdalena Vainilla",
+   "codigoBarras": "7793890259094",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Valente Magdalena marmoladas",
+   "codigoBarras": "7793890259117",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Ferraris Maria sabor vainilla",
+   "codigoBarras": "7791602006219",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Arrozen G. arroz con sal 100g",
+   "codigoBarras": "7798082000126",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Pitusas Black 160",
+   "codigoBarras": "7791324157633",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Slice papas fritas clasicas 950g",
+   "codigoBarras": "7798066070701",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Pitusas Merengadas",
+   "codigoBarras": "7791324157534",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Pitusas Chocolate 160g",
+   "codigoBarras": "7791324157046",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Pitusas Frutilla 160g",
+   "codigoBarras": "7791324157466",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Pitusas Vainilla 160g",
+   "codigoBarras": "7791324157022",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Pitusas Jalea Frambuesa 160",
+   "codigoBarras": "7791324157527",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Arrozen G. arroz dulce 100g",
+   "codigoBarras": "7798082000140",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Arrozen G. arroz integral sin sal agregada 100g",
+   "codigoBarras": "7798082000133",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Solitas Ekin g",
+   "codigoBarras": "7792684003745",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Solitas Aritos glaseados 500g",
+   "codigoBarras": "7792684000133",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Solitas Colmenitas sabor miel 500g",
+   "codigoBarras": "7792684001086",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Solitas Legendarias 500g",
+   "codigoBarras": "7792684000706",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Solitas Surtidas 500g",
+   "codigoBarras": "7792684000485",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Solitas Solitas frutillas 500g",
+   "codigoBarras": "7792684000669",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Kokis Cañoncitos membrillo 200g",
+   "codigoBarras": "7795733001099",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "9 de oro agridulces",
+   "codigoBarras": "7792200000128",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "9 de oro azucarados 210",
+   "codigoBarras": "7792200000319",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "9 de oro clasicos",
+   "codigoBarras": "7792200000159",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Don Satur bizcocho Dulce 200g",
+   "codigoBarras": "7795735000335",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Don Satur bizcocho negrito",
+   "codigoBarras": "7795735000342",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Don Satur bizcocho salado 200g",
+   "codigoBarras": "7795735000328",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Hojalmar Larguitas pack familiar",
+   "codigoBarras": "7793450000142",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Hojalmar Triángulos pack familiar",
+   "codigoBarras": "7793450000111",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Pitusas Limon",
+   "codigoBarras": "7791324000069",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Pitusas Mousse de chocolate 160g",
+   "codigoBarras": "7791324157084",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Trio Flolitas Membrillo 300g",
+   "codigoBarras": "7791787000644",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Trio Tartelette Frutilla 300g",
+   "codigoBarras": "7791787100900",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Trio Ppepas Chocotrio 300g",
+   "codigoBarras": "7791787001153",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Trio Floritas Batata 300g",
+   "codigoBarras": "7791787000774",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Trio Glasy Pepas Glaseadas 300g",
+   "codigoBarras": "7791787101020",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Trio Surtidas Variette 350g",
+   "codigoBarras": "7791787100993",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Trio Surtidas Variette 500g",
+   "codigoBarras": "7791787100283",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Trio Scons 320g",
+   "codigoBarras": "7791787101075",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Benjamin Marineras con semillas 300g",
+   "codigoBarras": "7790907005392",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Benjamin Marineras clasicas",
+   "codigoBarras": "7790907005361",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Granix Salvado 240g",
+   "codigoBarras": "779004826200",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Riera tostadas sin Sal",
+   "codigoBarras": "7790071090422",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Riera tostada Light",
+   "codigoBarras": "7790071070134",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Riera Tostadas Clasicas",
+   "codigoBarras": "7790071090231",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Mini Coronitas Black 130g",
+   "codigoBarras": "7790369008344",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Mauri Vainillas 28 u",
+   "codigoBarras": "7790628102646",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Trio Pepas con Chips",
+   "codigoBarras": "7791787101037",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Solitas Sandwich mimi crackres 500g",
+   "codigoBarras": "7792684000157",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Trio Tartelette Frutos del Bosque 300g",
+   "codigoBarras": "7791787100979",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Trio TriChoc 300g",
+   "codigoBarras": "7791787000705",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Trio Pepas Alemanas 300g",
+   "codigoBarras": "7791787100719",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Mini coronitas Frambuesa  140",
+   "codigoBarras": "7790369000997",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Mini Coronitas Chocolate Blanco 140g",
+   "codigoBarras": "7790369007835",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Mini Coronitas Dulce de leche",
+   "codigoBarras": "7790369007804",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Mini Coronitas Frutilla 140 g",
+   "codigoBarras": "7790369007828",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Mini Coronitas Frutos del Bosque",
+   "codigoBarras": "7790369007903",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Mini Coronitas Marroc 140g",
+   "codigoBarras": "7790369008399",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Mini coronitas chocolate",
+   "codigoBarras": "7790369007811",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Cilo Lenguitas 400g",
+   "codigoBarras": "7795643000267",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Solitas sin sal mini crackers 500",
+   "codigoBarras": "7792684000249",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Solitas Salvado mini crackers",
+   "codigoBarras": "7792684000232",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Riera Tostada Dulce",
+   "codigoBarras": "7790071090125",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Riera tostada arroz sin sal",
+   "codigoBarras": "7790071080416",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Bay Biscuit origanal",
+   "codigoBarras": "7798004241255",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Granix Frutigran chip choco",
+   "codigoBarras": "7790045824893",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Granix Frutigran avena y pasas",
+   "codigoBarras": "7790045001188",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Snack Bizcochos dulce de arroz 100",
+   "codigoBarras": "7790070418425",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Gaona galletitas dulces Chip de choco 230g",
+   "codigoBarras": "7798126071150",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Gaona Recreo surtidas y chip 300g",
+   "codigoBarras": "7798126073857",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Serranitas x 3",
+   "codigoBarras": "7790040143616",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Los Haroldos Estate Malbec 750",
+   "codigoBarras": "7791843009130",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Quara Malbec Argentina 750",
+   "codigoBarras": "7791690709030",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Hormiga Negra de los andes Malbec 750",
+   "codigoBarras": "7798001610368",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Otro Loco Mas Mlabec 750",
+   "codigoBarras": "7795232000524",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Finca Magnolia Malbec 750",
+   "codigoBarras": "7790314079993",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Latitud 33 Malbec",
+   "codigoBarras": "7790975204062",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Dada Malbec 750",
+   "codigoBarras": "7791540047862",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Cosecha Tradia Blanco Dulce Norton 750",
+   "codigoBarras": "7792319972224",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Don Valentoin Red Blend 750",
+   "codigoBarras": "7790703204968",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Bodega Privada Malbec 750",
+   "codigoBarras": "7790036001425",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Chacabuco Malbec 750",
+   "codigoBarras": "7791843023471",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Toro tinto botellon 1l",
+   "codigoBarras": "7790314079849",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Toro clasico tinto 750",
+   "codigoBarras": "7790314003226",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Toro tinto 750",
+   "codigoBarras": "7790314079054",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Purity Pan dulce con Frutas",
+   "codigoBarras": "7798067340193",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Purity Pan dulce con chip chocolate",
+   "codigoBarras": "7798164160175",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Purity Pan dulce sin Frutas",
+   "codigoBarras": "7798164160182",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Buon Natale budin Frutas",
+   "codigoBarras": "7798094222806",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Buon Natale budin Marnolado",
+   "codigoBarras": "7798094222820",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Buon Natale budin Vainilla",
+   "codigoBarras": "7798094222813",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Leiva Tostada de arroz Sin Sal",
+   "codigoBarras": "7790412000295",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Paseo mini crackers Oliva y Romero",
+   "codigoBarras": "7792180145420",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Paseo mini crackers son sal",
+   "codigoBarras": "7792180007254",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Leiva Tostada de arroz dulce",
+   "codigoBarras": "7790412000288",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Uvita tetra blanco",
+   "codigoBarras": "7790036044323",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Toro Tinto tetra 1",
+   "codigoBarras": "7790314063824",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Dilema Blanco Dulce 750",
+   "codigoBarras": "7790314079726",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Dilema Rosado Dulce 750",
+   "codigoBarras": "7790314079733",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Dilema Velvet 750",
+   "codigoBarras": "7790314079719",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Dilema Malbec 750",
+   "codigoBarras": "7790314079672",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Portillo Malbec 750",
+   "codigoBarras": "7798074864675",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Pato Criollo Malbec 750",
+   "codigoBarras": "7790314080128",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Emilia Malbec 750",
+   "codigoBarras": "7790070760722",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Lopez Malbec 750",
+   "codigoBarras": "7790336030507",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Alma Mora Malbec 750",
+   "codigoBarras": "7790240042108",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Trumpeter Malbec 750",
+   "codigoBarras": "7790577002165",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Gancia Americano 950",
+   "codigoBarras": "7790950000160",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Campari 750",
+   "codigoBarras": "7791200200781",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Americanos Czalis 950",
+   "codigoBarras": "7791200200767",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Smirnoff Bitter Citric 700",
+   "codigoBarras": "7791250003103",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Smirnoff Vodka N°21",
+   "codigoBarras": "7791250001345",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Smirnoff Raspberry 700",
+   "codigoBarras": "7791250001871",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Skyy Vodka 750",
+   "codigoBarras": "7791200000213",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Skyy Infusions",
+   "codigoBarras": "7791200200668",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Sernova Vodka",
+   "codigoBarras": "7790290101510",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Sernova Tropical Passion",
+   "codigoBarras": "7790290101664",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Sernova Candy Glow",
+   "codigoBarras": "7790290101787",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Sernova Ice Pop",
+   "codigoBarras": "7790290101824",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Gordon´s 700",
+   "codigoBarras": "7791250002267",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Blenders Pride 1l",
+   "codigoBarras": "7792410532181",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Jack Dniel´s whiskey 700m",
+   "codigoBarras": "082184090473",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Spirito Blu 700",
+   "codigoBarras": "7790290101756",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "John´q whisky 1l",
+   "codigoBarras": "7792855000832",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Tanqueray Gin 700m",
+   "codigoBarras": "5000281015248",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "JyB Whisky 750",
+   "codigoBarras": "7791250001994",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Fernet Branca 750",
+   "codigoBarras": "7790290101602",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Fernet BrNCA 450",
+   "codigoBarras": "7790290001179",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Amarula 750",
+   "codigoBarras": "6001495062508",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Sheridan´s licor",
+   "codigoBarras": "5011013500680",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Cinzano 1l",
+   "codigoBarras": "7791200200552",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Bacardí ron",
+   "codigoBarras": "7501008603017",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Ramazzotti Aperitivo",
+   "codigoBarras": "7792410779357",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Cynar 70Proof 750",
+   "codigoBarras": "7791200000619",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Ombu licor caña",
+   "codigoBarras": "7792410528917",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Cayman Ron",
+   "codigoBarras": "7790163022201",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Tres plumas",
+   "codigoBarras": "7790260016011",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Puntemes vermouth",
+   "codigoBarras": "7790290007195",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "San vicente Caña durazno",
+   "codigoBarras": "7790121000029",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Moscato Promesa",
+   "codigoBarras": "7790314072505",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Cusenier Granadina",
+   "codigoBarras": "7792410517348",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Sixtyseven vodka",
+   "codigoBarras": "7790163013407",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Legui",
+   "codigoBarras": "7791250001482",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "New Styler durazno",
+   "codigoBarras": "7790121007455",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "New Style chocolate",
+   "codigoBarras": "7790121007387",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Krachitos snacks Jamón Serrano",
+   "codigoBarras": "7794520441650",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Krachitos Snacks Cheddar",
+   "codigoBarras": "7794520868297",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Krachitos Ketchup",
+   "codigoBarras": "7794520868280",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Krachitos snacks Tradicionales",
+   "codigoBarras": "7794520869287",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Krachitos Snacks Corte Americano",
+   "codigoBarras": "7794520869324",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Tostex Cintitas crocantres Barbacoa",
+   "codigoBarras": "7798125810750",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Tostex Cintitas crocantes clásicas",
+   "codigoBarras": "7798125810354",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Natura Mayonesa 250",
+   "codigoBarras": "7791866001203",
+   "categoria": "Aderezos"
+  },
+  {
+   "nombre": "Hellmann´s Ajo 250",
+   "codigoBarras": "7794000006553",
+   "categoria": "Aderezos"
+  },
+  {
+   "nombre": "Hellmann´s Picante 250",
+   "codigoBarras": "7794000008915",
+   "categoria": "Aderezos"
+  },
+  {
+   "nombre": "Natura barbacoa",
+   "codigoBarras": "7791866004471",
+   "categoria": "Aderezos"
+  },
+  {
+   "nombre": "Hellmann´s mayonesa clásica 250",
+   "codigoBarras": "7794000006065",
+   "categoria": "Aderezos"
+  },
+  {
+   "nombre": "Salsa Golf 250",
+   "codigoBarras": "7794000007741",
+   "categoria": "Aderezos"
+  },
+  {
+   "nombre": "Hellmann´s Ketchup  250",
+   "codigoBarras": "7794000006188",
+   "categoria": "Aderezos"
+  },
+  {
+   "nombre": "Hellmann´s Asado 250",
+   "codigoBarras": "7794000009431",
+   "categoria": "Aderezos"
+  },
+  {
+   "nombre": "Marolio Arvejas 340",
+   "codigoBarras": "7797470007426",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Marolio Palmitos en rodajas",
+   "codigoBarras": "7797470130834",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Inca Choclo Cremoso 350g",
+   "codigoBarras": "7790790120837",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Salvita pimientos",
+   "codigoBarras": "7798127922130",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "La Llave duraznos amarillos en mitades",
+   "codigoBarras": "7798093871166",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Sabio Coctel de frutas",
+   "codigoBarras": "7798057520192",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Marolio champignones en trozo",
+   "codigoBarras": "7797470003428",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Inalpa lentejas",
+   "codigoBarras": "7792350067064",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Inalpa arvejas",
+   "codigoBarras": "7792350067019",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Inalpa jardinera",
+   "codigoBarras": "7792350067026",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Swift picadillo de carne",
+   "codigoBarras": "7790360720115",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Marolio picadillo de carne",
+   "codigoBarras": "7797470000571",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Cascabel atun desmenuzado en aceite",
+   "codigoBarras": "7798138551688",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Swift lomo de atun en aceite",
+   "codigoBarras": "7790360984241",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Swift Lomo de atun al natural",
+   "codigoBarras": "7790360984234",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Dos Anclas sal parrillera x 500g",
+   "codigoBarras": "7792900092683",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Dos Anclas sal gruesa x 500g",
+   "codigoBarras": "7792900092676",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Dos Anclas sal fina x 500g",
+   "codigoBarras": "7792900000138",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Colosal sal fina x 500g",
+   "codigoBarras": "7790641000011",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Colosal Sal gruesa",
+   "codigoBarras": "7790641000028",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Venado Tuerto harina integral",
+   "codigoBarras": "7798111850234",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Elio lentejas x 400g",
+   "codigoBarras": "7798048720921",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Eliomaiz pisingallo",
+   "codigoBarras": "7798048720907",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Del Campo polenta instantanea",
+   "codigoBarras": "7798004720088",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Nestle Chef pure de papas",
+   "codigoBarras": "8445290992789",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "De la huerta pure de tomate x 530g",
+   "codigoBarras": "7790036567440",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "De la huerta pure de tomates x 210g",
+   "codigoBarras": "7790036973036",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Arcor salsa lista tuco",
+   "codigoBarras": "7790580134518",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Arcor salsa lista pizza",
+   "codigoBarras": "7790580133153",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Inca extracto doble de tomates",
+   "codigoBarras": "7798144510457",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Knorr caldo de verduras x 12",
+   "codigoBarras": "7794000008557",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Centurion caldo de verduras",
+   "codigoBarras": "7793875046411",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Lucchetti  tirabuzon x 500g",
+   "codigoBarras": "7790070336026",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Venado Tuerto harina0000",
+   "codigoBarras": "7798111850142",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Venado Tuerto harina 000",
+   "codigoBarras": "7798111850067",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Colosal Sal entrefina x 500g",
+   "codigoBarras": "7790641000080",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Dos Anclas sal fina x 500g pouch",
+   "codigoBarras": "7792900000428",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Lucchetti coditos x 500g",
+   "codigoBarras": "7790070318343",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Lucchetti mostachol x 500g",
+   "codigoBarras": "7790070336149",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Lucchetti foratini x 500g",
+   "codigoBarras": "7790070336392",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Lucchetti tallarin x 500g",
+   "codigoBarras": "7790070336118",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Lucchetti spaghetti",
+   "codigoBarras": "7790070336385",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Lucchetti letritas 500g",
+   "codigoBarras": "7790070318381",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Arcor Tomate peritas 400g",
+   "codigoBarras": "7790580567903",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "La Parmesana Chimichurri Pizzero",
+   "codigoBarras": "7798224210383",
+   "categoria": "Aderezos"
+  },
+  {
+   "nombre": "Alcyone Pimientos 750g",
+   "codigoBarras": "7796465000091",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Knorr Spaghetti 500g",
+   "codigoBarras": "7798031155532",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Knorr Mostachol 500g",
+   "codigoBarras": "7798031155679",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Marcelito Municion 500g",
+   "codigoBarras": "7791812002285",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Marcelito Caracolito 500g",
+   "codigoBarras": "7791812002247",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Marcelito Mostachol 500g",
+   "codigoBarras": "7791812002346",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Marcelito Coditos 500g",
+   "codigoBarras": "7791812002315",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Marcelito Penetti 500g",
+   "codigoBarras": "7791812003282",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Lucchetti Arroz largo Fino 1kg",
+   "codigoBarras": "7790070431486",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Lucchetti Arroz Largo Fino 500",
+   "codigoBarras": "7790070431493",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Lucchetti Arroz no se pasa 500g",
+   "codigoBarras": "7790070431516",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Peleador Arroz largo finito 500g",
+   "codigoBarras": "7790022000128",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Bárbara Arroz Fino 500g",
+   "codigoBarras": "7794270000190",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Gallo Arroz Integral 500g",
+   "codigoBarras": "7790070433152",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Gallo Oro Arroz no se pasa 500g",
+   "codigoBarras": "7790070433114",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Cocinero Fritolim clásico 120g",
+   "codigoBarras": "7790070265333",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Marolio Vinagre de Alcohol 500c",
+   "codigoBarras": "7797470132692",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Molto Vinagre de Alcohol 500ml",
+   "codigoBarras": "7798138551558",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Molto Vinagre de Alcohol 1lt",
+   "codigoBarras": "7798138551565",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Halconero Vinagre de Alcohol 930",
+   "codigoBarras": "7796504000877",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Marolio Vinagre de Alcohol 1l",
+   "codigoBarras": "7797470133620",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Halconero Jugo de Limon 500",
+   "codigoBarras": "7796504600947",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Sabio Tomate Triturado 950",
+   "codigoBarras": "7798054510011",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Cañuelas Aceites Girasol 900ml",
+   "codigoBarras": "7792180001641",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Siglo de Oro 900ml",
+   "codigoBarras": "7798316700761",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Prados del Sol aceite de Girasol 900ml",
+   "codigoBarras": "727373026962",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "La Serenisima Leche Zero Lactosada",
+   "codigoBarras": "7790742333605",
+   "categoria": "Lacteos"
+  },
+  {
+   "nombre": "Cinta Roja Fideos secos con huevo",
+   "codigoBarras": "4011558710101",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Record Fideos Nidos al Huevo",
+   "codigoBarras": "656750803721",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "308 fideos al huevo nido N°1 500",
+   "codigoBarras": "7790427000013",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Lucchetti cappellettis multisabor",
+   "codigoBarras": "7790070320100",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Lucchetti cappellettis carne",
+   "codigoBarras": "7790070320117",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Lucchetti cappellettis espinaca y queso",
+   "codigoBarras": "7790070317469",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Lucchetti cappellettis jamón y queso",
+   "codigoBarras": "7790070317452",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Sol Pampeano Mostachol 500gr",
+   "codigoBarras": "7798031151213",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Sol Pampeano Tirabuzon 500",
+   "codigoBarras": "7798031151046",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Nutri Flakes Copos Azucarados",
+   "codigoBarras": "7797599000476",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Granix Aritos Frutales 130g",
+   "codigoBarras": "7790045826965",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Don Yeyo pan lactal 5 semillas 400g",
+   "codigoBarras": "7795293000297",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Don Yeyo Pn lactal 400g",
+   "codigoBarras": "7795293602156",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Don Yeyo pan Hamburguesa 210g",
+   "codigoBarras": "7795293601296",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Don Yeyo pan Panchos 210 g",
+   "codigoBarras": "7795293203209",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Sedal Crema Blance Shampoo 300ml Resp",
+   "codigoBarras": "7791293045719",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Sedal Crema Balance Acondicionador Resp",
+   "codigoBarras": "7791293045917",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Sedal Restauracion Instantanea Respuesto",
+   "codigoBarras": "7791293045726",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Dove Reconstrucción Acondicionador resp.",
+   "codigoBarras": "7791293046938",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Dove Reconstrucción Shampoo resp.",
+   "codigoBarras": "7791293046921",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Dove original jabón tocador",
+   "codigoBarras": "7898422746759",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Plusbella Jazmín Intenso Jabon tocador",
+   "codigoBarras": "7790990004111",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Duplex Maxi Rollo 200 paños",
+   "codigoBarras": "7798049449869",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "La Nid jabón tocador x 3",
+   "codigoBarras": "7798134070817",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Duc Hidrative jabón tocador",
+   "codigoBarras": "7790828104907",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Duc Citrus jabón tocador",
+   "codigoBarras": "7790828104891",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Plusbelle Lavanda jabón Tocador",
+   "codigoBarras": "7790990004135",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Plusbelle Flores Rosas jabón Tocador",
+   "codigoBarras": "7790990004098",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Duplex Rollo cocina x3",
+   "codigoBarras": "7798049448596",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Granix Skarchitos copos azucarados",
+   "codigoBarras": "7790045001607",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Doncella Nocturna x 8",
+   "codigoBarras": "7790940216243",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Doncella Ultrafina x 8",
+   "codigoBarras": "7790940216236",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Doncella Protector diario x 20",
+   "codigoBarras": "7790940233240",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Cada Dia mayonesa 475g",
+   "codigoBarras": "7791866000572",
+   "categoria": "Aderezos"
+  },
+  {
+   "nombre": "Suave acondicionador hidra. intensa x 930ml",
+   "codigoBarras": "7791293050430",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Suave shampoo hidra. intensa x 930ml",
+   "codigoBarras": "7791293050393",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Plusbelle acondicionador brillo x1000ml",
+   "codigoBarras": "7790740000318",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Plusbelle acondicionador nutricion x1000ml",
+   "codigoBarras": "7790740000349",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Plusbelle acondicionador suavidad x1000ml",
+   "codigoBarras": "7790740000332",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Plusbelle shampoo frescura x1000ml",
+   "codigoBarras": "7790740000240",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "plusbelle shampoo nutricion x1000ml",
+   "codigoBarras": "7790740000264",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Rexona antitranspirante aerosol masc. 150ml",
+   "codigoBarras": "7791293049496",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Axe desodorante green x150 ml",
+   "codigoBarras": "7506306249998",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Kevin desodorante rojo x150ml",
+   "codigoBarras": "7791600037239",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Axe desodorante cherry x150 ml",
+   "codigoBarras": "7506306255050",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Ciel desodorante Noir x123ml",
+   "codigoBarras": "7791600154257",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Colgate maxima proteccion x70g",
+   "codigoBarras": "7509546695457",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Kolinos triple extrafresh x70g",
+   "codigoBarras": "7509546667348",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Doncella algodon x70g",
+   "codigoBarras": "7790940003034",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Colgate cepillo dental medio",
+   "codigoBarras": "6910021007206",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Babysec talle XG x8",
+   "codigoBarras": "7790250040781",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Cif desinfectante aerosol x360",
+   "codigoBarras": "7791290795778",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Poett aerosol huellitas",
+   "codigoBarras": "7793253007614",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Poett aerosol despertar energia",
+   "codigoBarras": "7793253004293",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Lysoform desinfectante aerosol",
+   "codigoBarras": "7790520995285",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Saeta mata cucarachas y hormigas x 360",
+   "codigoBarras": "7798049444499",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Vivere suavizante eterna primavera x900ml",
+   "codigoBarras": "7791290796645",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Ala matic lavado total liquido x800 ml",
+   "codigoBarras": "7791290792012",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Doncella Tanga x 8",
+   "codigoBarras": "7790940216205",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Doncella Normal x8",
+   "codigoBarras": "7790940216151",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Selton aerosol Rojo x 360",
+   "codigoBarras": "7793253005153",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Poett espiritu play",
+   "codigoBarras": "7793253004323",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Magistral detergente Limon 225ml",
+   "codigoBarras": "7790990003954",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Esencial lavandina x 2litros",
+   "codigoBarras": "7797470198742",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Danubio apresto aerosol x390",
+   "codigoBarras": "7790047000080",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Cif crema multiuso x250ml",
+   "codigoBarras": "7791290794238",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Cepillo de mano O.K",
+   "codigoBarras": "7791625007897",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Marwhiplas broches de plastico x12",
+   "codigoBarras": "7794867000015",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "La Nuvia broches de madera x12",
+   "codigoBarras": "7798413490275",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Knorr caldo Verdura x 6",
+   "codigoBarras": "7794000008595",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Savora Original 250g",
+   "codigoBarras": "7794000006478",
+   "categoria": "Aderezos"
+  },
+  {
+   "nombre": "Dea esponja acero",
+   "codigoBarras": "7798059384273",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Ala limón cremoso 750ml",
+   "codigoBarras": "7791290793927",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Ala con Gliserina cremoso 750ml",
+   "codigoBarras": "7791290793903",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Ala det. Concentrado Limon 300ml",
+   "codigoBarras": "7791290794276",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Maggi pure de papas",
+   "codigoBarras": "8445290993021",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Cif detergente lima x300ml",
+   "codigoBarras": "7791290794108",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Vivere Suav. clásico 900ml",
+   "codigoBarras": "7791290796607",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "361 Cerveza rubia 1l",
+   "codigoBarras": "7798054012980",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Heineken Laton 710",
+   "codigoBarras": "7793147571283",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Fibran esponja multiuso",
+   "codigoBarras": "7798136921223",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Inalpa Choclo amarillo en grano 300",
+   "codigoBarras": "7792350067033",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Héroe des. piso Primavera 900ml",
+   "codigoBarras": "7798131250175",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Héroe des. piso Pino SIlvestre",
+   "codigoBarras": "7798131250205",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Ayudin ropa Blanca 1L",
+   "codigoBarras": "7793253004774",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Gatorade Mnazana 750ml",
+   "codigoBarras": "7792170052271",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Cif recarga economica Baño x450ml",
+   "codigoBarras": "7791290795600",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Ala detergente flores blancas x750ml",
+   "codigoBarras": "7791290794900",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Ayudin Original x 1 litro",
+   "codigoBarras": "7790132098459",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Poett des. piso Frescura Lavanda 900ml",
+   "codigoBarras": "7793253003500",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Poett des. piso Flores de Primavera 900ml",
+   "codigoBarras": "7793253003548",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Granby Rosas 800ml",
+   "codigoBarras": "7791290795143",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Granby jabon liquido limon x800ml",
+   "codigoBarras": "7791290795112",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Skip jabon liquido x800ml",
+   "codigoBarras": "7791290792814",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Cif detergente limon x300ml",
+   "codigoBarras": "7791290794054",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Gatorade Frutos Tropicales 750ml",
+   "codigoBarras": "7792170052295",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "La Serenisima Leche fresca clásica",
+   "codigoBarras": "7790742348302",
+   "categoria": "Lacteos"
+  },
+  {
+   "nombre": "La Serenisima L. Fresca desc.",
+   "codigoBarras": "7790742348005",
+   "categoria": "Lacteos"
+  },
+  {
+   "nombre": "Srite Lata",
+   "codigoBarras": "7790895000270",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Coca-Cola Lata",
+   "codigoBarras": "7790895000232",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Suiza Lipiar pisos 400ml",
+   "codigoBarras": "7790613071131",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Bath Toys jabon liquido 300ml",
+   "codigoBarras": "7791274201233",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Dove Original aerosol",
+   "codigoBarras": "7791293048468",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Rexona Efficient talco 100g",
+   "codigoBarras": "7791293044477",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Ciel Nuit desodorante",
+   "codigoBarras": "7791600064457",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Ciel Shine desodorante",
+   "codigoBarras": "7791600462253",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Ciel Crystal desodorante",
+   "codigoBarras": "7791600024239",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Esponja natural",
+   "codigoBarras": "7790035003024",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Makao Guantes Grande",
+   "codigoBarras": "7796851811393",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Makao Guantes Medianos",
+   "codigoBarras": "7796851811386",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "New Packing papel aluminio",
+   "codigoBarras": "754697486899",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Rayita rastrillo plastico",
+   "codigoBarras": "781159030925",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Ecco Escoba Doble Barrido",
+   "codigoBarras": "7791625001703",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Fibran Trapo",
+   "codigoBarras": "7798136921858",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "New Packong rollo aluminio",
+   "codigoBarras": "754697486905",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Reva bolsas residuos 60x90",
+   "codigoBarras": "648260466206",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Reva bolsa ressiduos 80x110",
+   "codigoBarras": "648260466169",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Ganga rejilla 40x50",
+   "codigoBarras": "7798413499841",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Puloil poloid",
+   "codigoBarras": "7791533001802",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Espacial fluido",
+   "codigoBarras": "7793702000265",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Paso Los toros Pomelo 500ml",
+   "codigoBarras": "7791813420385",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Pepsi 500ml",
+   "codigoBarras": "7791813888406",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Eco de los andes 500ml",
+   "codigoBarras": "7792799000011",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Red Bull red 250ml",
+   "codigoBarras": "9002490258313",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Paso Los Toros Pomelo 1.5",
+   "codigoBarras": "7791813421382",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "H2O limoneto x 2.25 litros",
+   "codigoBarras": "779181342911",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "7 up 3l",
+   "codigoBarras": "7791813444473",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Gatorade CoolBlue 750ml",
+   "codigoBarras": "7792170052264",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Mirinda 3l",
+   "codigoBarras": "7791813000020",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "H2O citrus x2.25 litros",
+   "codigoBarras": "7791813423591",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Paso de los Toros Tonica x 1.5 litros",
+   "codigoBarras": "7791813421368",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Pepsi x1.5 litros",
+   "codigoBarras": "7791813888413",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "H2OH sin gas naranja x 1.5litros",
+   "codigoBarras": "7791813000723",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "H2OH sin gas manzana x 1.5 litros",
+   "codigoBarras": "7791813403036",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Andes rubia oro lata x 473ml",
+   "codigoBarras": "7792798014934",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Brahma lata x 473 ml",
+   "codigoBarras": "7792798005888",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Andes rubia lata x 473ml",
+   "codigoBarras": "7792798999866",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Andes roja lata x 473 ml",
+   "codigoBarras": "7792798992317",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Andes negra lata x 473ml",
+   "codigoBarras": "7792798002320",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Quilmes 1890 lata x710 ml",
+   "codigoBarras": "7792798015511",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Brahma lata x 710 ml",
+   "codigoBarras": "7792798015061",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Granix Salvado",
+   "codigoBarras": "7790045826200",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Granix Sandwich granagua",
+   "codigoBarras": "7790045001133",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Granix Salvado sin sal Agreegada",
+   "codigoBarras": "7790045826095",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Natura Mostaza 250g",
+   "codigoBarras": "7791866004211",
+   "categoria": "Aderezos"
+  },
+  {
+   "nombre": "Corona 710",
+   "codigoBarras": "7792798003716",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Brahama botella 1 retornable",
+   "codigoBarras": "7792798007493",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Gancia sin alcohol 473",
+   "codigoBarras": "7790950147926",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Gancia One lata 473",
+   "codigoBarras": "7790950142921",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Monster Energy 473",
+   "codigoBarras": "7798422620014",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Monster Energy Mango Loco 473",
+   "codigoBarras": "7798422620045",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Speed Unlimited 473ml",
+   "codigoBarras": "7798119220183",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "1882 fernet y cola 473",
+   "codigoBarras": "7798167047923",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Dr. Lemon Pomelo 473",
+   "codigoBarras": "7790950140859",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Dr. Lemon Tropical Gin 473",
+   "codigoBarras": "7790950145274",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Dr. Lemon Limon/Vodka 473",
+   "codigoBarras": "7790950202816",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Pronto shake 473",
+   "codigoBarras": "7790950610574",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Ladysoft Normal 8",
+   "codigoBarras": "7790250097648",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Miller lata 473",
+   "codigoBarras": "7793147573386",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Premium Pate pollo gato adulto lata",
+   "codigoBarras": "7798429434751",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Premium Pate pescado gato adulto lata",
+   "codigoBarras": "7798429434720",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Schneider Laton 710",
+   "codigoBarras": "7793147570606",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Premium Alimento salmón gato adulto l",
+   "codigoBarras": "7798429433945",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Colon Frutos Rojos",
+   "codigoBarras": "7790168904663",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Colon Durazno",
+   "codigoBarras": "7790168904649",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Toddy choc. cookies y cream 60g",
+   "codigoBarras": "7790380025139",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Toddy Choc. aireado mix 50g",
+   "codigoBarras": "7790380018056",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Toddy alfajor 3 Mousse negro",
+   "codigoBarras": "7790380023753",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Toddy chocolate Mousse 60g",
+   "codigoBarras": "7790380025115",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Toddy chocolate Milk 60g",
+   "codigoBarras": "7790380025122",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Mantecol obleas 85g",
+   "codigoBarras": "7790380026457",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Schneider Remix Limon lata 473",
+   "codigoBarras": "7793147574222",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Schneider Remix Pomelo",
+   "codigoBarras": "7793147574352",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Jorgitos mini aljores blancos",
+   "codigoBarras": "7790957000538",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Jorgito mini alfajores chocolate",
+   "codigoBarras": "7790957000545",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Jorgito Alfajor Mousee",
+   "codigoBarras": "7790957000101",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Jorgito azucarado 50g",
+   "codigoBarras": "77905758",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Maxi Jorgelín Blanco 85g",
+   "codigoBarras": "77901705",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Maxi Jorgelín glaceado 85g",
+   "codigoBarras": "77901729",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Full Mani alfajor 40g",
+   "codigoBarras": "7790380025191",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Manctecol Alfajor triple",
+   "codigoBarras": "7790380026464",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Georgalos Flow Cereales almendras y mani",
+   "codigoBarras": "7790380020233",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Flynn Paff confitados 50g",
+   "codigoBarras": "7790380002826",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Flynn Paff Acido extremo 50",
+   "codigoBarras": "7790380016748",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Flynn Paff Yogur 50g",
+   "codigoBarras": "7790380029861",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Lengutazo Tropical",
+   "codigoBarras": "77994950",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Belden Frutilla pop",
+   "codigoBarras": "77969118",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Flynn Paff sabor banana c/u",
+   "codigoBarras": "7790380002659",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Flynn Paff tutti Frutti c/u",
+   "codigoBarras": "7790380002734",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Toddy Cubanitos 10g",
+   "codigoBarras": "7790380025245",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Smack Cubanito",
+   "codigoBarras": "7798094223605",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Toddy galletitas originales 126gr",
+   "codigoBarras": "7790380023432",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Toddy obleas mousse 85g",
+   "codigoBarras": "7790380023760",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Jorgito Alfajor Negro 55g",
+   "codigoBarras": "779057451",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Full Mani relleno Pasta mani",
+   "codigoBarras": "7790380025276",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Full Mani 30g",
+   "codigoBarras": "7790380025177",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Cocacola Retornable x1.25L",
+   "codigoBarras": "7790895005374",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Sprite Retornable 1.25L",
+   "codigoBarras": "7790895006111",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Fanta descartable 1.5L",
+   "codigoBarras": "7790895000454",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Sprite descartable 1.5L",
+   "codigoBarras": "7790895000447",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Sprite Zero descartable 1.5L",
+   "codigoBarras": "7790895064173",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Schweppes Tonica 1.5L",
+   "codigoBarras": "7790895006715",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Cocacola descartable 2.25L",
+   "codigoBarras": "7790895000997",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Sprite descartable 2.25L",
+   "codigoBarras": "7790895001000",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Sprite retornable 2L",
+   "codigoBarras": "7790895000225",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Fanta retornable 2.25L",
+   "codigoBarras": "7790895000331",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Cocacola retornable",
+   "codigoBarras": "7790895000218",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Don Yeyo ravioles espinaca y pollo x 500g",
+   "codigoBarras": "7795293106210",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Don Yeyo ravioles 4 quesos x 500g",
+   "codigoBarras": "7795293000174",
+   "categoria": "Aderezos"
+  },
+  {
+   "nombre": "Don Yeyo ravioles verdura x 500g",
+   "codigoBarras": "7795293106111",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Manaos soda 2L",
+   "codigoBarras": "7798113301529",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Sierra de los Padres Agua s/gas 1.5L",
+   "codigoBarras": "7798065733485",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Manaos naranja 3L",
+   "codigoBarras": "7798113301260",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Manaos citrus 3L",
+   "codigoBarras": "7798113301321",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Manaos cola 3L",
+   "codigoBarras": "7798113301246",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Manaos pomelo 3L",
+   "codigoBarras": "7798113301277",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Manaos limalimon 3L",
+   "codigoBarras": "7798113301253",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "La Serenisima yogur c/ cereales desc.",
+   "codigoBarras": "7791337010291",
+   "categoria": "Lacteos"
+  },
+  {
+   "nombre": "La Serenisima yogur c/ cereales entero",
+   "codigoBarras": "7791337010444",
+   "categoria": "Lacteos"
+  },
+  {
+   "nombre": "Tregar yogur cremoso vainilla x 125g",
+   "codigoBarras": "7793913013535",
+   "categoria": "Lacteos"
+  },
+  {
+   "nombre": "La  Serenisima postre vainilla x 95g",
+   "codigoBarras": "7791337010659",
+   "categoria": "Lacteos"
+  },
+  {
+   "nombre": "La Serenisima yogur firme frutilla x 125g",
+   "codigoBarras": "7791337010185",
+   "categoria": "Lacteos"
+  },
+  {
+   "nombre": "Tregar yogur c/frutiilas x 150g",
+   "codigoBarras": "7793913014198",
+   "categoria": "Lacteos"
+  },
+  {
+   "nombre": "Tregar yogur c/ durazno x150g",
+   "codigoBarras": "7793913014204",
+   "categoria": "Lacteos"
+  },
+  {
+   "nombre": "La Serenisima queso untable clasico",
+   "codigoBarras": "7791337061422",
+   "categoria": "Lacteos"
+  },
+  {
+   "nombre": "Cocacola descartable  1.5L",
+   "codigoBarras": "7790895000430",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "La Serenisima yogur firme vainilla x190g",
+   "codigoBarras": "7791337010192",
+   "categoria": "Lacteos"
+  },
+  {
+   "nombre": "La Serenisima manteca x200g",
+   "codigoBarras": "7793940054006",
+   "categoria": "Lacteos"
+  },
+  {
+   "nombre": "La Serenisima manteca x100g",
+   "codigoBarras": "7793940052002",
+   "categoria": "Lacteos"
+  },
+  {
+   "nombre": "Cotampo manteca x 200g",
+   "codigoBarras": "7798060852044",
+   "categoria": "Lacteos"
+  },
+  {
+   "nombre": "Cotampo manteca x100g",
+   "codigoBarras": "7798060852037",
+   "categoria": "Lacteos"
+  },
+  {
+   "nombre": "Paladini mortadela mini x 300g",
+   "codigoBarras": "7790079001031",
+   "categoria": "Fiambrería"
+  },
+  {
+   "nombre": "Paladini leber wurst",
+   "codigoBarras": "7790079000638",
+   "categoria": "Fiambrería"
+  },
+  {
+   "nombre": "Prime ultra fino x 3uni",
+   "codigoBarras": "7791519701061",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Prime super fino x 3 uni",
+   "codigoBarras": "7791519200045",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Prime tachas x 3 uni",
+   "codigoBarras": "7791519200090",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Primer texturado x 3 uni",
+   "codigoBarras": "7791519200069",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Prime anatomico x 3 uni",
+   "codigoBarras": "7791519200021",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Prime retardante x 3 uni",
+   "codigoBarras": "7791519702112",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Prime extra lubricacion x 3 uni",
+   "codigoBarras": "7791519000676",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Sedal Shampoo ceragloss x10ml",
+   "codigoBarras": "77982698",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Sedal shampoo crema balance x 10ml",
+   "codigoBarras": "77982704",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Cocacola Zero descartable 1.5L",
+   "codigoBarras": "7790895067556",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Rexona Odorono 60g",
+   "codigoBarras": "77987983",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Dove Original rollon",
+   "codigoBarras": "78924468",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Rexona desodorante 48hs acitve rollon",
+   "codigoBarras": "78944848",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Dove men desodorante rollo",
+   "codigoBarras": "78925519",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Dove Men invisibledesodorante rollo",
+   "codigoBarras": "78933354",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Nivea Crema 60ml",
+   "codigoBarras": "4005800137679",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Hinds antitranspirante original",
+   "codigoBarras": "7794640171246",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Hionds antitranspirante flowers",
+   "codigoBarras": "7794640171376",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "317 Kit color castaño oscuro",
+   "codigoBarras": "7792321003152",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Mac gregor espuma para afeitar",
+   "codigoBarras": "7790047001377",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Mujercitas desodorante 123ml",
+   "codigoBarras": "7791600595340",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Sedal crema balance Shampoo 10ml",
+   "codigoBarras": "11922704",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Sedal crema balance Acondicionadro 10ml",
+   "codigoBarras": "77982735",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Nivea milk Nutritiva 5 en 1 125ml",
+   "codigoBarras": "4005900984609",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Nivea Hidrataciob Express 125ml",
+   "codigoBarras": "4006000040349",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "VN Villeneuve protector baby y kids 60 120ml",
+   "codigoBarras": "7793008017998",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "VN Villeneuve protector sola 50",
+   "codigoBarras": "7793008018001",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Cutex Nature quitaesmalte 100ml",
+   "codigoBarras": "7790416016254",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Cutex Fortalecedor de uñas quitaesmalte 100ml",
+   "codigoBarras": "7790416066532",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Doree humectante quitaesmalter 65ml",
+   "codigoBarras": "7794050005001",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Honds crema rosa 125ml",
+   "codigoBarras": "7794640173066",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Cris- Jor Mani c/cober. sabor Pizza 980g",
+   "codigoBarras": "7798135900151",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Cris- Jor Mani c/cober. sabor Salame 980g",
+   "codigoBarras": "7798135900120",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Nosotras tampones regular 8",
+   "codigoBarras": "7702026194581",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Bebu toallitas húmedas c manzanilla 70un",
+   "codigoBarras": "7798049448633",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Bebu toallitas húmedas humectantes 70un",
+   "codigoBarras": "7798049448619",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Bebu oleo Calcáreo 1000ml",
+   "codigoBarras": "7798049449838",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Baysec toallitas humedas 50",
+   "codigoBarras": "7896061990687",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Johnson´s acondicionador 200ml",
+   "codigoBarras": "7790010668514",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Johnson´s shampoo original 200ml",
+   "codigoBarras": "7790010002417",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Johnson´s acondicionador c. claros 200ml",
+   "codigoBarras": "7790010540247",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Baby algabo jabon para bebe",
+   "codigoBarras": "7791274197307",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Johnson´s jabon glicerina",
+   "codigoBarras": "7891010035976",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Gillette prestobarba 3",
+   "codigoBarras": "7702018880409",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Gillette Venus",
+   "codigoBarras": "7500435251938",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Gillette prestobarba 2",
+   "codigoBarras": "7500435154420",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Gillette prestobarba ultra gilp 2",
+   "codigoBarras": "7500435154437",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "El Pulpito 50g",
+   "codigoBarras": "7790400022834",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Duracell AAA X 2",
+   "codigoBarras": "041333431482",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Duracell AA X 2",
+   "codigoBarras": "041333014630",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Energizer AA X4",
+   "codigoBarras": "039800011329",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Rodeo 220 fosoforos",
+   "codigoBarras": "7791190003607",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Candela led foco",
+   "codigoBarras": "7798347080061",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Off Family 127 aerosol",
+   "codigoBarras": "7790520009494",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Macao pomada para calzado negro",
+   "codigoBarras": "7796895101580",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Astro velas blancas",
+   "codigoBarras": "7798372610066",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Nuvia Velas blancas",
+   "codigoBarras": "7792763000092",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "OB simepre libre medio 8 tampones",
+   "codigoBarras": "7891010254773",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "OB simepre libre super 8 tampones",
+   "codigoBarras": "7891010254780",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Pepsi 3L",
+   "codigoBarras": "7791813888475",
+   "categoria": null
+  },
+  {
+   "nombre": "DRPIN 150 filtros",
+   "codigoBarras": "7798311170293",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Vanhaasen Tabaco",
+   "codigoBarras": "7798205440617",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "fILTROS PARA BOMBILLAS",
+   "codigoBarras": "FILTROS",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Velas para tortas",
+   "codigoBarras": "7799032003532",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Elite pañuelos descartables",
+   "codigoBarras": "7790250000358",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Elite pañuelos x 6",
+   "codigoBarras": "7790250054986",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Estrella clasico algodon 75g",
+   "codigoBarras": "7790064000261",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Duplex Alcohol etílico 96%",
+   "codigoBarras": "7798049449630",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "308 fideos al huevo nido N°4",
+   "codigoBarras": "7790427000440",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "NS Marineras tradicional 350gr",
+   "codigoBarras": "7798179490793",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "NS marineras 5 semillas 350gr",
+   "codigoBarras": "7798179490885",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Arcor Diversión sutidas 400g",
+   "codigoBarras": "7790040143364",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Terepín pepas membrillo 400gr",
+   "codigoBarras": "7798054220149",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Terep{in Pepas frutos del bosque",
+   "codigoBarras": "7798054220590",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Leivba Tostada de arroz clasica",
+   "codigoBarras": "7790412000271",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Cilo Anillos vainillas 400gr",
+   "codigoBarras": "7795643000328",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Guaymallen negro triple",
+   "codigoBarras": "77980274",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Lengutezo tuti fruty",
+   "codigoBarras": "77907943",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Medallon Dulce d leche 20gr",
+   "codigoBarras": "7790206008360",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Mentitas 16gr",
+   "codigoBarras": "7790206008308",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Moneda Pirata de choc. 5gr",
+   "codigoBarras": "7790206016006",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Tivis cubanito relleno",
+   "codigoBarras": "7790206509805",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Paraguita",
+   "codigoBarras": "7790206009503",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Pep Rueditas sabor pizza 120g",
+   "codigoBarras": "7790310984321",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Pep Rueditas sabor pizza 74gr",
+   "codigoBarras": "7790310984314",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Lay's Clasicas 40g",
+   "codigoBarras": "7790310985236",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Doritos sabor queso 40gr",
+   "codigoBarras": "7790310985267",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Bangladesh Sahumerios 15 Sándalo",
+   "codigoBarras": "7798081515942",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Bangladesh Sahumerios 15 Frutilla",
+   "codigoBarras": "7798161645132",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Bangladesh Sahumerios 15 Incienso",
+   "codigoBarras": "7798081516062",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Bangladesh Sahumerios 15 Jazmin",
+   "codigoBarras": "7798081515966",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Bangladesh Sahumerios 15 MIrra",
+   "codigoBarras": "7798081516789",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Bangladesh Sahumerios 15 Vainilla",
+   "codigoBarras": "7798161645347",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "3D Original sabor queso 43gr",
+   "codigoBarras": "7790310985113",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Doritos Queso 77gr",
+   "codigoBarras": "7790310985649",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Doritos Sabor Queso 129g",
+   "codigoBarras": "7790310985656",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Twistos Mini tostadas sabor queso 95g",
+   "codigoBarras": "7790310983270",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Chetos ondulados sabor ketchup 80g",
+   "codigoBarras": "7790310988114",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Cheetos OND. sabor Queso Crema 85g",
+   "codigoBarras": "7790310985670",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Lays Clásicas 85gr",
+   "codigoBarras": "7790310985458",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Lays sabor queso crema y cebolla 77gr",
+   "codigoBarras": "7790310985557",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Lays Jamón serrano 77gr",
+   "codigoBarras": "7790310985434",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Lays Ketchup 77gr",
+   "codigoBarras": "7790310985502",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Lay Barbacoa 77gr",
+   "codigoBarras": "7790310987766",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Lays Panceta 77gr",
+   "codigoBarras": "7790310987780",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Lays Provoleta 77gr",
+   "codigoBarras": "7790310986813",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Lays ondas Flamin Hot 77gr",
+   "codigoBarras": "7790310985328",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "3D sabor queso original 85gr",
+   "codigoBarras": "7790310985830",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Pehumar maicitos 265gr",
+   "codigoBarras": "7790310986615",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Pehumar palitos sabor queso 165gr",
+   "codigoBarras": "7790310985526",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Pehumar palitos salados 165gr",
+   "codigoBarras": "7790310985380",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Pehumar Mani Pelado 135gr",
+   "codigoBarras": "7790310986028",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Pehumar Mani Salado 135gr",
+   "codigoBarras": "7790310986738",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Doritos Dinamitas 82gr",
+   "codigoBarras": "7790310987582",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Pehumar papas matambrito 80gr",
+   "codigoBarras": "7790310987681",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Pehumar papas chimichurri 80gr",
+   "codigoBarras": "7790310987667",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Paty Hamburguesas clásica x 4",
+   "codigoBarras": "7790670050650",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Paty Hamburguesa Express x 4",
+   "codigoBarras": "7790670052371",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Vienissima salchichas x 6",
+   "codigoBarras": "7790670052401",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Doncella Toall. Normal x 8",
+   "codigoBarras": "7790940216144",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Doncella proc respirables x 20",
+   "codigoBarras": "7790940235077",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Plusbelle jabón tocador coco y vainilla",
+   "codigoBarras": "7790990004078",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Fuyi aerosol insecticida",
+   "codigoBarras": "7790520025869",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Ala jab. liq. Matic x 3L",
+   "codigoBarras": "7791290792036",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Skip Matic liquido x 3L",
+   "codigoBarras": "7791290792791",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Doncella Protec. con perfume x 20",
+   "codigoBarras": "7790940233264",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Ayudin Lav original x 2L",
+   "codigoBarras": "7793253006709",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Ayudin aerosol Original 332",
+   "codigoBarras": "7793253005054",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Ayudin Aerosol Matinal 332",
+   "codigoBarras": "7793253005061",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Poett Aerosol flores de primavera",
+   "codigoBarras": "7793253004248",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Poett aerosol frescura de lavanda",
+   "codigoBarras": "7793253004231",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Suave feder Suavizante x 900",
+   "codigoBarras": "7790990000625",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Suave federal suavizante x900ml bambu",
+   "codigoBarras": "7790990000601",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Suave federal suavizante x900ml violetas",
+   "codigoBarras": "7790990000618",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Duplex lav en gel 750",
+   "codigoBarras": "7798049449906",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Duplex doble hoja 4x30m",
+   "codigoBarras": "7798049449876",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Duplex Doble Hoja 4x20 m",
+   "codigoBarras": "7798049449432",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Higienol max. 4 x 80m",
+   "codigoBarras": "7790250026967",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Fuyi caja pastilla",
+   "codigoBarras": "7790520025845",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Fuyi tira x 4",
+   "codigoBarras": "FuyiTabletas",
+   "categoria": "Limpieza"
+  },
+  {
+   "nombre": "Curitas x8 tela elastica",
+   "codigoBarras": "7702003010743",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Granix bocaditos de arroz relleno frut",
+   "codigoBarras": "7791078022706",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Granix Sin Sal Agregada",
+   "codigoBarras": "7790045827733",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Cheetos sabor queso 43g",
+   "codigoBarras": "7790310985274",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Bangladesh Sahumerios 15 Lavanda",
+   "codigoBarras": "7798081515973",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Dulxelitos Cascarones sabor pizza 500g",
+   "codigoBarras": "7798023310543",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Fresh Enjoy palito Naranja y Frutilla",
+   "codigoBarras": "7798043062941",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Dulxelitos Conitos sabor pizza 800g",
+   "codigoBarras": "7798023310390",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Dulxelitos P. de maiz sabor queso",
+   "codigoBarras": "7798023310277",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "MAXUI HELADO PISTACHO Aloha",
+   "codigoBarras": "7798043065577",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Maxui Almendrado helado Aloha",
+   "codigoBarras": "7798043062361",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Aloha Bombon helado",
+   "codigoBarras": "7798043065324",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Fresh Enjoy palito Frutilla y Anana",
+   "codigoBarras": "7798043062958",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Slice Papas corte Americano 500g",
+   "codigoBarras": "7798066070770",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Aloha Palito Bombon",
+   "codigoBarras": "7798043060640",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Aloha  Cono Bola D de Leche",
+   "codigoBarras": "7798043064471",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Fresh Balde 3 litros frut, S.dulce d leche y vainilla",
+   "codigoBarras": "7798043064396",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Paty finitas x 2",
+   "codigoBarras": "7790670050728",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Dr. Lemon Gin Tonic 473",
+   "codigoBarras": "7790950144758",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Dr. Lemon Mojito lata 473",
+   "codigoBarras": "7790950144055",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Dr. Lemon Vodka lata 473",
+   "codigoBarras": "7790950202823",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Dr. Lemon Vodk 1l",
+   "codigoBarras": "7790950131918",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Dr. Lemon Limon/Vodka 1l",
+   "codigoBarras": "7790950134100",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Frizze Blue Evolution 1L",
+   "codigoBarras": "7791540053184",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "La Conquista hamburguesa x 2",
+   "codigoBarras": "7798155731377",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Fresh helado 1/4 D. d leche y americana",
+   "codigoBarras": "HELADO",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Fresh 3 litros Granizado, frut. y dulce d leche",
+   "codigoBarras": "7798043061975",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Fresh 1/4 Choc y Frutilla",
+   "codigoBarras": "Heladoo",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Fresh pote 1l Amer. Choc. D de Leche",
+   "codigoBarras": "5790223064105",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Fresh pote 1L Gran. Frut. D de leche",
+   "codigoBarras": "7798043064112",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Fresh pote 1L Frut. D de leche Vain",
+   "codigoBarras": "7798043064099",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Full Mani 500gr",
+   "codigoBarras": "7790380025283",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Vida agua saborizada Manzana 1.5",
+   "codigoBarras": "7790036002132",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Baggio Jugo Naranja 1l",
+   "codigoBarras": "7790036000329",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Baggio Jugo Multifrutas 1l",
+   "codigoBarras": "7790036000466",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Baggio Jugo Multifrutas 200ml",
+   "codigoBarras": "7790036000619",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Baggio Jugo Naranja 200ml",
+   "codigoBarras": "7790036000565",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Baggio Jugo Durazno 200ml",
+   "codigoBarras": "7790036000589",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Misky Car. relle. fruta. x 10",
+   "codigoBarras": "7790580155100",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Misky Gomitas Jelly Roll(redondas) x 100g",
+   "codigoBarras": "7790580640101",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Palitos de la Selva x 10",
+   "codigoBarras": "7622201802592",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Billiken masticables yogur x 100g",
+   "codigoBarras": "7792222004012",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Docile Gomitas Dientes x 100g",
+   "codigoBarras": "7896451910516",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Docile Gomas Tiburin azul x 100g",
+   "codigoBarras": "7896451922748",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Docile Gomas Tenis Acidos x 100g",
+   "codigoBarras": "7896451925688",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Pehuamar papas acanaladasx 420gr",
+   "codigoBarras": "7790310988459",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Pehuamar papas clásicas x 420gr",
+   "codigoBarras": "7790310988442",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Huevos 1/2 docena",
+   "codigoBarras": "Huevos",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Huevos 1 docena",
+   "codigoBarras": "HUEVOS",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Carlitos tapa de empanadas p/ horno x12",
+   "codigoBarras": "7798035940028",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Tonadita crema de leche 350cc",
+   "codigoBarras": "7798060850101",
+   "categoria": "Lacteos"
+  },
+  {
+   "nombre": "La Herradura Pizzetas x 12",
+   "codigoBarras": "7798421760124",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Alimento Perro",
+   "codigoBarras": "00000000050",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Alimento Gato",
+   "codigoBarras": "00000000051",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Pan Rallado x 1k",
+   "codigoBarras": "00000000052",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Dulxelitos Cascarones x 80 gr",
+   "codigoBarras": "00000000064",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Dulxelitos Conitos x 80 gr",
+   "codigoBarras": "00000000063",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Dulxelitos Chisitos x 80gr",
+   "codigoBarras": "00000000072",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Krachitos Bastonitos x 80gr",
+   "codigoBarras": "00000000076",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Slice papas Corte Americano x 80gr",
+   "codigoBarras": "00000000078",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Slice papas Clásicas x 80g",
+   "codigoBarras": "00000000079",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Paty viena salchichas x 6",
+   "codigoBarras": "7790670052388",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Mingo Pan Pancho",
+   "codigoBarras": "7798164190257",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Mingo Pan Hambuerguesa",
+   "codigoBarras": "7798164190226",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Mingo Pan Lactal Blanco x 360",
+   "codigoBarras": "7798164190165",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Philpmorris Blue selec. 20",
+   "codigoBarras": "77981691",
+   "categoria": "Cigarrillos"
+  },
+  {
+   "nombre": "Tonadita crema de leche 200cc",
+   "codigoBarras": "7798060850095",
+   "categoria": "Lacteos"
+  },
+  {
+   "nombre": "Mani Cervezero Saborizados",
+   "codigoBarras": "00000000068",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Mani Con Cascra x 200",
+   "codigoBarras": "00000000069",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Pre Pizza x 2",
+   "codigoBarras": "00000000088",
+   "categoria": "Elaborado"
+  },
+  {
+   "nombre": "Ensaladas Mixtas",
+   "codigoBarras": "00000000151",
+   "categoria": "Elaborado"
+  },
+  {
+   "nombre": "Picada Eco.",
+   "codigoBarras": "00000000153",
+   "categoria": "Elaborado"
+  },
+  {
+   "nombre": "Picada Elaborada",
+   "codigoBarras": "00000000154",
+   "categoria": "Elaborado"
+  },
+  {
+   "nombre": "Tarta Jamoin y Queso 1/2",
+   "codigoBarras": "00000000145",
+   "categoria": "Elaborado"
+  },
+  {
+   "nombre": "Tarta Pollo 1/2",
+   "codigoBarras": "00000000144",
+   "categoria": "Elaborado"
+  },
+  {
+   "nombre": "Tarta Carne 1/2",
+   "codigoBarras": "00000000143",
+   "categoria": "Elaborado"
+  },
+  {
+   "nombre": "Empanada Jamón y Queso c/u",
+   "codigoBarras": "00000000142",
+   "categoria": "Elaborado"
+  },
+  {
+   "nombre": "Empanada de Pollo",
+   "codigoBarras": "00000000141",
+   "categoria": "Elaborado"
+  },
+  {
+   "nombre": "Empanada de Carne",
+   "codigoBarras": "00000000140",
+   "categoria": "Elaborado"
+  },
+  {
+   "nombre": "Pizza Lista Para Hornear",
+   "codigoBarras": "00000000086",
+   "categoria": "Elaborado"
+  },
+  {
+   "nombre": "Topline Seven freezing Mentohol",
+   "codigoBarras": "77964137",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Topline Seven Atomic strong",
+   "codigoBarras": "77939753",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Misky Gomitas Fantasia x 100g",
+   "codigoBarras": "7790580403805",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Georgalos Flow Cereales avellanas arandanos c miel",
+   "codigoBarras": "7790380020271",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Medallón pollo c/jamón y queso",
+   "codigoBarras": "00000000098",
+   "categoria": "Congelados"
+  },
+  {
+   "nombre": "Papa Bastón x 500gr",
+   "codigoBarras": "00000000100",
+   "categoria": "Congelados"
+  },
+  {
+   "nombre": "Bastón Merluza",
+   "codigoBarras": "00000000102",
+   "categoria": "Congelados"
+  },
+  {
+   "nombre": "Chesterfield Blue Motion box x 20",
+   "codigoBarras": "77953957",
+   "categoria": "Cigarrillos"
+  },
+  {
+   "nombre": "Bocaditos Calabaza/Muzzarella x 500gr",
+   "codigoBarras": "00000000092",
+   "categoria": "Congelados"
+  },
+  {
+   "nombre": "Bocaditos Capresse x 500gr",
+   "codigoBarras": "00000000077",
+   "categoria": "Congelados"
+  },
+  {
+   "nombre": "Bocaditos Papa Queso x 500gr",
+   "codigoBarras": "00000000091",
+   "categoria": "Congelados"
+  },
+  {
+   "nombre": "Bocaditos Primavera x 500gr",
+   "codigoBarras": "00000000071",
+   "categoria": "Congelados"
+  },
+  {
+   "nombre": "Medallón Pollo c/ espinaca",
+   "codigoBarras": "00000000099",
+   "categoria": "Congelados"
+  },
+  {
+   "nombre": "Pastas Carlistos Rav. Ñoq. Tar. x 1kg",
+   "codigoBarras": "00000000103",
+   "categoria": "Congelados"
+  },
+  {
+   "nombre": "Pastas Carlitos Fideos x 1kg",
+   "codigoBarras": "00000000107",
+   "categoria": "Congelados"
+  },
+  {
+   "nombre": "Pastas Carlitos Fideos x 500gr",
+   "codigoBarras": "00000000106",
+   "categoria": "Congelados"
+  },
+  {
+   "nombre": "Pastas Carlitos Rav. Ñoq. Tart x 500gr",
+   "codigoBarras": "00000000104",
+   "categoria": "Congelados"
+  },
+  {
+   "nombre": "Patitas Pollo Clásicas x 500gr",
+   "codigoBarras": "00000000095",
+   "categoria": "Congelados"
+  },
+  {
+   "nombre": "Patitas c/ jamón y queso x 500gr",
+   "codigoBarras": "00000000096",
+   "categoria": "Congelados"
+  },
+  {
+   "nombre": "Sideral azucar 1k",
+   "codigoBarras": "7798444590012",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Arcor Jugo sabor Manzana",
+   "codigoBarras": "7790580144142",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Arcor Jugo Sabor Multifrutas",
+   "codigoBarras": "7790580142490",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Arcor Sabor Naranja",
+   "codigoBarras": "7790580143237",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Elio Avena Instantánea",
+   "codigoBarras": "7798048721553",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Efe Galle. Dulces Vainillas x 3",
+   "codigoBarras": "7791602000637",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Caracas Choclo en grano",
+   "codigoBarras": "7790645002301",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Venado Tuerto harina leudante",
+   "codigoBarras": "7798111850180",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Firenze Choco Pamela 250g",
+   "codigoBarras": "7791568006162",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "CHUPETIN POP",
+   "codigoBarras": "CHUPETIN",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "CAJON POLLO",
+   "codigoBarras": "CAJON",
+   "categoria": "Carniceria/Polleria"
+  },
+  {
+   "nombre": "Taragui Mate cocido Saq. 25",
+   "codigoBarras": "7790387800050",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "La Serenisima Crema L. Batir 200",
+   "codigoBarras": "7790742011701",
+   "categoria": "Lacteos"
+  },
+  {
+   "nombre": "La Serenisima Crema L. Cocinar 200",
+   "codigoBarras": "7790742141606",
+   "categoria": "Lacteos"
+  },
+  {
+   "nombre": "La Serenisima Q. Crema LIGHT290",
+   "codigoBarras": "7791337061439",
+   "categoria": "Lacteos"
+  },
+  {
+   "nombre": "Andes Origen Ipa lata 473",
+   "codigoBarras": "7792798002726",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Medallon de pollo",
+   "codigoBarras": "00000000097",
+   "categoria": "Congelados"
+  },
+  {
+   "nombre": "Girasolazo Girasol tostado y salado",
+   "codigoBarras": "7798395880019",
+   "categoria": "kiosco"
+  },
+  {
+   "nombre": "Paseo mini crackers Clásicas",
+   "codigoBarras": "7792180006448",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Plusbelle Jbon coco vainilla tocador",
+   "codigoBarras": "7790990004074",
+   "categoria": "Perfumería"
+  },
+  {
+   "nombre": "Mauri Vainillas 14 u 160g",
+   "codigoBarras": "7790628102639",
+   "categoria": "Galletetitas"
+  },
+  {
+   "nombre": "Philpmorris original Box x 12",
+   "codigoBarras": "77981813",
+   "categoria": "Cigarrillos"
+  },
+  {
+   "nombre": "Marlboro Crafted Box Coral x 20",
+   "codigoBarras": "77989345",
+   "categoria": "Cigarrillos"
+  },
+  {
+   "nombre": "Philipmorris Original Box x 20",
+   "codigoBarras": "77912954",
+   "categoria": "Cigarrillos"
+  },
+  {
+   "nombre": "Celestial agua de mes a 6l",
+   "codigoBarras": "7792758372685",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Leña x 10",
+   "codigoBarras": "00000000056",
+   "categoria": "Almacen"
+  },
+  {
+   "nombre": "Leña 20 kg",
+   "codigoBarras": "00000000057",
+   "categoria": "Aderezos"
+  },
+  {
+   "nombre": "Brahma Pomelo 473cc",
+   "codigoBarras": "7792798015146",
+   "categoria": "Bebida con alcohol"
+  },
+  {
+   "nombre": "Cheetos origal sabor queso 85g",
+   "codigoBarras": "7790310985809",
+   "categoria": "Snack"
+  },
+  {
+   "nombre": "Gatorade CoolBlue 500ml",
+   "codigoBarras": "7792170042258",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Gatorade Frutas Tropicales",
+   "codigoBarras": "7792170042029",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "Gatorade Manzana 500ml",
+   "codigoBarras": "7792170042005",
+   "categoria": "Bebida sin alcohol"
+  },
+  {
+   "nombre": "CIGARRILLO SUELTO",
+   "codigoBarras": "CIGARRILLO",
+   "categoria": "Cigarrillos"
+  },
+  {
+   "nombre": "Maple Huevo",
+   "codigoBarras": "Maple",
+   "categoria": "Verdulería"
+  }
+ ]
+}

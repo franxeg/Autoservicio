@@ -10,6 +10,6 @@ export class CambiarPasswordAdminDto {
   @ApiProperty({ required: false, description: 'Contraseña nueva (vacío = autogenerada)' })
   @IsOptional()
   @IsString()
-  @MinLength(4, { message: 'La contraseña debe tener al menos 4 caracteres' })
+  @MinLength(6, { message: 'La contraseña debe tener al menos 6 caracteres' })
   passwordNueva?: string;
 }

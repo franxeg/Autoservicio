@@ -2,6 +2,7 @@ import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../lib/store';
 import { useEffect, useState } from 'react';
 import { getTelefonoEmpresa, getDireccionEmpresa } from '../lib/empresa';
+import { getPremiumStatus } from '../lib/premium';
 
 export default function Layout() {
   const { user, logout } = useAuthStore();
@@ -43,8 +44,12 @@ export default function Layout() {
   // Nombre de empresa reactivo (solo premium)
   const [nombreEmpresaSidebar, setNombreEmpresaSidebar] = useState('Autoservicio');
   const [contactoEmpresa, setContactoEmpresa] = useState({ telefono: '', direccion: '' });
+  const [plan, setPlan] = useState<'Premium' | 'Trial' | 'Free'>('Free');
   useEffect(() => {
     const update = () => {
+      // Plan actual (se recalcula solo: trial, premium o free).
+      const st = getPremiumStatus();
+      setPlan(st.isTrial ? 'Trial' : st.isPremium ? 'Premium' : 'Free');
       const esPremium = (() => {
         try {
           const cache = localStorage.getItem('license_status_cache');
@@ -119,6 +124,9 @@ export default function Layout() {
         {!isElaboracion && <Link to="/caja" style={linkStyle('/caja')}>💰 Caja</Link>}
         {isAdmin && <Link to="/empleados" style={linkStyle('/empleados')}>👷 Empleados</Link>}
         <Link to="/configuracion" style={linkStyle('/configuracion')}>⚙️ Configuración</Link>
+        <div style={{ fontSize: 11, opacity: 0.8, marginTop: -4, paddingLeft: 8 }}>
+          Plan: <b>{plan}</b>
+        </div>
         <div style={{ marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: 12 }}>
           <small>{user?.nombre || 'Usuario'} - {user?.rol}</small><br />
           <button onClick={handleLogout} style={{ marginTop: 8, width: '100%', padding: 6, cursor: 'pointer', background: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 6 }}>Cerrar Sesión</button>

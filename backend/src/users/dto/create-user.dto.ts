@@ -10,7 +10,7 @@ export class CreateUserDto {
 
   @ApiProperty({ example: 'cajero123' })
   @IsString({ message: 'La contraseña es obligatoria' })
-  @MinLength(4, { message: 'La contraseña debe tener al menos 4 caracteres' })
+  @MinLength(6, { message: 'La contraseña debe tener al menos 6 caracteres' })
   password: string;
 
   @ApiProperty({ example: 'Juan Perez' })

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../lib/store';
 import { api } from '../lib/api';
-import { getPremiumStatus } from '../lib/premium';
+import { getPremiumStatus, refreshPremiumStatus } from '../lib/premium';
 
 const TABS = [
   { id: 'premium', label: 'Suscribirse a Premium' },
@@ -50,14 +50,27 @@ export default function Configuracion() {
 }
 
 function TabPremium() {
-  const status = getPremiumStatus();
+  const [status, setStatus] = useState(() => getPremiumStatus());
+
+  // Sincroniza con el license-server al abrir la pestaña para mostrar los días
+  // reales de trial (el cache puede tener los 30 días del registro inicial).
+  useEffect(() => {
+    let activo = true;
+    refreshPremiumStatus()
+      .then(s => { if (activo) setStatus(s); })
+      .catch(() => {});
+    return () => { activo = false; };
+  }, []);
+
+  const diasTrial = status.trialDaysLeft === 1 ? '1 día' : `${status.trialDaysLeft} días`;
+  const venceTrial = status.expiryDate ? new Date(status.expiryDate).toLocaleDateString() : null;
 
   return (
     <div>
       <h3>Suscribirse a Premium</h3>
       <div style={{ background: status.isPremium ? '#ecfdf5' : '#fef2f2', border: `1px solid ${status.isPremium ? '#a7f3d0' : '#fecaca'}`, padding: 12, borderRadius: 6, marginBottom: 16 }}>
         {status.isTrial ? (
-          <span style={{ color: '#059669' }}>✅ Estás en <b>período de prueba</b>. Te quedan <b>{status.trialDaysLeft} días</b> de Premium.</span>
+          <span style={{ color: '#059669' }}>✅ Estás en <b>período de prueba</b>. Te quedan <b>{diasTrial}</b> de Premium{venceTrial ? ` (hasta el ${venceTrial})` : ''}.</span>
         ) : status.isPremium ? (
           <span style={{ color: '#059669' }}>✅ Premium activo hasta {status.expiryDate ? new Date(status.expiryDate).toLocaleDateString() : '—'}</span>
         ) : (
@@ -357,7 +370,7 @@ function TabPassword() {
   const [msg, setMsg] = useState('');
   const cambiar = async () => {
     if (!nueva || nueva !== confirmar) { setMsg('Las contraseñas no coinciden'); return; }
-    if (nueva.length < 4) { setMsg('La contraseña debe tener al menos 4 caracteres'); return; }
+    if (nueva.length < 6) { setMsg('La contraseña debe tener al menos 6 caracteres'); return; }
     try {
       const res = await api.post('/auth/cambiar-password', { passwordActual: actual, passwordNueva: nueva });
       setMsg(res.data?.message || 'Contraseña actualizada correctamente');

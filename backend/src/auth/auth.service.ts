@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException, ForbiddenException, BadRequestException, InternalServerErrorException, NotFoundException, BadGatewayException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, ForbiddenException, BadRequestException, InternalServerErrorException, NotFoundException, BadGatewayException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { Rol, Prisma } from '@prisma/client';
@@ -9,6 +9,7 @@ import { ResetearCredencialesDto } from './dto/resetear-credenciales.dto';
 import { CambiarPasswordAdminDto } from './dto/cambiar-password-admin.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ActualizarEmpresaDto } from './dto/actualizar-empresa.dto';
+import { sembrarCatalogoInicial } from './catalogo-inicial';
 import * as bcrypt from 'bcryptjs';
 import { randomBytes, timingSafeEqual } from 'crypto';
 import { readFileSync, writeFileSync } from 'fs';
@@ -33,6 +34,7 @@ export class AuthService {
   ) {}
 
   private lsTokenCache: { token: string; expires: number } | null = null;
+  private readonly logger = new Logger(AuthService.name);
 
   private getLicenseUrl(): string {
     return process.env.LICENSE_SERVER_URL || 'https://autoservicio-license-server.onrender.com';
@@ -250,7 +252,7 @@ export class AuthService {
     if (!user) throw new NotFoundException('Usuario no encontrado');
     const valid = await bcrypt.compare(passwordActual, user.password);
     if (!valid) throw new UnauthorizedException('La contraseña actual no es correcta');
-    if (!passwordNueva || passwordNueva.length < 4) throw new BadRequestException('La contraseña debe tener al menos 4 caracteres');
+    if (!passwordNueva || passwordNueva.length < 6) throw new BadRequestException('La contraseña debe tener al menos 6 caracteres');
     const password = await bcrypt.hash(passwordNueva, 10);
     await this.prisma.tenant.usuario.update({ where: { id: userId }, data: { password } });
     return { ok: true, message: 'Contraseña actualizada correctamente' };
@@ -421,7 +423,7 @@ export class AuthService {
       });
       if (!admin) throw new NotFoundException('La empresa no tiene un ADMIN activo.');
       const passwordNueva = dto.passwordNueva?.trim() || generarPasswordTemporal();
-      if (passwordNueva.length < 4) throw new BadRequestException('La contraseña debe tener al menos 4 caracteres');
+      if (passwordNueva.length < 6) throw new BadRequestException('La contraseña debe tener al menos 6 caracteres');
       const password = await bcrypt.hash(passwordNueva, 10);
       await tx.usuario.update({ where: { id: admin.id }, data: { password } });
       return {
@@ -498,7 +500,7 @@ export class AuthService {
     }
 
     // 2) Con el registro confirmado, creamos los datos locales.
-    return this.prisma.runAsSystem(async (tx) => {
+    const resultado = await this.prisma.runAsSystem(async (tx) => {
       const empresaId = 'empresa-principal';
       const sucursalId = 'sucursal-central';
 
@@ -538,6 +540,22 @@ export class AuthService {
       const { password: _, ...result } = admin;
       return { access_token, user: result, setupCompletado: true, license };
     });
+
+    // 3) Catálogo de productos precargado (solo si el instalador lo incluye).
+    // Se hace fuera de la transacción para que un problema con el catálogo no
+    // impida completar el registro de la empresa.
+    try {
+      const cargado = await this.prisma.runAsSystem((tx) =>
+        sembrarCatalogoInicial(tx, 'empresa-principal', 'sucursal-central'),
+      );
+      if (cargado.productos > 0) {
+        this.logger.log(`Catálogo inicial cargado: ${cargado.categorias} categorías, ${cargado.productos} productos.`);
+      }
+    } catch (e: any) {
+      this.logger.warn(`No se pudo cargar el catálogo inicial: ${e?.message || e}`);
+    }
+
+    return resultado;
   }
 
   async setupAdmin(userId: string, dto: SetupAdminDto) {

@@ -24,6 +24,14 @@ function getTrialStart(): number {
   return Number(v);
 }
 
+// Días restantes hasta una fecha ISO (redondeo hacia arriba, mínimo 0).
+function diasRestantes(iso: string | null): number | null {
+  if (!iso) return null;
+  const ms = new Date(iso).getTime() - Date.now();
+  if (isNaN(ms)) return null;
+  return Math.max(0, Math.ceil(ms / (24 * 60 * 60 * 1000)));
+}
+
 // Sincrónico: usa cache o trial local
 export function getPremiumStatus(): PremiumStatus {
   const cached = localStorage.getItem('license_status_cache');
@@ -32,11 +40,33 @@ export function getPremiumStatus(): PremiumStatus {
       const parsed = JSON.parse(cached);
       const status = parsed.status || parsed;
       if (status) {
+        const expiryDate = status.expiryDate || null;
+        let isTrial = !!status.isTrial;
+        let isPremium = !!status.isPremium;
+        let trialDaysLeft = Number(status.trialDaysLeft) || 0;
+
+        // El cache guarda los días que quedaban al momento del último chequeo.
+        // Recalculamos contra la fecha real de vencimiento para no mostrar
+        // siempre los 30 días del inicio del trial.
+        if (isTrial) {
+          const d = diasRestantes(expiryDate);
+          if (d !== null) trialDaysLeft = d;
+          if (trialDaysLeft <= 0) {
+            isTrial = false;
+            isPremium = false;
+          } else {
+            isPremium = true;
+          }
+        } else if (isPremium && expiryDate) {
+          const d = diasRestantes(expiryDate);
+          if (d !== null && d <= 0) isPremium = false;
+        }
+
         return {
-          isPremium: !!status.isPremium,
-          isTrial: !!status.isTrial,
-          trialDaysLeft: status.trialDaysLeft || 0,
-          expiryDate: status.expiryDate || null,
+          isPremium,
+          isTrial,
+          trialDaysLeft: isTrial ? trialDaysLeft : 0,
+          expiryDate,
           licenseKey: status.licenseKey || null,
           offline: false,
         };

@@ -58,7 +58,7 @@ export default function Empleados() {
   const cambiarPassword = async () => {
     if (!pwdModal) return;
     setError(''); setSuccess('');
-    if (!pwdNueva || pwdNueva.length < 4) { setError('La contraseña debe tener al menos 4 caracteres'); return; }
+    if (!pwdNueva || pwdNueva.length < 6) { setError('La contraseña debe tener al menos 6 caracteres'); return; }
     try {
       await api.patch(`/usuarios/${pwdModal.id}`, { password: pwdNueva });
       setSuccess(`Contraseña de ${pwdModal.nombre} actualizada`);

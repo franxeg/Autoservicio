@@ -104,5 +104,17 @@ export default function adminRoutes(prisma: PrismaClient) {
     }
   });
 
+  // Eliminar empresa definitivamente (libera el usuario para volver a registrarse)
+  router.delete('/companies/:id', requireAdmin, async (req, res, next) => {
+    try {
+      const company = await prisma.company.findUnique({ where: { id: req.params.id } });
+      if (!company) return res.status(404).json({ message: 'Empresa no encontrada' });
+      await prisma.company.delete({ where: { id: req.params.id } });
+      res.json({ id: company.id, nombre: company.nombre, message: 'Empresa eliminada' });
+    } catch (err) {
+      next(err);
+    }
+  });
+
   return router;
 }
