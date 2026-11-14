@@ -103,6 +103,7 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
   });
   const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false);
   const [mostrarCombosModal, setMostrarCombosModal] = useState(false);
+  const [comboSearch, setComboSearch] = useState('');
   const [mostrarCombinar, setMostrarCombinar] = useState(false);
   const [pagosCombinados, setPagosCombinados] = useState<{ metodo: string; monto: number }[]>([]);
   const [pagoCombinadoMetodo, setPagoCombinadoMetodo] = useState('EFECTIVO');
@@ -367,8 +368,21 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
 
   const updateCantidad = (codigo: string, delta: number) => {
     setItems(prev => prev.map(p => p.codigo === codigo ? { ...p, cantidad: Math.max(1, p.cantidad + delta) } : p));
+    // El foco vuelve al buscador para que el lector siga cargando productos.
+    setTimeout(() => inputRef.current?.focus(), 0);
   };
-  const removeItem = (codigo: string) => setItems(prev => prev.filter(p => p.codigo !== codigo));
+  const removeItem = (codigo: string) => {
+    setItems(prev => prev.filter(p => p.codigo !== codigo));
+    setTimeout(() => inputRef.current?.focus(), 0);
+  };
+
+  const combosFiltrados = combos.filter(c => (c.nombre || '').toLowerCase().includes(comboSearch.trim().toLowerCase()));
+
+  const cerrarCombos = () => {
+    setMostrarCombosModal(false);
+    setComboSearch('');
+    setTimeout(() => inputRef.current?.focus(), 50);
+  };
 
   const freeAmountByProduct = new Map<string, number>();
   for (const item of items) {
@@ -546,7 +560,7 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
             <small style={{ color: '#059669' }}>✓ Caja abierta - Inicial: ${Number(cajaAbierta.montoInicial).toFixed(0)}</small>
           )}
           <div style={{ position: 'relative' }}>
-            <button onClick={(e) => { e.stopPropagation(); setMostrarCombosModal(true); }} style={{ padding: '6px 10px', background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: 6, cursor: 'pointer', fontSize: 13, whiteSpace: 'nowrap' }}>
+            <button onClick={(e) => { e.stopPropagation(); setComboSearch(''); setMostrarCombosModal(true); }} style={{ padding: '6px 10px', background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: 6, cursor: 'pointer', fontSize: 13, whiteSpace: 'nowrap' }}>
               Cargar oferta o combo
             </button>
           </div>
@@ -718,15 +732,23 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
     )}
 
     {mostrarCombosModal && (
-      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'grid', placeItems: 'center', zIndex: 95 }} onClick={() => setMostrarCombosModal(false)}>
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'grid', placeItems: 'center', zIndex: 95 }} onClick={cerrarCombos}>
         <div style={{ background: 'white', padding: 24, borderRadius: 12, width: 460, maxHeight: '80vh', overflow: 'auto' }} onClick={e => e.stopPropagation()}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3 style={{ margin: 0 }}>Ofertas y Combos</h3>
-            <button onClick={() => setMostrarCombosModal(false)} style={{ border: 'none', background: '#e5e7eb', padding: '6px 10px', borderRadius: 6, cursor: 'pointer' }}>✕</button>
+            <button onClick={cerrarCombos} style={{ border: 'none', background: '#e5e7eb', padding: '6px 10px', borderRadius: 6, cursor: 'pointer' }}>✕</button>
           </div>
+          <input
+            value={comboSearch}
+            onChange={e => setComboSearch(e.target.value)}
+            placeholder="Buscar oferta o combo..."
+            autoFocus
+            style={{ width: '100%', padding: 10, marginTop: 12, borderRadius: 6, border: '1px solid #d1d5db', boxSizing: 'border-box' }}
+          />
           {combos.length === 0 && <div style={{ padding: 10, color: '#9ca3af', fontSize: 13, marginTop: 12 }}>Sin ofertas/combo cargados</div>}
+          {combos.length > 0 && combosFiltrados.length === 0 && <div style={{ padding: 10, color: '#9ca3af', fontSize: 13, marginTop: 12 }}>No se encontraron ofertas o combos con ese nombre</div>}
           <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {combos.map(c => (
+            {combosFiltrados.map(c => (
               <div key={c.id} onClick={() => {
                 setItems(prev => {
                   let next = [...prev];
@@ -749,7 +771,7 @@ function VentaPanel({ canal = 1, activo = true, titulo = 'POS - Punto de Venta',
                   }
                   return next;
                 });
-                setMostrarCombosModal(false);
+                cerrarCombos();
               }} style={{ padding: '10px 12px', cursor: 'pointer', border: '1px solid #e5e7eb', borderRadius: 8, background: '#f9fafb' }}>
                 <div style={{ fontWeight: 600 }}>{c.nombre}</div>
                 <div style={{ color: '#065f46', fontSize: 12, marginTop: 4 }}>${Number(c.precioVenta).toFixed(0)} (lista ${Number(c.totalLista).toFixed(0)})</div>
