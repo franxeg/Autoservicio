@@ -90,7 +90,7 @@ export default function Dashboard() {
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, marginTop: 20 }}>
         <div style={{ background: 'white', padding: 20, borderRadius: 8 }}>
           <h3>Ventas últimos 7 días</h3>
-          <div style={{ display: 'flex', alignItems: 'end', gap: 6, height: 120, marginTop: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 120, marginTop: 12 }}>
             {data.ventasPorDia.map((d: any) => (
               <div key={d.fecha} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
                 <div style={{ width: '100%', background: d.total > 0 ? '#111827' : '#e5e7eb', height: `${(d.total / maxVentas) * 100}px`, minHeight: d.total > 0 ? 8 : 4, borderRadius: 4 }} title={`${d.fecha}: $${d.total}`} />
@@ -247,7 +247,7 @@ export default function Dashboard() {
           <div style={{ background: 'white', padding: 20, borderRadius: 12, width: 700, maxHeight: '80vh', overflow: 'auto' }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><h3>Ventas este mes - Resumen por día</h3><button onClick={() => setModalMes(false)} style={{ border: 'none', background: '#e5e7eb', padding: '6px 10px', borderRadius: 6, cursor: 'pointer' }}>✕</button></div>
             <p style={{ color: '#6b7280' }}>Total mes: ${Number(data.ventasEsteMes.total).toFixed(0)} ({data.ventasEsteMes.cantidad} ventas) · Ticket prom ${Number(data.ventasEsteMes.ticketPromedio).toFixed(0)}</p>
-            <div style={{ display: 'flex', alignItems: 'end', gap: 3, height: 140, marginTop: 16, overflowX: 'auto' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 140, marginTop: 16, overflowX: 'auto' }}>
               {(data.ventasMesPorDia || []).map((d: any) => (
                 <div key={d.fecha} style={{ flex: '1 0 22px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                   <div style={{ width: '100%', background: d.total > 0 ? '#059669' : '#e5e7eb', height: `${(d.total / maxMes) * 100}px`, minHeight: d.total > 0 ? 6 : 3, borderRadius: 3 }} title={`${d.fecha}: $${d.total} (${d.cantidad})`} />
