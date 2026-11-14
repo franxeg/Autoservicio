@@ -47,6 +47,25 @@
  - Backup automatico diario a las 22:00 (si activaste el autoarranque).
 
 
+-- RESTAURAR UN BACKUP EN UNA PC NUEVA --------------------------------
+
+ Sirve para pasar todos los datos (productos, ventas, clientes, usuarios)
+ de una PC a otra.
+
+ 1. En la PC vieja, con el sistema andando, doble clic en  backup.bat
+    El archivo .dump queda en la carpeta  backups\
+ 2. Copiar ese .dump a la PC nueva.
+ 3. En la PC nueva, instalar el sistema (no hace falta iniciarlo).
+ 4. Doble clic en  restaurar.bat
+ 5. Arrastrar el archivo .dump a la ventana (o pegar la ruta) y confirmar.
+    Tambien se puede arrastrar el .dump directamente sobre restaurar.bat.
+ 6. El sistema restaura los datos, actualiza la base y arranca solo en
+    http://localhost:3000
+
+ Antes de restaurar se guarda un backup de seguridad de los datos que
+ hubiera en ese momento en la carpeta  backups\
+
+
 -- AUTOARRANQUE AL ENCENDER LA PC --------------------------------------
 
  Clic derecho en  autoarranque.bat  >  Ejecutar como administrador.
