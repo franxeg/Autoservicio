@@ -57,9 +57,6 @@ export function getPremiumStatus(): PremiumStatus {
           } else {
             isPremium = true;
           }
-        } else if (isPremium && expiryDate) {
-          const d = diasRestantes(expiryDate);
-          if (d !== null && d <= 0) isPremium = false;
         }
 
         return {
