@@ -21,6 +21,11 @@ interface Producto {
   stocks?: any[];
 }
 
+const escHtml = (s: any) => String(s ?? '')
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+const fmtPrecio = (n: any) => '$' + Number(n || 0).toLocaleString('es-AR', { maximumFractionDigits: 2 });
+
 export default function Productos() {
   const user = useAuthStore(s => s.user);
   const sucursalId = user?.sucursalId || localStorage.getItem('sucursalId') || 'sucursal-central';
@@ -233,6 +238,86 @@ export default function Productos() {
     } catch (e: any) { setError(e.response?.data?.message || e.message); }
   };
 
+  const nombreCategoriaActual = () =>
+    catFiltro === 'ALL' ? 'Todas las categorías'
+      : (catFiltro === '' ? 'Sin categoría' : (categorias.find(c => c.id === catFiltro)?.nombre || catFiltro));
+
+  // Imprime etiquetas de codigos de barras o de precios de los productos de la
+  // categoria seleccionada, en una grilla A4 para que entren la mayor cantidad.
+  const imprimirEtiquetas = async (modo: 'codigos' | 'precios') => {
+    const items = [...filtered].sort((a, b) => {
+      const ca = (a.categoria?.nombre || '').toLowerCase();
+      const cb = (b.categoria?.nombre || '').toLowerCase();
+      if (ca !== cb) return ca.localeCompare(cb, 'es');
+      return a.nombre.localeCompare(b.nombre, 'es');
+    });
+    const nombreEmp = nombreEmpresa || getNombreEmpresa();
+    const catNombre = nombreCategoriaActual();
+    const titulo = modo === 'codigos' ? 'Códigos' : 'Precios';
+    const columnas = modo === 'codigos' ? 4 : 5;
+    const win = window.open('', '_blank', 'width=900,height=700');
+    if (!win) return;
+    win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${titulo} - ${escHtml(catNombre)}</title><style>
+      @page { size: A4 portrait; margin: 8mm; }
+      * { box-sizing: border-box; }
+      body { font-family: Arial, Helvetica, sans-serif; margin: 0; color: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      h1 { font-size: 12pt; margin: 0 0 1mm; }
+      .sub { font-size: 8pt; color: #444; margin-bottom: 2mm; }
+      .grid { display: grid; grid-template-columns: repeat(${columnas}, 1fr); gap: 1.5mm; }
+      .label { border: 1px dashed #b0b0b0; border-radius: 1.5mm; padding: 1mm; text-align: center; break-inside: avoid; page-break-inside: avoid; overflow: hidden; }
+      .emp { font-size: 7pt; font-weight: 700; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .prod { font-size: 7pt; line-height: 1.15; height: 6.5mm; overflow: hidden; }
+      .label img { width: 100%; max-height: 13mm; object-fit: contain; display: block; }
+      .price { font-size: 15pt; font-weight: 800; line-height: 1.05; white-space: nowrap; }
+      .nocode { font-size: 7pt; color: #555; padding: 3mm 0; }
+      .gen { padding: 20px; font-family: Arial; font-size: 11pt; }
+      @media print { .gen { display: none; } }
+    </style></head><body>
+      <h1>${escHtml(nombreEmp)}</h1>
+      <div class="sub">${titulo} - ${escHtml(catNombre)} - ${items.length} producto${items.length === 1 ? '' : 's'} - ${escHtml(new Date().toLocaleString())}</div>
+      <div class="grid" id="grid"></div>
+      <div class="gen" id="gen">Generando etiquetas...</div>
+    </body></html>`);
+    win.document.close();
+
+    const grid = win.document.getElementById('grid');
+    if (!grid) return;
+    for (let i = 0; i < items.length; i += 40) {
+      let html = '';
+      for (const p of items.slice(i, i + 40)) {
+        const prod = escHtml((p.nombre || '').substring(0, 40));
+        if (modo === 'codigos') {
+          const codigo = (p.codigoBarras || '').trim();
+          let img = '<div class="nocode">Sin código</div>';
+          if (codigo) {
+            try {
+              const bc = document.createElement('canvas');
+              JsBarcode(bc, codigo, { format: 'CODE128', width: 2, height: 48, displayValue: true, fontSize: 13, margin: 2 });
+              img = `<img src="${bc.toDataURL('image/png')}" alt="${escHtml(codigo)}" />`;
+            } catch { img = `<div class="nocode">${escHtml(codigo)}</div>`; }
+          }
+          html += `<div class="label"><div class="emp">${escHtml(nombreEmp)}</div><div class="prod">${prod}</div>${img}</div>`;
+        } else {
+          html += `<div class="label"><div class="emp">${escHtml(nombreEmp)}</div><div class="prod">${prod}</div><div class="price">${fmtPrecio(p.precioVenta)}</div></div>`;
+        }
+      }
+      grid.insertAdjacentHTML('beforeend', html);
+      await new Promise<void>(resolve => setTimeout(resolve, 0));
+    }
+
+    // Esperar a que se decodifiquen las imagenes antes de abrir el dialogo.
+    const imgs = Array.from(grid.querySelectorAll('img'));
+    await Promise.all(imgs.map(img => img.complete ? Promise.resolve() : new Promise<void>(resolve => {
+      img.addEventListener('load', () => resolve());
+      img.addEventListener('error', () => resolve());
+    })));
+
+    const gen = win.document.getElementById('gen');
+    if (gen) gen.style.display = 'none';
+    win.focus();
+    win.print();
+  };
+
   const tabs = (
     <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
       <button onClick={() => setVista('productos')} style={{ padding: '8px 16px', borderRadius: 6, cursor: 'pointer', fontWeight: 600, border: vista === 'productos' ? '2px solid #111827' : '1px solid #d1d5db', background: vista === 'productos' ? '#111827' : 'white', color: vista === 'productos' ? 'white' : '#111827' }}>Productos</button>
@@ -296,6 +381,7 @@ export default function Productos() {
           ? <small style={{ color: '#0ea5e9' }}>Mostrando la búsqueda "{search}" (ignora la categoría)</small>
           : <small style={{ color: '#6b7280' }}>{filtered.length} producto{filtered.length === 1 ? '' : 's'}</small>}
         {!search.trim() && (
+          <>
           <button type="button" onClick={() => {
             const items = filtered;
             const nombreEmp = (function(){
@@ -325,6 +411,13 @@ export default function Productos() {
           }} style={{ padding: '8px 12px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}>
             Imprimir listado
           </button>
+          <button type="button" onClick={() => { void imprimirEtiquetas('codigos'); }} style={{ padding: '8px 12px', background: '#0891b2', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}>
+            Imprimir todos los códigos
+          </button>
+          <button type="button" onClick={() => { void imprimirEtiquetas('precios'); }} style={{ padding: '8px 12px', background: '#7c3aed', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}>
+            Imprimir todos los precios
+          </button>
+          </>
         )}
       </div>
 
