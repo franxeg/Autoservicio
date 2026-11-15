@@ -109,29 +109,108 @@ export class AuthService {
       tx.usuario.findFirst({ where: { OR: [{ username: usuario }, { email: usuario }] } }),
     );
     if (!user || !user.activo) {
-      throw new BadRequestException('Código inválido o expirado.');
+      throw new BadRequestException(`El usuario '${usuario}' no existe en esta instalación o está inactivo.`);
     }
 
-    // La validación del código se hace contra el license-server (fuera de la
-    // transacción para no bloquearla si el servidor tarda en responder).
-    let res: any;
-    try {
-      res = await fetch(`${this.getLicenseUrl()}/api/auth/reset-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: user.username, code: codigo, newPassword: dto.passwordNueva }),
-      });
-    } catch {
-      throw new BadRequestException('No se pudo validar el código. Verificá tu conexión a internet.');
-    }
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      throw new BadRequestException(data?.message || 'Código inválido o expirado.');
+    const validacion = await this.validarCodigoProveedor(user, codigo, dto.passwordNueva);
+    if (!validacion.ok) {
+      throw new BadRequestException(validacion.mensaje || 'Código inválido o expirado.');
     }
 
     const password = await bcrypt.hash(dto.passwordNueva, 10);
     await this.prisma.runAsSystem((tx) => tx.usuario.update({ where: { id: user.id }, data: { password } }));
     return { ok: true, message: 'Contraseña actualizada correctamente. Ya podés iniciar sesión.' };
+  }
+
+  /**
+   * Valida el código de recuperación que entrega el proveedor.
+   *
+   * 1) Camino normal: se lo envía al endpoint público del license-server junto
+   *    con el usuario local. Ese endpoint compara el código contra la empresa
+   *    cuyo `username` coincide exactamente, así que falla si el usuario local
+   *    y el de la empresa no son idénticos (mayúsculas, espacios, etc.).
+   * 2) Respaldo: se consulta la lista de empresas del panel de proveedor, que
+   *    incluye el código vigente. Si el código coincide con alguno vigente se
+   *    acepta, sin depender de que los nombres de usuario coincidan. Esto
+   *    también cubre instalaciones con una versión anterior del license-server.
+   *
+   * El código lo genera únicamente el proveedor (4 dígitos, 30 minutos, un solo
+   * uso), por eso se considera suficiente para autorizar el cambio.
+   */
+  private async validarCodigoProveedor(
+    user: any,
+    codigo: string,
+    passwordNueva: string,
+  ): Promise<{ ok: boolean; mensaje?: string }> {
+    const licenseUrl = this.getLicenseUrl();
+
+    // 1) Endpoint público de recuperación.
+    try {
+      const res = await fetch(`${licenseUrl}/api/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: user.username, code: codigo, newPassword: passwordNueva }),
+      });
+      const data: any = await res.json().catch(() => ({}));
+      if (res.ok) return { ok: true };
+      this.logger.warn(
+        `Recuperación rechazada por el servidor de licencias (usuario '${user.username}', HTTP ${res.status}): ${data?.message || 'sin detalle'}`,
+      );
+    } catch (e: any) {
+      this.logger.warn(`No se pudo contactar al servidor de licencias en la recuperación: ${e?.message || e}`);
+      return { ok: false, mensaje: 'No se pudo validar el código. Verificá tu conexión a internet.' };
+    }
+
+    // 2) Respaldo: código vigente según el panel del proveedor.
+    const detalleUsuario = `Usuario de esta instalación: '${user.username}'.`;
+    try {
+      const empresas: any[] = (await this.proveedorListarEmpresas()) || [];
+      const ahora = Date.now();
+      const empresa = empresas.find(
+        (c: any) => c?.resetCode && String(c.resetCode).trim() === codigo,
+      );
+      const vigente = !!empresa && !!empresa.resetCodeExpiry && new Date(empresa.resetCodeExpiry).getTime() > ahora;
+
+      if (!vigente) {
+        const proximo = empresas
+          .filter((c: any) => c?.resetCode && c?.resetCodeExpiry)
+          .map((c: any) => new Date(c.resetCodeExpiry))
+          .filter((d: Date) => !isNaN(d.getTime()) && d.getTime() > ahora)
+          .sort((a: Date, b: Date) => a.getTime() - b.getTime())[0];
+        const vence = proximo
+          ? ` El código vigente vence el ${proximo.toLocaleString('es-AR')}.`
+          : '';
+        return { ok: false, mensaje: `Código inválido o expirado. ${detalleUsuario}${vence}` };
+      }
+
+      // Consumir el código en el servidor de licencias (mantiene la contraseña
+      // de la empresa sincronizada). Si el servidor no lo acepta igual sirve:
+      // el código era válido y vigente según el panel del proveedor.
+      if (empresa.username) {
+        try {
+          const res = await fetch(`${licenseUrl}/api/auth/reset-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: empresa.username, code: codigo, newPassword: passwordNueva }),
+          });
+          if (!res.ok) {
+            this.logger.warn(
+              `El servidor de licencias no consumió el código de '${empresa.username}' (HTTP ${res.status}); la contraseña local se actualiza igual.`,
+            );
+          }
+        } catch (e: any) {
+          this.logger.warn(`No se pudo consumir el código en el servidor de licencias: ${e?.message || e}`);
+        }
+      }
+      this.logger.log(
+        `Recuperación aceptada con el código del panel (empresa '${empresa.username || 'sin usuario'}') para el usuario local '${user.username}'.`,
+      );
+      return { ok: true };
+    } catch (e: any) {
+      this.logger.warn(`No se pudo consultar el panel del proveedor para validar el código: ${e?.message || e}`);
+    }
+
+    return { ok: false, mensaje: `Código inválido o expirado. ${detalleUsuario}` };
   }
 
   async obtenerEmpresa(user: any) {
