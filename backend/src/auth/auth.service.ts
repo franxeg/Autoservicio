@@ -10,6 +10,7 @@ import * as bcrypt from 'bcryptjs';
 import { randomBytes, timingSafeEqual } from 'crypto';
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
+import { INSTANCIA_APP } from './instancia';
 
 function generarPasswordTemporal(): string {
   return randomBytes(6).toString('base64url');
@@ -46,6 +47,7 @@ export class AuthService {
         rol: user.rol,
         sucursalId: user.sucursalId,
         empresaId: user.empresaId,
+        instancia: INSTANCIA_APP,
       };
       const access_token = this.jwtService.sign(payload);
       const { password: _, ...result } = user;
@@ -69,7 +71,7 @@ export class AuthService {
     if (!expectedUser || !expectedPass || !credencialesCoinciden(usuario, expectedUser) || !credencialesCoinciden(password, expectedPass)) {
       throw new UnauthorizedException('Credenciales de proveedor inválidas.');
     }
-    const payload = { sub: 'proveedor', rol: 'PROVEEDOR', proveedor: true };
+    const payload = { sub: 'proveedor', rol: 'PROVEEDOR', proveedor: true, instancia: INSTANCIA_APP };
     return { access_token: this.jwtService.sign(payload), rol: 'PROVEEDOR', empresa: 'Panel de proveedor' };
   }
 
@@ -269,6 +271,7 @@ export class AuthService {
         rol: admin.rol,
         sucursalId: admin.sucursalId,
         empresaId: admin.empresaId,
+        instancia: INSTANCIA_APP,
       };
       const access_token = this.jwtService.sign(payload);
       const { password: _, ...result } = admin;

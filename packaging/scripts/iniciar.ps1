@@ -1,6 +1,7 @@
 param(
   [switch]$NoBrowser,
-  [switch]$NoPause
+  [switch]$NoPause,
+  [switch]$Progress
 )
 
 # ---------------------------------------------------------------------------
@@ -14,8 +15,104 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
 
-function Log([string]$m)  { Write-Host "[autoservicio] $m" -ForegroundColor Cyan }
-function Fail([string]$m) { Write-Host "[autoservicio] $m" -ForegroundColor Red; if (-not $NoPause) { Read-Host "Enter para cerrar" }; exit 1 }
+# --- ventana de progreso (opcional, con -Progress) --------------------------
+$script:UI = $null
+
+function Init-Progress {
+  if (!$Progress) { return }
+  try {
+    Add-Type -AssemblyName System.Windows.Forms | Out-Null
+    Add-Type -AssemblyName System.Drawing | Out-Null
+
+    $form = New-Object System.Windows.Forms.Form
+    $form.Text = 'Autoservicio'
+    $form.ClientSize = New-Object System.Drawing.Size(470, 178)
+    $form.StartPosition = 'CenterScreen'
+    $form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedDialog
+    $form.MaximizeBox = $false
+    $form.MinimizeBox = $false
+    $form.BackColor = [System.Drawing.Color]::FromArgb(17, 24, 39)
+    $form.TopMost = $true
+
+    $titulo = New-Object System.Windows.Forms.Label
+    $titulo.Text = 'Iniciando Autoservicio'
+    $titulo.ForeColor = [System.Drawing.Color]::White
+    $titulo.Font = New-Object System.Drawing.Font('Segoe UI', 17, [System.Drawing.FontStyle]::Bold)
+    $titulo.AutoSize = $true
+    $titulo.Location = New-Object System.Drawing.Point(28, 26)
+    $form.Controls.Add($titulo)
+
+    $detalle = New-Object System.Windows.Forms.Label
+    $detalle.Text = 'Preparando...'
+    $detalle.ForeColor = [System.Drawing.Color]::FromArgb(209, 213, 219)
+    $detalle.Font = New-Object System.Drawing.Font('Segoe UI', 10)
+    $detalle.AutoSize = $false
+    $detalle.Size = New-Object System.Drawing.Size(414, 46)
+    $detalle.Location = New-Object System.Drawing.Point(30, 72)
+    $form.Controls.Add($detalle)
+
+    $barra = New-Object System.Windows.Forms.ProgressBar
+    $barra.Minimum = 0
+    $barra.Maximum = 100
+    $barra.Value = 0
+    $barra.Size = New-Object System.Drawing.Size(414, 16)
+    $barra.Location = New-Object System.Drawing.Point(30, 126)
+    $form.Controls.Add($barra)
+
+    $script:UI = @{ Form = $form; Detalle = $detalle; Barra = $barra }
+    $form.Show()
+    [System.Windows.Forms.Application]::DoEvents()
+  } catch {
+    $script:UI = $null
+  }
+}
+
+function Set-Estado {
+  param([int]$Pct, [string]$Texto)
+  if ($script:UI) {
+    try {
+      if ($script:UI.Form.IsDisposed) { $script:UI = $null; return }
+      $script:UI.Barra.Value = [Math]::Max(0, [Math]::Min(100, $Pct))
+      $script:UI.Detalle.Text = $Texto
+      [System.Windows.Forms.Application]::DoEvents()
+    } catch {
+      $script:UI = $null
+    }
+  }
+}
+
+function Close-Progress {
+  if ($script:UI) {
+    try {
+      [System.Windows.Forms.Application]::DoEvents()
+      $script:UI.Form.Close()
+      $script:UI.Form.Dispose()
+    } catch {}
+    $script:UI = $null
+  }
+}
+
+function Log([string]$m) {
+  Write-Host "[autoservicio] $m" -ForegroundColor Cyan
+  if ($script:UI) { Set-Estado -Pct $script:UI.Barra.Value -Texto $m }
+}
+
+function Step([int]$Pct, [string]$m) {
+  if ($script:UI) { Set-Estado -Pct $Pct -Texto $m }
+  Write-Host "[autoservicio] $m" -ForegroundColor Cyan
+}
+
+function Fail([string]$m) {
+  Write-Host "[autoservicio] $m" -ForegroundColor Red
+  if ($script:UI) {
+    try {
+      [System.Windows.Forms.MessageBox]::Show($m, 'Autoservicio - Error', [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
+    } catch {}
+    Close-Progress
+  }
+  if (-not $NoPause -and -not $Progress) { Read-Host "Enter para cerrar" }
+  exit 1
+}
 
 $node       = Join-Path $root 'node\node.exe'
 $pgBin      = Join-Path $root 'pgsql\bin'
@@ -25,6 +122,9 @@ $appDir     = Join-Path $root 'app'
 $configPath = Join-Path $root 'config.env'
 $versionFile = Join-Path $root 'app-version.txt'
 $backupsDir = Join-Path $root 'backups'
+
+Init-Progress
+Step 5 "Verificando la instalacion..."
 
 if (!(Test-Path $logsDir))   { New-Item -ItemType Directory -Path $logsDir | Out-Null }
 if (!(Test-Path $node))      { Fail "No se encontro node\node.exe. Bundle incompleto." }
@@ -55,6 +155,9 @@ if (!$cfg.ContainsKey('JWT_SECRET'))            { $cfg.JWT_SECRET = (New-Secret 
 if (!$cfg.ContainsKey('JWT_EXPIRES_IN'))        { $cfg.JWT_EXPIRES_IN = '30d' }
 if (!$cfg.ContainsKey('PROVIDER_USER'))         { $cfg.PROVIDER_USER = 'Jupiter' }
 if (!$cfg.ContainsKey('PROVIDER_PASSWORD'))     { $cfg.PROVIDER_PASSWORD = 'Proveedor21' }
+if (!$cfg.ContainsKey('LICENSE_SERVER_URL'))    { $cfg.LICENSE_SERVER_URL = 'https://autoservicio-license-server.onrender.com' }
+if (!$cfg.ContainsKey('LICENSE_SERVER_ADMIN_USER'))     { $cfg.LICENSE_SERVER_ADMIN_USER = 'admin' }
+if (!$cfg.ContainsKey('LICENSE_SERVER_ADMIN_PASSWORD')) { $cfg.LICENSE_SERVER_ADMIN_PASSWORD = 'admin123' }
 ($cfg.GetEnumerator() | Sort-Object Name | ForEach-Object { "$($_.Key)=$($_.Value)" }) | Set-Content -Path $configPath -Encoding ASCII
 
 $versionActual = $cfg.APP_VERSION
@@ -64,7 +167,7 @@ $host_ = "127.0.0.1:$($cfg.PGPORT)"
 
 # --- 1) initdb (solo la primera vez) ---
 if (!(Test-Path (Join-Path $dataDir 'PG_VERSION'))) {
-  Log "Primera ejecucion: inicializando la base de datos..."
+  Step 15 "Primera ejecucion: inicializando la base de datos..."
   if (!(Test-Path $dataDir)) { New-Item -ItemType Directory -Path $dataDir | Out-Null }
   $pwfile = Join-Path $logsDir 'pw.tmp'
   Set-Content -Path $pwfile -Value $cfg.POSTGRES_PASSWORD -NoNewline -Encoding ASCII
@@ -94,7 +197,7 @@ if ($LASTEXITCODE -ne 0) {
     Remove-Item $pidFile -Force -ErrorAction SilentlyContinue
   }
 
-  Log "Iniciando PostgreSQL (puerto $($cfg.PGPORT))..."
+  Step 35 "Iniciando PostgreSQL (puerto $($cfg.PGPORT))..."
   # pg_ctl con -w espera a que el motor termine el arranque y no cae por el 'starting up'.
   & $pgctl -D $dataDir -l $pgLog -o "-p $($cfg.PGPORT) -c listen_addresses=127.0.0.1" start -w -t 120
   if ($LASTEXITCODE -ne 0) {
@@ -104,6 +207,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 # Espera corta final para asegurar que responda a conexiones
+Step 45 "Esperando a que PostgreSQL responda..."
 $ready = $false
 for ($i = 0; $i -lt 40; $i++) {
   & (Join-Path $pgBin 'pg_isready.exe') -h 127.0.0.1 -p $cfg.PGPORT -U $cfg.POSTGRES_USER *> $null
@@ -119,7 +223,7 @@ if (!$ready) {
 $psql = Join-Path $pgBin 'psql.exe'
 $exists = "$(& $psql -h 127.0.0.1 -p $cfg.PGPORT -U $cfg.POSTGRES_USER -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='$($cfg.POSTGRES_DB)'")".Trim()
 if ($exists -ne '1') {
-  Log "Creando base de datos $($cfg.POSTGRES_DB)..."
+  Step 55 "Creando la base de datos..."
   & (Join-Path $pgBin 'createdb.exe') -h 127.0.0.1 -p $cfg.PGPORT -U $cfg.POSTGRES_USER $cfg.POSTGRES_DB
 }
 
@@ -131,7 +235,7 @@ if (-not (Test-Path $versionFile) -or $versionAnterior -ne $versionActual) {
   if (Test-Path (Join-Path $root 'data\PG_VERSION')) {
     $actualDbExists = "$(& $psql -h 127.0.0.1 -p $cfg.PGPORT -U $cfg.POSTGRES_USER -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='$($cfg.POSTGRES_DB)'")".Trim()
     if ($actualDbExists -eq '1') {
-      Log "Actualizacion detectada ($versionAnterior -> $versionActual). Generando backup de seguridad antes de aplicar cambios..."
+      Step 60 "Generando backup de seguridad de los datos..."
       if (!(Test-Path $backupsDir)) { New-Item -ItemType Directory -Path $backupsDir | Out-Null }
       & (Join-Path $pgBin 'pg_dump.exe') -h 127.0.0.1 -p $cfg.PGPORT -U $cfg.POSTGRES_USER -d $cfg.POSTGRES_DB -F c -f $dumpPath
       if ($LASTEXITCODE -ne 0) { Fail "No se pudo crear el backup previo a la actualizacion. Revisa la DB y vuelve a intentar." }
@@ -149,12 +253,12 @@ $prismaCli = Join-Path $appDir 'node_modules\prisma\build\index.js'
 $appUrl    = "postgresql://$($cfg.POSTGRES_APP_USER):$($cfg.POSTGRES_APP_PASSWORD)@$host_/$($cfg.POSTGRES_DB)?schema=public"
 $migUrl    = "postgresql://$($cfg.POSTGRES_USER):$($cfg.POSTGRES_PASSWORD)@$host_/$($cfg.POSTGRES_DB)?schema=public"
 
-Log "Aplicando esquema de base de datos..."
+Step 68 "Aplicando esquema de base de datos..."
 $env:DATABASE_URL = $migUrl
 Push-Location $appDir
 & $node $prismaCli db push --skip-generate --accept-data-loss
 if ($LASTEXITCODE -ne 0) { Pop-Location; Fail "Fallo prisma db push." }
-Log "Aplicando seguridad por fila (RLS)..."
+Step 80 "Aplicando seguridad por fila (RLS)..."
 & $node $prismaCli db execute --url $migUrl --file prisma/rls.sql
 if ($LASTEXITCODE -ne 0) { Pop-Location; Fail "Fallo RLS." }
 Pop-Location
@@ -165,6 +269,9 @@ $env:JWT_SECRET      = $cfg.JWT_SECRET
 $env:JWT_EXPIRES_IN  = $cfg.JWT_EXPIRES_IN
 $env:PROVIDER_USER   = $cfg.PROVIDER_USER
 $env:PROVIDER_PASSWORD = $cfg.PROVIDER_PASSWORD
+$env:LICENSE_SERVER_URL = $cfg.LICENSE_SERVER_URL
+$env:LICENSE_SERVER_ADMIN_USER = $cfg.LICENSE_SERVER_ADMIN_USER
+$env:LICENSE_SERVER_ADMIN_PASSWORD = $cfg.LICENSE_SERVER_ADMIN_PASSWORD
 $env:PORT            = $cfg.APP_PORT
 $env:WEB_DIR         = Join-Path $appDir 'public'
 $env:NODE_ENV        = 'production'
@@ -172,9 +279,9 @@ $env:NODE_ENV        = 'production'
 $running = Get-CimInstance Win32_Process -Filter "Name = 'node.exe'" |
   Where-Object { $_.CommandLine -like '*dist\main*' -or $_.CommandLine -like '*dist/main*' }
 if ($running) {
-  Log "La aplicacion ya estaba en ejecucion."
+  Step 88 "La aplicacion ya estaba en ejecucion."
 } else {
-  Log "Iniciando la aplicacion (en segundo plano)..."
+  Step 88 "Iniciando la aplicacion..."
   Start-Process -FilePath $node -ArgumentList 'dist/main.js' -WorkingDirectory $appDir `
     -WindowStyle Hidden `
     -RedirectStandardOutput (Join-Path $logsDir 'app.log') `
@@ -182,14 +289,27 @@ if ($running) {
 }
 
 # esperar a que el puerto responda
+Step 92 "Esperando a que la aplicacion responda..."
 $appPort = [int]$cfg.APP_PORT
 $up = $false
 for ($i = 0; $i -lt 120; $i++) {
+  if ($script:UI -and ($i % 4 -eq 0)) {
+    Set-Estado -Pct (92 + [int](($i / 120) * 7)) -Texto "Esperando a que la aplicacion responda..."
+  }
   try { $c = New-Object Net.Sockets.TcpClient; $c.Connect('127.0.0.1', $appPort); $c.Close(); $up = $true; break }
   catch { Start-Sleep -Milliseconds 500 }
 }
+if (!$up) { Log "La aplicacion todavia no responde. Revisa logs\app.err" }
 
-Log "Aplicacion lista en http://localhost:$($cfg.APP_PORT)"
+$mensajeFinal = if ($NoBrowser) { 'Aplicacion lista.' } else { 'Aplicacion lista. Abriendo el navegador...' }
+Step 100 $mensajeFinal
 Log "(Panel de proveedor para crear la empresa: http://localhost:$($cfg.APP_PORT)/proveedor)"
 Log "Se ejecuta en segundo plano. Para detener: ejecuta detener.bat"
 if (!$NoBrowser) { Start-Process "http://localhost:$($cfg.APP_PORT)" }
+
+# Dejar visible el 100% unos instantes y cerrar la ventana de progreso.
+if ($script:UI) {
+  [System.Windows.Forms.Application]::DoEvents()
+  Start-Sleep -Milliseconds 1500
+  Close-Progress
+}

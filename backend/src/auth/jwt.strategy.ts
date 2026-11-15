@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import { INSTANCIA_APP } from './instancia';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -13,6 +14,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
+    // Las sesiones se invalidan cuando se reinicia el backend (nueva instancia).
+    if (!payload || payload.instancia !== INSTANCIA_APP) {
+      throw new UnauthorizedException('La sesion expiro. Inicie sesion nuevamente.');
+    }
     return {
       id: payload.sub,
       username: payload.username,
