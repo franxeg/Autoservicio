@@ -10,6 +10,7 @@ import { CambiarPasswordAdminDto } from './dto/cambiar-password-admin.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ActualizarEmpresaDto } from './dto/actualizar-empresa.dto';
 import { sembrarCatalogoInicial } from './catalogo-inicial';
+import { INSTANCIA_APP } from './instancia';
 import * as bcrypt from 'bcryptjs';
 import { randomBytes, timingSafeEqual } from 'crypto';
 import { readFileSync, writeFileSync } from 'fs';
@@ -230,6 +231,7 @@ export class AuthService {
         rol: user.rol,
         sucursalId: user.sucursalId,
         empresaId: user.empresaId,
+        instancia: INSTANCIA_APP,
       };
       const access_token = this.jwtService.sign(payload);
       const { password: _, ...result } = user;
@@ -264,7 +266,7 @@ export class AuthService {
     if (!expectedUser || !expectedPass || !credencialesCoinciden(usuario, expectedUser) || !credencialesCoinciden(password, expectedPass)) {
       throw new UnauthorizedException('Credenciales de proveedor inválidas.');
     }
-    const payload = { sub: 'proveedor', rol: 'PROVEEDOR', proveedor: true };
+    const payload = { sub: 'proveedor', rol: 'PROVEEDOR', proveedor: true, instancia: INSTANCIA_APP };
     return { access_token: this.jwtService.sign(payload), rol: 'PROVEEDOR', empresa: 'Panel de proveedor' };
   }
 
@@ -535,6 +537,7 @@ export class AuthService {
         rol: admin.rol,
         sucursalId: admin.sucursalId,
         empresaId: admin.empresaId,
+        instancia: INSTANCIA_APP,
       };
       const access_token = this.jwtService.sign(payload);
       const { password: _, ...result } = admin;
@@ -584,6 +587,7 @@ export class AuthService {
         rol: admin.rol,
         sucursalId: admin.sucursalId,
         empresaId: admin.empresaId,
+        instancia: INSTANCIA_APP,
       };
       const access_token = this.jwtService.sign(payload);
       const { password: _, ...result } = admin;
