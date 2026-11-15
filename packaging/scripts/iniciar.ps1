@@ -136,7 +136,7 @@ function New-Secret([int]$n) {
   -join (1..$n | ForEach-Object { $chars[(Get-Random -Maximum $chars.Length)] })
 }
 
-# --- configuración (se genera sola la primera vez) ---
+# --- configuracion (se genera sola la primera vez) ---
 $cfg = @{}
 if (Test-Path $configPath) {
   Get-Content $configPath | Where-Object { $_ -match '=' -and $_ -notmatch '^\s*#' } | ForEach-Object {
@@ -155,9 +155,6 @@ if (!$cfg.ContainsKey('JWT_SECRET'))            { $cfg.JWT_SECRET = (New-Secret 
 if (!$cfg.ContainsKey('JWT_EXPIRES_IN'))        { $cfg.JWT_EXPIRES_IN = '30d' }
 if (!$cfg.ContainsKey('PROVIDER_USER'))         { $cfg.PROVIDER_USER = 'Jupiter' }
 if (!$cfg.ContainsKey('PROVIDER_PASSWORD'))     { $cfg.PROVIDER_PASSWORD = 'Proveedor21' }
-if (!$cfg.ContainsKey('LICENSE_SERVER_URL'))    { $cfg.LICENSE_SERVER_URL = 'https://autoservicio-license-server.onrender.com' }
-if (!$cfg.ContainsKey('LICENSE_SERVER_ADMIN_USER'))     { $cfg.LICENSE_SERVER_ADMIN_USER = 'admin' }
-if (!$cfg.ContainsKey('LICENSE_SERVER_ADMIN_PASSWORD')) { $cfg.LICENSE_SERVER_ADMIN_PASSWORD = 'admin123' }
 ($cfg.GetEnumerator() | Sort-Object Name | ForEach-Object { "$($_.Key)=$($_.Value)" }) | Set-Content -Path $configPath -Encoding ASCII
 
 $versionActual = $cfg.APP_VERSION
@@ -175,7 +172,7 @@ if (!(Test-Path (Join-Path $dataDir 'PG_VERSION'))) {
   & (Join-Path $pgBin 'initdb.exe') -D $dataDir -U $cfg.POSTGRES_USER -A scram-sha-256 --pwfile=$pwfile -E UTF8 --locale=C *>&1 | Tee-Object -FilePath $initdbLog
   if ($LASTEXITCODE -ne 0) {
     Remove-Item $pwfile -Force -ErrorAction SilentlyContinue
-    Fail "Fallo initdb. Detalle en logs\initdb.log (¿falta el runtime de Visual C++? msvcp140.dll / vcruntime140.dll)."
+    Fail "Fallo initdb. Detalle en logs\initdb.log (falta el runtime de Visual C++? msvcp140.dll / vcruntime140.dll)."
   }
   Remove-Item $pwfile -Force -ErrorAction SilentlyContinue
   Add-Content -Path (Join-Path $dataDir 'postgresql.conf') "`nport = $($cfg.PGPORT)`nlisten_addresses = '127.0.0.1'`n"
@@ -269,9 +266,6 @@ $env:JWT_SECRET      = $cfg.JWT_SECRET
 $env:JWT_EXPIRES_IN  = $cfg.JWT_EXPIRES_IN
 $env:PROVIDER_USER   = $cfg.PROVIDER_USER
 $env:PROVIDER_PASSWORD = $cfg.PROVIDER_PASSWORD
-$env:LICENSE_SERVER_URL = $cfg.LICENSE_SERVER_URL
-$env:LICENSE_SERVER_ADMIN_USER = $cfg.LICENSE_SERVER_ADMIN_USER
-$env:LICENSE_SERVER_ADMIN_PASSWORD = $cfg.LICENSE_SERVER_ADMIN_PASSWORD
 $env:PORT            = $cfg.APP_PORT
 $env:WEB_DIR         = Join-Path $appDir 'public'
 $env:NODE_ENV        = 'production'
