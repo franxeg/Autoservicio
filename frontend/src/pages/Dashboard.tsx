@@ -28,7 +28,12 @@ export default function Dashboard() {
 
   const cantTxt = (p: any) => {
     const n = Number(p.cantidad ?? 0);
-    return p.unidad === 'KG' ? `${n.toFixed(3).replace(/\.?0+$/, '')} kg` : `${Math.round(n)} u.`;
+    if (p.unidad === 'KG') {
+      // Menos de medio kilo se muestra con un decimal (0,4 kg) para no perder el dato.
+      if (n > 0 && n < 0.5) return `${n.toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg`;
+      return `${Math.round(n)} kg`;
+    }
+    return `${Math.round(n)} u.`;
   };
 
   useEffect(() => {
@@ -106,7 +111,7 @@ export default function Dashboard() {
           {data.topProductos.length === 0 ? <small style={{ color: '#9ca3af' }}>Sin ventas</small> : (
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead><tr style={{ borderBottom: '1px solid #e5e7eb', textAlign: 'left' }}><th>Producto</th><th>Cant</th><th>Total</th></tr></thead>
-              <tbody>{data.topProductos.map((p: any) => <tr key={p.productoId} style={{ borderBottom: '1px solid #f3f4f6' }}><td>{p.nombre}</td><td>{Math.round(Number(p.cantidad ?? 0))}</td><td>${Number(p.total).toFixed(0)}</td></tr>)}</tbody>
+              <tbody>{data.topProductos.map((p: any) => <tr key={p.productoId} style={{ borderBottom: '1px solid #f3f4f6' }}><td>{p.nombre}</td><td>{cantTxt(p)}</td><td>${Number(p.total).toFixed(0)}</td></tr>)}</tbody>
             </table>
           )}
         </div>

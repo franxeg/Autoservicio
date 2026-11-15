@@ -39,9 +39,9 @@ $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoi
 # El VBS abre iniciar.ps1 con -Progress, que muestra una ventana con la barra
 # de avance mientras arranca PostgreSQL y la aplicacion.
 if (Test-Path $vbsInicio) {
-  $accionInicio = New-ScheduledTaskAction -Execute 'wscript.exe' -Argument "`"$vbsInicio`" -NoBrowser"
+  $accionInicio = New-ScheduledTaskAction -Execute 'wscript.exe' -Argument "`"$vbsInicio`""
 } else {
-  $argInicio = "-NoProfile -Sta -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$iniciar`" -NoBrowser -NoPause -Progress"
+  $argInicio = "-NoProfile -Sta -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$iniciar`" -NoPause -Progress"
   $accionInicio = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument $argInicio
 }
 Register-ScheduledTask -TaskName $taskInicio `
