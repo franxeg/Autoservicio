@@ -106,7 +106,7 @@ export default function Dashboard() {
           {data.topProductos.length === 0 ? <small style={{ color: '#9ca3af' }}>Sin ventas</small> : (
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead><tr style={{ borderBottom: '1px solid #e5e7eb', textAlign: 'left' }}><th>Producto</th><th>Cant</th><th>Total</th></tr></thead>
-              <tbody>{data.topProductos.map((p: any) => <tr key={p.productoId} style={{ borderBottom: '1px solid #f3f4f6' }}><td>{p.nombre}</td><td>{p.cantidad}</td><td>${Number(p.total).toFixed(0)}</td></tr>)}</tbody>
+              <tbody>{data.topProductos.map((p: any) => <tr key={p.productoId} style={{ borderBottom: '1px solid #f3f4f6' }}><td>{p.nombre}</td><td>{Math.round(Number(p.cantidad ?? 0))}</td><td>${Number(p.total).toFixed(0)}</td></tr>)}</tbody>
             </table>
           )}
         </div>
