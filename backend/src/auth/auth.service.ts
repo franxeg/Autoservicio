@@ -105,11 +105,44 @@ export class AuthService {
     const codigo = dto.codigo.trim();
     if (!usuario || !codigo) throw new BadRequestException('Ingresá tu usuario y el código de recuperación.');
 
-    const user = await this.prisma.runAsSystem((tx) =>
-      tx.usuario.findFirst({ where: { OR: [{ username: usuario }, { email: usuario }] } }),
+    // El usuario que se escribe suele ser el de la empresa en el servidor de
+    // licencias, que no siempre coincide con el usuario local (por ejemplo,
+    // instalaciones restauradas desde un backup hecho con otro nombre). Por eso
+    // se busca sin distinguir mayúsculas y, si no existe, se usa el único
+    // administrador activo de la instalación.
+    let user: any = await this.prisma.runAsSystem((tx) =>
+      tx.usuario.findFirst({
+        where: {
+          OR: [
+            { username: { equals: usuario, mode: 'insensitive' } },
+            { email: { equals: usuario, mode: 'insensitive' } },
+          ],
+        },
+      }),
     );
+
     if (!user || !user.activo) {
-      throw new BadRequestException(`El usuario '${usuario}' no existe en esta instalación o está inactivo.`);
+      const activos = await this.prisma.runAsSystem((tx) =>
+        tx.usuario.findMany({ where: { activo: true }, select: { id: true, username: true, rol: true } }),
+      );
+      const admins = activos.filter((u) => u.rol === 'ADMIN');
+      const candidatos = admins.length ? admins : activos;
+
+      if (candidatos.length === 1) {
+        user = await this.prisma.runAsSystem((tx) => tx.usuario.findUnique({ where: { id: candidatos[0].id } }));
+        this.logger.warn(
+          `Recuperación: no existe el usuario '${usuario}' en esta instalación; se cambia la contraseña de '${candidatos[0].username}'.`,
+        );
+      } else if (candidatos.length === 0) {
+        throw new BadRequestException(
+          'Esta instalación no tiene usuarios activos. Completá el registro inicial del sistema.',
+        );
+      } else {
+        const lista = candidatos.map((u) => u.username).join(', ');
+        throw new BadRequestException(
+          `No existe el usuario '${usuario}'. Usuarios de esta instalación: ${lista}.`,
+        );
+      }
     }
 
     const validacion = await this.validarCodigoProveedor(user, codigo, dto.passwordNueva);
@@ -119,7 +152,11 @@ export class AuthService {
 
     const password = await bcrypt.hash(dto.passwordNueva, 10);
     await this.prisma.runAsSystem((tx) => tx.usuario.update({ where: { id: user.id }, data: { password } }));
-    return { ok: true, message: 'Contraseña actualizada correctamente. Ya podés iniciar sesión.' };
+    return {
+      ok: true,
+      usuario: user.username,
+      message: `Contraseña actualizada correctamente para el usuario '${user.username}'. Ya podés iniciar sesión.`,
+    };
   }
 
   /**

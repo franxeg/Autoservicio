@@ -82,7 +82,7 @@ export default function Login() {
         codigo: codigo.trim(),
       });
       setForgotMsg(data?.message || 'Contraseña actualizada correctamente.');
-      setUsuario(forgotUsuario.trim());
+      setUsuario(data?.usuario || forgotUsuario.trim());
       setPassword(nueva);
       setNueva('');
       setRepetir('');
