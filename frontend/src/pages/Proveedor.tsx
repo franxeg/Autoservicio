@@ -15,6 +15,7 @@ export default function Proveedor() {
   const [accionId, setAccionId] = useState('');
   const [msg, setMsg] = useState('');
   const [codigos, setCodigos] = useState<Record<string, { code: string; expiry: string }>>({});
+  const [mostrarArchivadas, setMostrarArchivadas] = useState(false);
 
   const navigate = useNavigate();
 
@@ -85,6 +86,40 @@ export default function Proveedor() {
     }
   };
 
+  const toggleActivo = async (company: any) => {
+    setMsg('');
+    setListError('');
+    setAccionId(company.id);
+    try {
+      const activo = company.activo === false;
+      await api.patch(`/auth/proveedor/empresas/${company.id}/activo`, { activo }, headers());
+      setMsg(`${company.username || company.nombre}: ${activo ? 'empresa reactivada' : 'empresa desactivada'}.`);
+      await cargarEmpresas();
+    } catch (err: any) {
+      setListError(err.response?.data?.message || 'No se pudo cambiar el estado de la empresa.');
+    } finally {
+      setAccionId('');
+    }
+  };
+
+  const toggleArchivar = async (company: any) => {
+    setMsg('');
+    setListError('');
+    setAccionId(company.id);
+    try {
+      const archivada = !company.archivada;
+      await api.patch(`/auth/proveedor/empresas/${company.id}/archivar`, { archivada }, headers());
+      setMsg(
+        `${company.username || company.nombre}: ${archivada ? 'empresa archivada (se oculta del listado)' : 'empresa desarchivada'}.`,
+      );
+      await cargarEmpresas();
+    } catch (err: any) {
+      setListError(err.response?.data?.message || 'No se pudo archivar la empresa.');
+    } finally {
+      setAccionId('');
+    }
+  };
+
   const generarCodigo = async (company: any) => {
     setMsg('');
     setListError('');
@@ -113,6 +148,46 @@ export default function Proveedor() {
     return new Date(company.premiumExpiry) > new Date();
   };
 
+  const estadoTrial = (company: any) => {
+    if (estadoPremium(company)) return false;
+    return !!company?.trialEnd && new Date(company.trialEnd) > new Date();
+  };
+
+  // Orden: premium vigente, trial vigente y free. Dentro de cada grupo se
+  // respeta el orden del servidor (más nueva primero).
+  const rango = (company: any) => (estadoPremium(company) ? 0 : (estadoTrial(company) ? 1 : 2));
+
+  const todas = empresas || [];
+  const archivadas = todas.filter((c: any) => c.archivada).length;
+  const visibles = todas
+    .filter((c: any) => mostrarArchivadas || !c.archivada)
+    .sort((a: any, b: any) => rango(a) - rango(b));
+
+  const badge = (texto: string, color: string, fondo: string) => (
+    <span style={{ fontSize: 12, padding: '3px 9px', borderRadius: 999, color, background: fondo, fontWeight: 600 }}>
+      {texto}
+    </span>
+  );
+
+  const botonSecundario = (texto: string, onClick: () => void, color = '#111827', deshabilitado = false) => (
+    <button
+      onClick={onClick}
+      disabled={deshabilitado}
+      style={{
+        fontSize: 12,
+        padding: '6px 10px',
+        background: 'white',
+        color,
+        border: `1px solid ${color}33`,
+        borderRadius: 6,
+        cursor: deshabilitado ? 'wait' : 'pointer',
+        opacity: deshabilitado ? 0.6 : 1,
+      }}
+    >
+      {texto}
+    </button>
+  );
+
   return (
     <div style={{ minHeight: '100vh', background: '#f3f4f6', padding: 24 }}>
       <div style={{ maxWidth: 900, margin: '0 auto' }}>
@@ -136,12 +211,16 @@ export default function Proveedor() {
           </div>
         ) : (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 12, flexWrap: 'wrap' }}>
               <div>
                 <h2 style={{ margin: 0 }}>Empresas registradas</h2>
-                <p style={{ color: '#6b7280', fontSize: 13, margin: '4px 0 0' }}>Usuarios creados al instalar el sistema. Desde cada tarjeta podés administrar Premium y generar un código de recuperación de contraseña.</p>
+                <p style={{ color: '#6b7280', fontSize: 13, margin: '4px 0 0' }}>Usuarios creados al instalar el sistema. Desde cada tarjeta podés administrar Premium, el estado de la empresa y generar un código de recuperación de contraseña.</p>
               </div>
-              <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, userSelect: 'none' }}>
+                  <input type="checkbox" checked={mostrarArchivadas} onChange={e => setMostrarArchivadas(e.target.checked)} />
+                  Mostrar archivadas{archivadas > 0 ? ` (${archivadas})` : ''}
+                </label>
                 <button onClick={() => cargarEmpresas()} disabled={cargando} style={{ fontSize: 13, padding: '7px 12px', cursor: 'pointer' }}>{cargando ? 'Actualizando...' : 'Actualizar'}</button>
                 <button onClick={cerrarSesion} style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: 13 }}>Cerrar sesión</button>
               </div>
@@ -155,45 +234,76 @@ export default function Proveedor() {
                 Todavía no hay empresas registradas en el servidor de licencias. Aparecerán acá cuando un cliente complete el registro inicial con conexión a internet.
               </div>
             )}
+            {empresas !== null && empresas.length > 0 && visibles.length === 0 && (
+              <div style={{ background: 'white', padding: 24, borderRadius: 12, color: '#6b7280' }}>
+                No hay empresas para mostrar.
+                {archivadas > 0 ? ` Hay ${archivadas} archivada(s): activá "Mostrar archivadas" para verlas.` : ''}
+              </div>
+            )}
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
-              {(empresas || []).map((c: any) => {
+              {visibles.map((c: any) => {
                 const premium = estadoPremium(c);
-                const trialVigente = !premium && c.trialEnd && new Date(c.trialEnd) > new Date();
+                const trialVigente = estadoTrial(c);
+                const activa = c.activo !== false;
                 const codigo = codigos[c.id];
                 const codigoServidor = !codigo && c.resetCode && c.resetCodeExpiry && new Date(c.resetCodeExpiry) > new Date()
                   ? { code: c.resetCode, expiry: c.resetCodeExpiry }
                   : null;
                 const codigoVisible = codigo || codigoServidor;
+                const ocupada = accionId === c.id;
                 return (
-                  <div key={c.id} style={{ background: 'white', borderRadius: 12, padding: 18, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <div
+                    key={c.id}
+                    style={{
+                      background: 'white',
+                      borderRadius: 12,
+                      padding: 18,
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 12,
+                      border: activa ? '1px solid transparent' : '1px solid #fecaca',
+                    }}
+                  >
                     <div>
                       <div style={{ fontSize: 12, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 0.5 }}>Nombre de usuario</div>
                       <div style={{ fontSize: 20, fontWeight: 700 }}>{c.username || '—'}</div>
                       {c.nombre && <div style={{ fontSize: 13, color: '#6b7280', marginTop: 2 }}>{c.nombre}</div>}
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                      <span style={{ fontSize: 13, padding: '4px 10px', borderRadius: 999, color: 'white', background: premium ? '#059669' : (trialVigente ? '#d97706' : '#6b7280') }}>
-                        {premium ? 'Premium' : (trialVigente ? 'Trial' : 'No premium')}
-                      </span>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {premium
+                        ? badge('Premium', 'white', '#059669')
+                        : trialVigente
+                          ? badge('Trial', 'white', '#d97706')
+                          : badge('Free', '#374151', '#e5e7eb')}
+                      {activa
+                        ? badge('Activa', '#065f46', '#d1fae5')
+                        : badge('Inactiva', '#991b1b', '#fee2e2')}
+                      {c.archivada && badge('Archivada', '#4b5563', '#f3f4f6')}
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       <button
                         onClick={() => togglePremium(c)}
-                        disabled={accionId === c.id}
-                        style={{ fontSize: 12, padding: '6px 10px', background: premium ? '#dc2626' : '#059669', color: 'white', border: 'none', borderRadius: 6, cursor: accionId === c.id ? 'wait' : 'pointer', opacity: accionId === c.id ? 0.6 : 1 }}
+                        disabled={ocupada}
+                        style={{ fontSize: 12, padding: '6px 10px', background: premium ? '#dc2626' : '#059669', color: 'white', border: 'none', borderRadius: 6, cursor: ocupada ? 'wait' : 'pointer', opacity: ocupada ? 0.6 : 1 }}
                       >
                         {premium ? 'Desactivar premium' : 'Activar premium'}
                       </button>
+                      {botonSecundario(activa ? 'Desactivar' : 'Reactivar', () => toggleActivo(c), activa ? '#991b1b' : '#065f46', ocupada)}
                     </div>
 
                     {premium && <div style={{ fontSize: 12, color: '#6b7280' }}>Vence: {formatoFecha(c.premiumExpiry)}</div>}
                     {!premium && trialVigente && <div style={{ fontSize: 12, color: '#92400e' }}>Trial hasta: {formatoFecha(c.trialEnd)}</div>}
+                    {!activa && <div style={{ fontSize: 12, color: '#991b1b' }}>Los datos de esta empresa se eliminaron (registro de otra empresa).</div>}
 
                     <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: 12 }}>
                       <button
                         onClick={() => generarCodigo(c)}
-                        disabled={accionId === c.id}
-                        style={{ width: '100%', fontSize: 13, padding: '8px 10px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 6, cursor: accionId === c.id ? 'wait' : 'pointer', opacity: accionId === c.id ? 0.6 : 1 }}
+                        disabled={ocupada}
+                        style={{ width: '100%', fontSize: 13, padding: '8px 10px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 6, cursor: ocupada ? 'wait' : 'pointer', opacity: ocupada ? 0.6 : 1 }}
                       >
                         Generar código de contraseña
                       </button>
@@ -205,6 +315,14 @@ export default function Proveedor() {
                         </div>
                       )}
                     </div>
+
+                    <button
+                      onClick={() => toggleArchivar(c)}
+                      disabled={ocupada}
+                      style={{ background: 'none', border: 'none', color: '#6b7280', cursor: ocupada ? 'wait' : 'pointer', fontSize: 12, textDecoration: 'underline', padding: 0, alignSelf: 'flex-start' }}
+                    >
+                      {c.archivada ? 'Desarchivar' : 'Archivar'}
+                    </button>
                   </div>
                 );
               })}

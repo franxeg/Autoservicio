@@ -11,6 +11,7 @@ import { CambiarPasswordAdminDto } from './dto/cambiar-password-admin.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ActualizarEmpresaDto } from './dto/actualizar-empresa.dto';
 import { PremiumProveedorDto } from './dto/premium-proveedor.dto';
+import { ReiniciarSistemaDto } from './dto/reiniciar-sistema.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { ProviderGuard } from './guards/provider.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
@@ -27,8 +28,8 @@ export class AuthController {
 
   /** Elimina los datos locales (con respaldo previo) para registrar otra empresa. */
   @Post('reiniciar-sistema')
-  async reiniciarSistema() {
-    return this.authService.reiniciarSistema();
+  async reiniciarSistema(@Body() dto: ReiniciarSistemaDto) {
+    return this.authService.reiniciarSistema(dto);
   }
 
   @Post('login')
@@ -74,6 +75,20 @@ export class AuthController {
   @Patch('proveedor/empresas/:id/premium')
   async proveedorPremium(@Param('id') id: string, @Body() dto: PremiumProveedorDto) {
     return this.authService.proveedorCambiarPremium(id, dto.isPremium, dto.days);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, ProviderGuard)
+  @Patch('proveedor/empresas/:id/activo')
+  async proveedorActivo(@Param('id') id: string, @Body() body: { activo?: boolean }) {
+    return this.authService.proveedorCambiarActivo(id, body.activo !== false);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, ProviderGuard)
+  @Patch('proveedor/empresas/:id/archivar')
+  async proveedorArchivar(@Param('id') id: string, @Body() body: { archivada?: boolean }) {
+    return this.authService.proveedorArchivar(id, body.archivada !== false);
   }
 
   @ApiBearerAuth()

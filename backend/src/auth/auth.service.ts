@@ -8,6 +8,7 @@ import { SetupInicialDto } from './dto/setup-inicial.dto';
 import { ResetearCredencialesDto } from './dto/resetear-credenciales.dto';
 import { CambiarPasswordAdminDto } from './dto/cambiar-password-admin.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ReiniciarSistemaDto } from './dto/reiniciar-sistema.dto';
 import { ActualizarEmpresaDto } from './dto/actualizar-empresa.dto';
 import { sembrarCatalogoInicial } from './catalogo-inicial';
 import { INSTANCIA_APP } from './instancia';
@@ -111,16 +112,28 @@ export class AuthService {
    * se borra nada. El borrado se hace con DELETE en orden de dependencias
    * (el usuario de la app tiene permiso de DELETE, pero no de TRUNCATE).
    */
-  async reiniciarSistema() {
+  async reiniciarSistema(dto: ReiniciarSistemaDto = {}) {
     const resumen = await this.prisma.runAsSystem(async (tx) => {
       const usuarios = await tx.usuario.count();
-      const empresa = await tx.empresa.findFirst({ select: { nombre: true } });
+      const empresa = await tx.empresa.findFirst({
+        select: { nombre: true, licenseCompanyId: true, licenseUsername: true },
+      });
       return { usuarios, empresa };
     });
 
     if (resumen.usuarios === 0 && !resumen.empresa) {
-      return { ok: true, backup: null, empresa: null, message: 'No había datos para eliminar.' };
+      return {
+        ok: true,
+        backup: null,
+        empresa: null,
+        licenciaDesactivada: null,
+        message: 'No había datos para eliminar.',
+      };
     }
+
+    // Resolver qué empresa del license-server corresponde a esta instalación
+    // antes de borrar: después ya no queda el dato local.
+    const licencia = await this.resolverEmpresaLicencia(resumen.empresa, dto);
 
     const backup = await this.crearRespaldoPrevio();
     const orden = await this.prisma.runAsSystem((tx) => this.ordenDeBorrado(tx));
@@ -131,6 +144,25 @@ export class AuthService {
       }
     });
 
+    // La empresa anterior no se elimina del license-server: se marca inactiva
+    // para que el panel del proveedor lo muestre. Si no hay conexión, el
+    // borrado local ya se hizo igual y se avisa en la respuesta.
+    let licenciaDesactivada: boolean | null = null;
+    if (licencia) {
+      try {
+        await this.proveedorCambiarActivo(licencia.id, false);
+        licenciaDesactivada = true;
+        this.logger.log(
+          `Empresa '${licencia.username ?? licencia.id}' marcada como inactiva en el servidor de licencias.`,
+        );
+      } catch (e: any) {
+        licenciaDesactivada = false;
+        this.logger.warn(
+          `No se pudo marcar como inactiva la empresa '${licencia.username ?? licencia.id}': ${e?.message || e}`,
+        );
+      }
+    }
+
     this.logger.log(
       `Sistema reiniciado: se eliminaron los datos de '${resumen.empresa?.nombre ?? 'sin empresa'}' (respaldo: ${backup}).`,
     );
@@ -138,8 +170,41 @@ export class AuthService {
       ok: true,
       backup,
       empresa: resumen.empresa?.nombre ?? null,
+      licenciaDesactivada,
       message: 'Los datos anteriores se eliminaron. Ya podés registrar la empresa nueva.',
     };
+  }
+
+  /**
+   * Identifica la empresa del license-server de esta instalación. El id
+   * guardado en la base local tiene prioridad; para instalaciones anteriores
+   * se acepta el que envía el panel, pero validando que el usuario coincida
+   * con el registrado en el servidor de licencias.
+   */
+  private async resolverEmpresaLicencia(
+    empresa: { licenseCompanyId: string | null; licenseUsername: string | null } | null,
+    dto: ReiniciarSistemaDto,
+  ): Promise<{ id: string; username: string | null } | null> {
+    if (empresa?.licenseCompanyId) {
+      return { id: empresa.licenseCompanyId, username: empresa.licenseUsername ?? null };
+    }
+
+    const idPedido = dto?.licenseCompanyId?.trim();
+    if (!idPedido) return null;
+
+    try {
+      const empresas: any[] = (await this.proveedorListarEmpresas()) || [];
+      const encontrada = empresas.find((e) => e?.id === idPedido);
+      if (!encontrada) return null;
+      if (dto?.licenseUsername && encontrada.username && dto.licenseUsername !== encontrada.username) {
+        this.logger.warn('El usuario informado por el panel no coincide con el del servidor de licencias.');
+        return null;
+      }
+      return { id: encontrada.id, username: encontrada.username ?? null };
+    } catch (e: any) {
+      this.logger.warn(`No se pudo consultar el panel del proveedor: ${e?.message || e}`);
+      return null;
+    }
   }
 
   /**
@@ -471,6 +536,27 @@ export class AuthService {
     });
   }
 
+  async proveedorCambiarActivo(id: string, activo: boolean) {
+    return this.lsRequest(`/api/admin/companies/${encodeURIComponent(id)}/activo`, {
+      method: 'PATCH',
+      body: JSON.stringify({ activo }),
+    });
+  }
+
+  async proveedorArchivar(id: string, archivada: boolean) {
+    return this.lsRequest(`/api/admin/companies/${encodeURIComponent(id)}/archivar`, {
+      method: 'PATCH',
+      body: JSON.stringify({ archivada }),
+    });
+  }
+
+  async proveedorCambiarPassword(id: string, password: string) {
+    return this.lsRequest(`/api/admin/companies/${encodeURIComponent(id)}/password`, {
+      method: 'PATCH',
+      body: JSON.stringify({ password }),
+    });
+  }
+
   async login(usuario: string, password: string) {
     return this.prisma.runAsSystem(async (tx) => {
       const user = await tx.usuario.findFirst({
@@ -722,6 +808,38 @@ export class AuthService {
     });
   }
 
+  /**
+   * Reutiliza un usuario del license-server que quedó inactivo porque desde la
+   * aplicación se borraron los datos de la empresa. Se le asigna la contraseña
+   * nueva y se reactiva, conservando su licencia (trial o premium).
+   */
+  private async reclamarEmpresaLicencia(
+    usuario: string,
+    password: string,
+  ): Promise<{ token: string; licenseKey: string | null; company: any } | null> {
+    try {
+      const empresas: any[] = (await this.proveedorListarEmpresas()) || [];
+      const existente = empresas.find((e) => e?.username === usuario);
+      if (!existente || existente.activo !== false) return null;
+
+      await this.proveedorCambiarPassword(existente.id, password);
+      await this.proveedorCambiarActivo(existente.id, true);
+
+      const res = await fetch(`${this.getLicenseUrl()}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: usuario, password }),
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      this.logger.log(`Usuario '${usuario}' reactivado en el servidor de licencias (la empresa estaba inactiva).`);
+      return { token: data.access_token, licenseKey: data.company?.licenseKey ?? null, company: data.company };
+    } catch (e: any) {
+      this.logger.warn(`No se pudo reutilizar el usuario '${usuario}' en el servidor de licencias: ${e?.message || e}`);
+      return null;
+    }
+  }
+
   async setupInicial(dto: SetupInicialDto) {
     /**
      * Registro inicial obligatorio:
@@ -774,10 +892,18 @@ export class AuthService {
         throw new BadRequestException('No se pudo conectar al servidor de licencias. Verificá tu conexión a internet e intentá nuevamente.');
       }
       if (!loginRes.ok) {
-        throw new ConflictException('Ese usuario ya está registrado en el servidor de licencias con otra contraseña. Ingresá la contraseña original o elegí otro usuario.');
+        // La empresa puede estar inactiva porque se borraron sus datos desde
+        // la aplicación: en ese caso se reutiliza el usuario (se le asigna la
+        // contraseña nueva y se reactiva) en lugar de dejar el registro
+        // bloqueado para siempre.
+        license = await this.reclamarEmpresaLicencia(usuario, dto.password);
+        if (!license) {
+          throw new ConflictException('Ese usuario ya está registrado en el servidor de licencias con otra contraseña. Ingresá la contraseña original o elegí otro usuario.');
+        }
+      } else {
+        const data = await loginRes.json();
+        license = { token: data.access_token, licenseKey: data.company?.licenseKey ?? null, company: data.company };
       }
-      const data = await loginRes.json();
-      license = { token: data.access_token, licenseKey: data.company?.licenseKey ?? null, company: data.company };
     } else {
       const data = await registerRes.json().catch(() => ({}));
       throw new BadRequestException(data?.message || 'No se pudo registrar en el servidor de licencias. Intentá nuevamente.');
@@ -790,8 +916,17 @@ export class AuthService {
 
       const empresa = await tx.empresa.upsert({
         where: { id: empresaId },
-        update: { nombre: nombreEmpresa },
-        create: { id: empresaId, nombre: nombreEmpresa },
+        update: {
+          nombre: nombreEmpresa,
+          licenseCompanyId: license?.company?.id ?? undefined,
+          licenseUsername: license?.company?.username ?? undefined,
+        },
+        create: {
+          id: empresaId,
+          nombre: nombreEmpresa,
+          licenseCompanyId: license?.company?.id ?? null,
+          licenseUsername: license?.company?.username ?? null,
+        },
       });
 
       await tx.sucursal.upsert({

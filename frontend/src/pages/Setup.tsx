@@ -21,6 +21,7 @@ export default function Setup() {
   const [hayDatos, setHayDatos] = useState(false);
   const [empresaActual, setEmpresaActual] = useState('');
   const [confirmarBorrado, setConfirmarBorrado] = useState(false);
+  const [avisoLicencia, setAvisoLicencia] = useState('');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const reRegistro = searchParams.get('nueva') === '1';
@@ -72,8 +73,24 @@ export default function Setup() {
   const registrar = async () => {
     setLoading(true);
     setError('');
+    setAvisoLicencia('');
     try {
-      if (hayDatos) await api.post('/auth/reiniciar-sistema');
+      if (hayDatos) {
+        // Identidad de la empresa anterior en el license-server: el backend la
+        // marca como inactiva (no la elimina) después de borrar los datos.
+        let licencia: { id?: string; username?: string } | null = null;
+        try { licencia = JSON.parse(localStorage.getItem('license_company') || 'null'); } catch { licencia = null; }
+        const { data: reinicio } = await api.post('/auth/reiniciar-sistema', {
+          licenseCompanyId: licencia?.id,
+          licenseUsername: licencia?.username,
+        });
+        if (reinicio?.licenciaDesactivada === false) {
+          setAvisoLicencia(
+            'No se pudo marcar la empresa anterior como inactiva en el servidor de licencias (revisá la conexión). ' +
+            'En el panel del proveedor va a seguir figurando como activa.',
+          );
+        }
+      }
       const { data } = await api.post('/auth/setup-inicial', {
         nombreEmpresa: nombreEmpresa.trim(),
         usuario: usuario.trim(),
@@ -126,6 +143,11 @@ export default function Setup() {
         )}
 
         {error && <div style={{ background: '#fee2e2', color: '#dc2626', padding: 10, borderRadius: 6, marginBottom: 12, fontSize: 14 }}>{error}</div>}
+        {avisoLicencia && (
+          <div style={{ background: '#fffbeb', border: '1px solid #fcd34d', color: '#92400e', padding: 10, borderRadius: 6, marginBottom: 12, fontSize: 13, lineHeight: 1.5 }}>
+            ⚠️ {avisoLicencia}
+          </div>
+        )}
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0 24px' }}>
           {/* Columna izquierda: Usuario, Contraseña, Teléfono */}

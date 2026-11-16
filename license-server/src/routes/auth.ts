@@ -53,6 +53,9 @@ export default function authRoutes(prisma: PrismaClient) {
           username,
           password: hashed,
           trialEnd,
+          // Toda empresa nueva queda activa y visible en el panel del proveedor.
+          activo: true,
+          archivada: false,
         },
       });
 

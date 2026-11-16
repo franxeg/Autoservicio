@@ -21,10 +21,26 @@ export default function adminRoutes(prisma: PrismaClient) {
           resetCodeExpiry: true,
           trialEnd: true,
           activo: true,
+          archivada: true,
           createdAt: true,
         },
         orderBy: { createdAt: 'desc' },
       });
+
+      // Orden pedido por el proveedor: premium vigente, luego trial vigente y
+      // por último las que están en free. Dentro de cada grupo, la más nueva
+      // primero.
+      const now = new Date();
+      const rango = (c: (typeof companies)[number]) => {
+        const premium = c.isPremium && (!c.premiumExpiry || new Date(c.premiumExpiry) > now);
+        if (premium) return 0;
+        if (new Date(c.trialEnd) > now) return 1;
+        return 2;
+      };
+      companies.sort(
+        (a, b) => rango(a) - rango(b) || new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+
       res.json(companies);
     } catch (err) {
       next(err);
@@ -59,6 +75,19 @@ export default function adminRoutes(prisma: PrismaClient) {
         data: { activo: req.body.activo !== false },
       });
       res.json({ id: company.id, nombre: company.nombre, activo: company.activo });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Archivar/desarchivar empresa (solo la oculta del listado del proveedor)
+  router.patch('/companies/:id/archivar', requireAdmin, async (req, res, next) => {
+    try {
+      const company = await prisma.company.update({
+        where: { id: req.params.id },
+        data: { archivada: req.body.archivada !== false },
+      });
+      res.json({ id: company.id, nombre: company.nombre, archivada: company.archivada });
     } catch (err) {
       next(err);
     }

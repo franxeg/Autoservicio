@@ -51,6 +51,10 @@ model Empresa {
   nombre    String
   cuit      String?  @unique
   activa    Boolean  @default(true)
+  // Identidad de la empresa en el license-server (para marcarla inactiva
+  // cuando se borran los datos locales y se registra otra empresa).
+  licenseCompanyId String?
+  licenseUsername  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

@@ -23,11 +23,19 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ sucursalId: id });
   },
   logout: () => {
-    // Preservar preferencias de tema por usuario
+    // Preservar preferencias de tema por usuario y la licencia de la
+    // instalación (no pertenece a la sesión local: se usa para el estado
+    // premium y para marcar la empresa anterior como inactiva al registrar
+    // otra empresa).
     const keep: Record<string, string> = {};
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
-      if (k && (k.startsWith('tema_color_') || k.startsWith('tema_fontSize_'))) {
+      if (k && (
+        k.startsWith('tema_color_') ||
+        k.startsWith('tema_fontSize_') ||
+        k.startsWith('license_') ||
+        k === 'premium_trial_start'
+      )) {
         keep[k] = localStorage.getItem(k) || '';
       }
     }
