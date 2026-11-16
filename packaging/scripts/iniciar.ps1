@@ -275,6 +275,10 @@ $env:LICENSE_SERVER_ADMIN_PASSWORD = $cfg.LICENSE_SERVER_ADMIN_PASSWORD
 $env:PORT            = $cfg.APP_PORT
 $env:WEB_DIR         = Join-Path $appDir 'public'
 $env:NODE_ENV        = 'production'
+# Datos para el respaldo automatico previo al registro de otra empresa
+$env:PG_BIN          = $pgBin
+$env:BACKUP_DIR      = $backupsDir
+$env:BACKUP_DATABASE_URL = $migUrl
 
 $running = Get-CimInstance Win32_Process -Filter "Name = 'node.exe'" |
   Where-Object { $_.CommandLine -like '*dist\main*' -or $_.CommandLine -like '*dist/main*' }

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../lib/store';
 import { api } from '../lib/api';
 import ContactoProveedor from '../components/ContactoProveedor';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 export default function Login() {
   const [usuario, setUsuario] = useState('');
@@ -21,6 +22,7 @@ export default function Login() {
   const [forgotError, setForgotError] = useState('');
   const [forgotMsg, setForgotMsg] = useState('');
   const [forgotLoading, setForgotLoading] = useState(false);
+  const [confirmarRegistro, setConfirmarRegistro] = useState(false);
 
   const navigate = useNavigate();
   const setAuth = useAuthStore(s => s.setAuth);
@@ -143,9 +145,30 @@ export default function Login() {
               <button type="button" onClick={() => setShowForgot(false)} style={{ padding: '10px 16px', background: '#e5e7eb', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Cerrar</button>
             </div>
             <ContactoProveedor compacto />
+            <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid #e5e7eb' }}>
+              <button
+                type="button"
+                onClick={() => setConfirmarRegistro(true)}
+                style={{ width: '100%', padding: 8, background: 'none', border: 'none', color: '#b91c1c', cursor: 'pointer', fontSize: 12.5 }}
+              >
+                Quiero registrarme con otra Empresa
+              </button>
+            </div>
           </form>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmarRegistro}
+        titulo="Registrar otra empresa"
+        confirmar="Aceptar y continuar"
+        onCancel={() => setConfirmarRegistro(false)}
+        onConfirm={() => { setConfirmarRegistro(false); setShowForgot(false); navigate('/setup?nueva=1'); }}
+        nota="Antes de eliminar se guarda un respaldo automático en la carpeta de respaldos de la instalación."
+      >
+        Atención: si registra una nueva empresa, los datos registrados anteriormente se eliminarán
+        permanentemente y ya no se podrán recuperar. ¿Desea continuar?
+      </ConfirmDialog>
     </div>
   );
 }

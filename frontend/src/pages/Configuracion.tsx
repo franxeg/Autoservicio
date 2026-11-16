@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../lib/store';
 import { api } from '../lib/api';
 import { getPremiumStatus, refreshPremiumStatus } from '../lib/premium';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 const TABS = [
   { id: 'premium', label: 'Suscribirse a Premium' },
@@ -368,6 +370,9 @@ function TabPassword() {
   const [nueva, setNueva] = useState('');
   const [confirmar, setConfirmar] = useState('');
   const [msg, setMsg] = useState('');
+  const [confirmarRegistro, setConfirmarRegistro] = useState(false);
+  const navigate = useNavigate();
+  const logout = useAuthStore(s => s.logout);
   const cambiar = async () => {
     if (!nueva || nueva !== confirmar) { setMsg('Las contraseñas no coinciden'); return; }
     if (nueva.length < 6) { setMsg('La contraseña debe tener al menos 6 caracteres'); return; }
@@ -400,6 +405,31 @@ function TabPassword() {
         <button onClick={cambiar} style={{ padding: '10px 20px', background: '#111827', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', width: 'fit-content' }}>Cambiar</button>
         {msg && <small style={{ color: msg.includes('correctamente') || msg.includes('actualizada') ? '#059669' : '#dc2626' }}>{msg}</small>}
       </div>
+
+      <div style={{ marginTop: 28, paddingTop: 18, borderTop: '1px solid #e5e7eb', maxWidth: 520 }}>
+        <p style={{ fontSize: 13, color: '#6b7280', marginTop: 0 }}>
+          ¿Necesitás empezar de cero con otra empresa?
+        </p>
+        <button
+          type="button"
+          onClick={() => setConfirmarRegistro(true)}
+          style={{ padding: '10px 16px', background: 'white', color: '#b91c1c', border: '1px solid #fca5a5', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}
+        >
+          Quiero registrarme con otra Empresa
+        </button>
+      </div>
+
+      <ConfirmDialog
+        open={confirmarRegistro}
+        titulo="Registrar otra empresa"
+        confirmar="Aceptar y continuar"
+        onCancel={() => setConfirmarRegistro(false)}
+        onConfirm={() => { navigate('/setup?nueva=1'); logout(); }}
+        nota="Antes de eliminar se guarda un respaldo automático en la carpeta de respaldos de la instalación."
+      >
+        Atención: si registra una nueva empresa, los datos registrados anteriormente se eliminarán
+        permanentemente y ya no se podrán recuperar. ¿Desea continuar?
+      </ConfirmDialog>
     </div>
   );
 }

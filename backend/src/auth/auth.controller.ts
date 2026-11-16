@@ -25,6 +25,12 @@ export class AuthController {
     return this.authService.hasUsers();
   }
 
+  /** Elimina los datos locales (con respaldo previo) para registrar otra empresa. */
+  @Post('reiniciar-sistema')
+  async reiniciarSistema() {
+    return this.authService.reiniciarSistema();
+  }
+
   @Post('login')
   async login(@Body() dto: LoginDto) {
     const usuario = (dto as any).usuario || (dto as any).email;

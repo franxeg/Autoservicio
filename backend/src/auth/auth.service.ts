@@ -13,8 +13,9 @@ import { sembrarCatalogoInicial } from './catalogo-inicial';
 import { INSTANCIA_APP } from './instancia';
 import * as bcrypt from 'bcryptjs';
 import { randomBytes, timingSafeEqual } from 'crypto';
-import { readFileSync, writeFileSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, statSync, unlinkSync } from 'fs';
 import { join } from 'path';
+import { spawn } from 'child_process';
 
 function generarPasswordTemporal(): string {
   return randomBytes(6).toString('base64url');
@@ -95,8 +96,173 @@ export class AuthService {
 
   /** Indica si la instalación local ya tiene usuarios (para decidir setup o login). */
   async hasUsers() {
-    const count = await this.prisma.runAsSystem((tx) => tx.usuario.count());
-    return { hasUsers: count > 0 };
+    return this.prisma.runAsSystem(async (tx) => {
+      const count = await tx.usuario.count();
+      const empresa = count > 0 ? await tx.empresa.findFirst({ select: { nombre: true } }) : null;
+      return { hasUsers: count > 0, empresaNombre: empresa?.nombre ?? null };
+    });
+  }
+
+  /**
+   * Borra todos los datos locales (empresa, usuarios, ventas, stock, etc.)
+   * dejando el sistema listo para registrar una empresa nueva.
+   *
+   * Antes de eliminar genera un respaldo automático; si el respaldo falla no
+   * se borra nada. El borrado se hace con DELETE en orden de dependencias
+   * (el usuario de la app tiene permiso de DELETE, pero no de TRUNCATE).
+   */
+  async reiniciarSistema() {
+    const resumen = await this.prisma.runAsSystem(async (tx) => {
+      const usuarios = await tx.usuario.count();
+      const empresa = await tx.empresa.findFirst({ select: { nombre: true } });
+      return { usuarios, empresa };
+    });
+
+    if (resumen.usuarios === 0 && !resumen.empresa) {
+      return { ok: true, backup: null, empresa: null, message: 'No había datos para eliminar.' };
+    }
+
+    const backup = await this.crearRespaldoPrevio();
+    const orden = await this.prisma.runAsSystem((tx) => this.ordenDeBorrado(tx));
+
+    await this.prisma.runAsSystem(async (tx) => {
+      for (const tabla of orden) {
+        await tx.$executeRawUnsafe(`DELETE FROM "${tabla.replace(/"/g, '""')}"`);
+      }
+    });
+
+    this.logger.log(
+      `Sistema reiniciado: se eliminaron los datos de '${resumen.empresa?.nombre ?? 'sin empresa'}' (respaldo: ${backup}).`,
+    );
+    return {
+      ok: true,
+      backup,
+      empresa: resumen.empresa?.nombre ?? null,
+      message: 'Los datos anteriores se eliminaron. Ya podés registrar la empresa nueva.',
+    };
+  }
+
+  /**
+   * Orden de borrado: primero las tablas que dependen de otras y por último
+   * Empresa. Se calcula desde las claves foráneas reales de la base para no
+   * quedar desactualizado si el esquema cambia.
+   */
+  private async ordenDeBorrado(tx: Prisma.TransactionClient): Promise<string[]> {
+    const tablas = await tx.$queryRawUnsafe<Array<{ tablename: string }>>(
+      `select tablename from pg_tables where schemaname = 'public' and tablename <> '_prisma_migrations'`,
+    );
+    const fks = await tx.$queryRawUnsafe<Array<{ hijo: string; padre: string }>>(
+      `select c.conrelid::regclass::text as hijo, c.confrelid::regclass::text as padre
+         from pg_constraint c
+         join pg_class t on t.oid = c.conrelid
+         join pg_namespace n on n.oid = t.relnamespace
+        where c.contype = 'f' and n.nspname = 'public'`,
+    );
+
+    const normalizar = (v: string) => v.replace(/^public\./, '').replace(/"/g, '');
+    const nombres = tablas.map((t) => t.tablename);
+    const referidaPor = new Map<string, Set<string>>(nombres.map((n) => [n, new Set<string>()]));
+    for (const { hijo, padre } of fks) {
+      const h = normalizar(hijo);
+      const p = normalizar(padre);
+      if (referidaPor.has(p) && nombres.includes(h)) referidaPor.get(p)!.add(h);
+    }
+
+    const orden: string[] = [];
+    const pendientes = new Set(nombres);
+    while (pendientes.size) {
+      const libres = [...pendientes].filter((t) =>
+        [...(referidaPor.get(t) ?? [])].every((r) => !pendientes.has(r)),
+      );
+      if (libres.length === 0) {
+        throw new InternalServerErrorException(
+          `No se pudo determinar el orden de borrado (dependencias circulares): ${[...pendientes].join(', ')}`,
+        );
+      }
+      for (const t of libres) {
+        orden.push(t);
+        pendientes.delete(t);
+      }
+    }
+    return orden;
+  }
+
+  /** Ruta del pg_dump que viene incluido en la instalación. */
+  private rutaPgdump(): string {
+    const win = process.platform === 'win32';
+    const candidatos = [
+      process.env.PG_DUMP_PATH,
+      process.env.PG_BIN ? join(process.env.PG_BIN, win ? 'pg_dump.exe' : 'pg_dump') : null,
+      win ? 'C:\\Autoservicio\\pgsql\\bin\\pg_dump.exe' : '/usr/bin/pg_dump',
+    ].filter(Boolean) as string[];
+    const encontrado = candidatos.find((c) => existsSync(c));
+    if (encontrado) return encontrado;
+    if (!win) return 'pg_dump';
+    throw new InternalServerErrorException(
+      'No se encontró pg_dump para generar el respaldo. Instalá la aplicación nuevamente.',
+    );
+  }
+
+  /** Carpeta donde se guardan los respaldos automáticos. */
+  private carpetaBackups(): string {
+    const candidatos = [
+      process.env.BACKUP_DIR,
+      process.env.WEB_DIR ? join(process.env.WEB_DIR, '..', '..', 'backups') : null,
+      join(process.cwd(), 'backups'),
+    ].filter(Boolean) as string[];
+    for (const carpeta of candidatos) {
+      try {
+        mkdirSync(carpeta, { recursive: true });
+        return carpeta;
+      } catch {}
+    }
+    throw new InternalServerErrorException('No se pudo crear la carpeta de respaldos.');
+  }
+
+  /** Genera un dump completo antes del borrado. Si falla, se aborta el reinicio. */
+  private async crearRespaldoPrevio(): Promise<string> {
+    const pgDump = this.rutaPgdump();
+    const urlCruda = process.env.BACKUP_DATABASE_URL || process.env.DATABASE_URL;
+    if (!urlCruda) {
+      throw new InternalServerErrorException('No está configurada la conexión para generar el respaldo.');
+    }
+    // pg_dump usa una cadena de conexión de libpq: no acepta los parámetros
+    // propios de Prisma (por ejemplo "?schema=public").
+    const url = urlCruda.replace(/[?#].*$/, '');
+
+    const sello = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
+    const destino = join(this.carpetaBackups(), `autoservicio-pre-registro-${sello}.dump`);
+
+    await new Promise<void>((resolve, reject) => {
+      const proceso = spawn(pgDump, ['-F', 'c', '--no-owner', '--no-acl', '-f', destino, url], {
+        windowsHide: true,
+      });
+      let salidaError = '';
+      proceso.stderr?.on('data', (d) => {
+        salidaError += d.toString();
+      });
+      proceso.on('error', (e) => reject(e));
+      proceso.on('close', (codigo) => {
+        if (codigo !== 0) {
+          reject(new Error(salidaError.trim() || `pg_dump terminó con código ${codigo}`));
+          return;
+        }
+        if (!existsSync(destino) || statSync(destino).size === 0) {
+          reject(new Error('El respaldo quedó vacío.'));
+          return;
+        }
+        resolve();
+      });
+    }).catch((e: any) => {
+      try { if (existsSync(destino)) unlinkSync(destino); } catch {}
+      this.logger.error(`No se pudo generar el respaldo previo: ${e?.message || e}`);
+      throw new InternalServerErrorException(
+        'No se pudo generar el respaldo automático, así que no se eliminó nada. Intentá de nuevo.',
+      );
+    });
+
+    this.logger.log(`Respaldo previo al reinicio: ${destino}`);
+    return destino;
   }
 
   /** Cambio de contraseña local validando el código generado por el proveedor. */

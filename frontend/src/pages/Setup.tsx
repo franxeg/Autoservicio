@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../lib/store';
 import { api } from '../lib/api';
 import { checkUsername, saveLicenseSession } from '../lib/license';
 import ContactoProveedor from '../components/ContactoProveedor';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 export default function Setup() {
   const [nombreEmpresa, setNombreEmpresa] = useState('');
@@ -17,21 +18,33 @@ export default function Setup() {
   const [loading, setLoading] = useState(false);
   const [verificando, setVerificando] = useState(true);
   const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
+  const [hayDatos, setHayDatos] = useState(false);
+  const [empresaActual, setEmpresaActual] = useState('');
+  const [confirmarBorrado, setConfirmarBorrado] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const reRegistro = searchParams.get('nueva') === '1';
   const setAuth = useAuthStore(s => s.setAuth);
 
-  // Si ya hay usuarios locales, este panel no debe mostrarse.
+  // Si ya hay usuarios locales, este panel solo se muestra cuando se pidió
+  // explícitamente registrar otra empresa (los datos actuales se eliminan).
   useEffect(() => {
     let activo = true;
     api.get('/auth/has-users')
       .then(({ data }) => {
         if (!activo) return;
-        if (data?.hasUsers) navigate('/login', { replace: true });
-        else setVerificando(false);
+        const hay = !!data?.hasUsers;
+        setEmpresaActual(data?.empresaNombre || '');
+        setHayDatos(hay);
+        if (hay && !reRegistro) {
+          navigate('/login', { replace: true });
+          return;
+        }
+        setVerificando(false);
       })
       .catch(() => { if (activo) setVerificando(false); });
     return () => { activo = false; };
-  }, [navigate]);
+  }, [navigate, reRegistro]);
 
   const checkUser = async (u: string) => {
     const limpio = u.trim();
@@ -41,14 +54,26 @@ export default function Setup() {
     setUsernameStatus(res.available ? 'available' : 'taken');
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     if (password.length < 6) { setError('La contraseña debe tener al menos 6 caracteres'); return; }
     if (password !== confirmar) { setError('Las contraseñas no coinciden'); return; }
     if (usernameStatus === 'taken') { setError('El usuario ya está en uso. Elegí otro.'); return; }
+    if (hayDatos) {
+      // Los datos del formulario ya están validados: pedimos confirmación
+      // antes de eliminar la empresa actual.
+      setConfirmarBorrado(true);
+      return;
+    }
+    registrar();
+  };
+
+  const registrar = async () => {
     setLoading(true);
+    setError('');
     try {
+      if (hayDatos) await api.post('/auth/reiniciar-sistema');
       const { data } = await api.post('/auth/setup-inicial', {
         nombreEmpresa: nombreEmpresa.trim(),
         usuario: usuario.trim(),
@@ -71,6 +96,7 @@ export default function Setup() {
       setError(Array.isArray(msg) ? msg.join('. ') : (msg || 'No se pudo completar el registro. Verificá tu conexión a internet.'));
     } finally {
       setLoading(false);
+      setConfirmarBorrado(false);
     }
   };
 
@@ -90,6 +116,14 @@ export default function Setup() {
         <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1e3a8a', padding: 12, borderRadius: 8, margin: '16px 0', fontSize: 13, lineHeight: 1.5 }}>
           📶 <b>Debés estar conectado a internet para registrarte.</b> Es necesario crear tu usuario en el servidor
         </div>
+
+        {reRegistro && hayDatos && (
+          <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b', padding: 12, borderRadius: 8, margin: '0 0 16px', fontSize: 13, lineHeight: 1.5 }}>
+            ⚠️ <b>Atención:</b> al registrar una empresa nueva se eliminarán los datos actuales
+            {empresaActual ? <> de <b>{empresaActual}</b></> : null} (ventas, stock, productos y usuarios).
+            Se guardará una copia de seguridad automática antes de eliminar.
+          </div>
+        )}
 
         {error && <div style={{ background: '#fee2e2', color: '#dc2626', padding: 10, borderRadius: 6, marginBottom: 12, fontSize: 14 }}>{error}</div>}
 
@@ -146,6 +180,29 @@ export default function Setup() {
 
         <ContactoProveedor />
       </form>
+
+      {reRegistro && (
+        <button
+          type="button"
+          onClick={() => navigate('/login')}
+          style={{ marginTop: 12, padding: '8px 14px', background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', fontSize: 13 }}
+        >
+          ← Volver al inicio de sesión
+        </button>
+      )}
+
+      <ConfirmDialog
+        open={confirmarBorrado}
+        titulo="Eliminar datos y registrar otra empresa"
+        confirmar="Sí, eliminar y registrar"
+        procesando={loading}
+        onCancel={() => setConfirmarBorrado(false)}
+        onConfirm={registrar}
+        nota="Antes de eliminar se guarda un respaldo automático en la carpeta de respaldos de la instalación."
+      >
+        Atención: si continúa con el registro, los datos de <b>{empresaActual || 'la empresa actual'}</b> se
+        eliminarán permanentemente y ya no se podrán recuperar. ¿Desea continuar?
+      </ConfirmDialog>
     </div>
   );
 }
