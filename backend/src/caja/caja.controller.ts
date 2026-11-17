@@ -1,7 +1,7 @@
-import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { CajaService } from './caja.service';
-import { AbrirCajaDto, CerrarCajaDto, MovimientoCajaDto } from './dto/abrir-caja.dto';
+import { AbrirCajaDto, CerrarCajaDto, MovimientoCajaDto, ActualizarMovimientoCajaDto } from './dto/abrir-caja.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
@@ -39,6 +39,16 @@ export class CajaController {
 
   @Post(':id/movimiento')
   addMovimiento(@Param('id') id: string, @Body() dto: MovimientoCajaDto) {
-    return this.service.addMovimiento(id, dto.tipo, dto.monto, dto.descripcion, dto.metodoPago);
+    return this.service.addMovimiento(id, dto.tipo, dto.monto, dto.descripcion, dto.metodoPago, dto.esIngreso);
+  }
+
+  @Patch(':id/movimiento/:movimientoId')
+  updateMovimiento(@Param('id') id: string, @Param('movimientoId') movimientoId: string, @Body() dto: ActualizarMovimientoCajaDto) {
+    return this.service.updateMovimiento(id, movimientoId, dto);
+  }
+
+  @Delete(':id/movimiento/:movimientoId')
+  deleteMovimiento(@Param('id') id: string, @Param('movimientoId') movimientoId: string) {
+    return this.service.deleteMovimiento(id, movimientoId);
   }
 }

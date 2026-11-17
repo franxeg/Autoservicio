@@ -39,6 +39,12 @@ export default function Compras() {
   const [errorGasto, setErrorGasto] = useState('');
   const [gastoMetodo, setGastoMetodo] = useState('EFECTIVO');
   const [verGastos, setVerGastos] = useState(false);
+  const [editandoGasto, setEditandoGasto] = useState<any>(null);
+  const [editGastoDesc, setEditGastoDesc] = useState('');
+  const [editGastoImporte, setEditGastoImporte] = useState('');
+  const [editGastoMetodo, setEditGastoMetodo] = useState('EFECTIVO');
+  const [errorEditGasto, setErrorEditGasto] = useState('');
+  const [guardandoEditGasto, setGuardandoEditGasto] = useState(false);
 
   // Borrador en edición (id si viene de la lista de borradores del servidor)
   const inicial = (() => {
@@ -151,6 +157,43 @@ export default function Compras() {
       await fetchGastosCaja(cajaAbierta.id);
     } catch (err: any) { setErrorGasto(err.response?.data?.message || err.message); }
     finally { setGuardandoGasto(false); }
+  };
+
+  const abrirEditarGasto = (m: any) => {
+    setEditandoGasto(m);
+    setEditGastoDesc(m.descripcion || '');
+    setEditGastoImporte(String(Math.abs(Number(m.monto))));
+    setEditGastoMetodo(m.metodoPago || 'EFECTIVO');
+    setErrorEditGasto('');
+  };
+
+  const guardarEdicionGasto = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!cajaAbierta || !editandoGasto) return;
+    setErrorEditGasto('');
+    const importe = Math.round(parseFloat(editGastoImporte));
+    if (isNaN(importe) || importe <= 0) { setErrorEditGasto('El importe debe ser mayor a cero.'); return; }
+    if (!editGastoDesc.trim()) { setErrorEditGasto('Poné una descripción del gasto.'); return; }
+    setGuardandoEditGasto(true);
+    try {
+      await api.patch(`/caja/${cajaAbierta.id}/movimiento/${editandoGasto.id}`, {
+        monto: importe,
+        descripcion: editGastoDesc.trim(),
+        metodoPago: editGastoMetodo,
+      });
+      setEditandoGasto(null);
+      await fetchGastosCaja(cajaAbierta.id);
+    } catch (err: any) { setErrorEditGasto(err.response?.data?.message || err.message); }
+    finally { setGuardandoEditGasto(false); }
+  };
+
+  const eliminarGasto = async (m: any) => {
+    if (!cajaAbierta || !confirm(`¿Deshacer el gasto "${m.descripcion || m.tipo}" de $${Math.round(Math.abs(Number(m.monto))).toFixed(0)}?\n\nSe quitará de la caja y se recalculará el saldo.`)) return;
+    setErrorGasto('');
+    try {
+      await api.delete(`/caja/${cajaAbierta.id}/movimiento/${m.id}`);
+      await fetchGastosCaja(cajaAbierta.id);
+    } catch (err: any) { setErrorGasto(err.response?.data?.message || err.message); }
   };
 
   const addProducto = (p: any) => {
@@ -525,7 +568,7 @@ export default function Compras() {
               <button onClick={() => setVerGastos(false)} style={{ border: 'none', background: '#e5e7eb', padding: '6px 10px', borderRadius: 6, cursor: 'pointer' }}>✕</button>
             </div>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead><tr style={{ borderBottom: '2px solid #e5e7eb', textAlign: 'left' }}><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Medio</th><th style={{ textAlign: 'right' }}>Monto</th></tr></thead>
+              <thead><tr style={{ borderBottom: '2px solid #e5e7eb', textAlign: 'left' }}><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Medio</th><th style={{ textAlign: 'right' }}>Monto</th><th style={{ textAlign: 'right' }}>Acciones</th></tr></thead>
               <tbody>
                 {[...gastosCaja].reverse().map((m: any) => (
                   <tr key={m.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
@@ -533,16 +576,47 @@ export default function Compras() {
                     <td>{m.tipo}</td>
                     <td>{m.descripcion || '-'}</td>
                     <td>{labelMetodo(m.metodoPago || 'EFECTIVO')}</td>
-                    <td style={{ textAlign: 'right', fontWeight: 'bold' }}>${Math.round(m.monto).toFixed(0)}</td>
+                    <td style={{ textAlign: 'right', fontWeight: 'bold' }}>${Math.round(Math.abs(m.monto)).toFixed(0)}</td>
+                    <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                      <button onClick={() => abrirEditarGasto(m)} title="Editar gasto" style={{ padding: '4px 8px', marginRight: 4, background: '#eff6ff', color: '#1d4ed8', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 12 }}>Editar</button>
+                      <button onClick={() => eliminarGasto(m)} title="Deshacer gasto" style={{ padding: '4px 8px', background: '#fee2e2', color: '#b91c1c', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 12 }}>Deshacer</button>
+                    </td>
                   </tr>
                 ))}
-                {gastosCaja.length === 0 && <tr><td colSpan={5} style={{ textAlign: 'center', padding: 20, color: '#9ca3af' }}>Sin gastos</td></tr>}
+                {gastosCaja.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', padding: 20, color: '#9ca3af' }}>Sin gastos</td></tr>}
               </tbody>
               <tfoot>
-                <tr><td colSpan={4} style={{ textAlign: 'right', fontWeight: 'bold', paddingTop: 10 }}>Total</td><td style={{ textAlign: 'right', fontWeight: 'bold', paddingTop: 10 }}>${gastosCaja.reduce((a, m) => a + Math.round(m.monto), 0).toFixed(0)}</td></tr>
+                <tr><td colSpan={4} style={{ textAlign: 'right', fontWeight: 'bold', paddingTop: 10 }}>Total</td><td style={{ textAlign: 'right', fontWeight: 'bold', paddingTop: 10 }}>${gastosCaja.reduce((a, m) => a + Math.round(Math.abs(m.monto)), 0).toFixed(0)}</td><td></td></tr>
               </tfoot>
             </table>
           </div>
+        </div>
+      )}
+
+      {editandoGasto && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'grid', placeItems: 'center', zIndex: 70 }} onClick={() => setEditandoGasto(null)}>
+          <form onSubmit={guardarEdicionGasto} onClick={e => e.stopPropagation()} style={{ background: 'white', padding: 24, borderRadius: 12, width: 480, maxWidth: '94vw' }}>
+            <h3 style={{ marginTop: 0 }}>Editar gasto</h3>
+            <p style={{ color: '#6b7280', fontSize: 13 }}>Corregí la descripción, el importe o el medio de pago. El saldo de la caja se recalcula automáticamente.</p>
+            <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>Descripción
+                <input value={editGastoDesc} onChange={e => setEditGastoDesc(e.target.value)} style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }} />
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>Importe
+                <input type="number" min="0" step="1" value={editGastoImporte} onChange={e => setEditGastoImporte(e.target.value)} style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }} />
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>Medio de pago
+                <select value={editGastoMetodo} onChange={e => setEditGastoMetodo(e.target.value)} style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }}>
+                  {METODOS.filter(m => m.value !== 'CUENTA_CORRIENTE').map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                </select>
+              </label>
+              <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                <button type="submit" disabled={guardandoEditGasto} style={{ flex: 1, padding: 10, background: '#dc2626', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}>{guardandoEditGasto ? 'Guardando...' : 'Guardar cambios'}</button>
+                <button type="button" onClick={() => setEditandoGasto(null)} style={{ padding: '10px 16px', background: '#e5e7eb', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Cancelar</button>
+              </div>
+              {errorEditGasto && <div style={{ color: '#dc2626', fontSize: 13 }}>{errorEditGasto}</div>}
+            </div>
+          </form>
         </div>
       )}
 
