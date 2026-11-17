@@ -81,6 +81,12 @@ function TabPremium() {
   })();
   const diasTrial = diasRestantesTrial === 1 ? '1 día' : `${diasRestantesTrial} días`;
 
+  const planes = [
+    { nombre: '30 días', precio: '$8.000 ARS', detalle: 'Un mes de Premium', link: 'https://mpago.la/1XcoPQc' },
+    { nombre: '1 año', precio: '$60.000 ARS', detalle: 'Un año completo de Premium', link: 'https://mpago.li/23rmUxL' },
+    { nombre: 'Sin vencimiento', precio: '$90.000 ARS', detalle: 'Premium permanente', link: 'https://mpago.li/2h7bLwT' },
+  ];
+
   return (
     <div>
       <h3>Suscribirse a Premium</h3>
@@ -94,7 +100,7 @@ function TabPremium() {
         )}
       </div>
       <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: 16, borderRadius: 8, marginTop: 12 }}>
-        <h4 style={{ marginTop: 0 }}>Plan Premium - $8.000 ARS / mes</h4>
+        <h4 style={{ marginTop: 0 }}>Planes Premium</h4>
         <ul style={{ lineHeight: 1.8 }}>
           <li>Dashboard con estadísticas de ventas</li>
           <li>Movimientos detallados</li>
@@ -103,13 +109,22 @@ function TabPremium() {
           <li>Actualizaciones gratuitas</li>
         </ul>
       </div>
-      <div style={{ marginTop: 16, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-        <a href="https://mpago.la/1XcoPQc" target="_blank" rel="noreferrer" style={{ padding: '12px 20px', background: '#009ee3', color: 'white', borderRadius: 8, textDecoration: 'none', fontWeight: 600 }}>
-          Pagar con Mercado Pago
-        </a>
-        <button onClick={() => { navigator.clipboard?.writeText('https://mpago.la/1XcoPQc'); alert('Link copiado'); }} style={{ padding: '12px 20px', background: '#e5e7eb', border: 'none', borderRadius: 8, cursor: 'pointer' }}>
-          Copiar link de pago
-        </button>
+      <div style={{ marginTop: 16, display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+        {planes.map((plan) => (
+          <div key={plan.nombre} style={{ border: '1px solid #bfdbfe', borderRadius: 8, padding: 16, background: '#f8fbff' }}>
+            <h4 style={{ marginTop: 0 }}>{plan.nombre}</h4>
+            <div style={{ fontSize: 20, fontWeight: 700, color: '#1d4ed8', marginBottom: 4 }}>{plan.precio}</div>
+            <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 12px' }}>{plan.detalle}</p>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <a href={plan.link} target="_blank" rel="noreferrer" style={{ padding: '10px 14px', background: '#009ee3', color: 'white', borderRadius: 8, textDecoration: 'none', fontWeight: 600, fontSize: 13 }}>
+                Pagar con Mercado Pago
+              </a>
+              <button onClick={() => { navigator.clipboard?.writeText(plan.link); alert('Link copiado'); }} style={{ padding: '10px 14px', background: '#e5e7eb', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13 }}>
+                Copiar link
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
       <div style={{ marginTop: 20, padding: 12, background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 6, fontSize: 13, color: '#92400e' }}>
         ⚠️ Después de pagar, enviame el comprobante por WhatsApp/Instagram y te activo Premium manualmente dentro de las 24 hs.
