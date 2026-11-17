@@ -47,13 +47,18 @@ export default function adminRoutes(prisma: PrismaClient) {
     }
   });
 
-  // Activar/desactivar premium
+  // Activar/desactivar premium. La duración puede indicarse en días o
+  // solicitarse sin vencimiento (premiumExpiry = null).
   router.patch('/companies/:id/premium', requireAdmin, async (req, res, next) => {
     try {
-      const { isPremium, days } = req.body;
+      const { isPremium, days, sinVencimiento } = req.body;
       const data: any = { isPremium: !!isPremium };
-      if (isPremium) {
-        data.premiumExpiry = new Date(Date.now() + (days || 30) * 24 * 60 * 60 * 1000);
+      if (isPremium && sinVencimiento === true) {
+        data.premiumExpiry = null;
+      } else if (isPremium) {
+        const dias = Number(days);
+        const duracion = Number.isFinite(dias) && dias > 0 ? dias : 30;
+        data.premiumExpiry = new Date(Date.now() + duracion * 24 * 60 * 60 * 1000);
       } else {
         data.premiumExpiry = null;
       }

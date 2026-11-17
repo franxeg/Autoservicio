@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Consola del proveedor | Autoservicio</title>
+  <style>
+    :root {
+      --bg: #051127;
+      --surface: rgba(8, 27, 65, 0.92);
+      --surface-soft: rgba(255, 255, 255, 0.06);
+      --text: #eef5ff;
+      --muted: #b7c6e1;
+      --accent: #6ca0ff;
+      --accent-strong: #3d74ff;
+      --border: rgba(255, 255, 255, 0.12);
+      --ok: #34d399;
+      --warn: #fbbf24;
+      --danger: #f87171;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at top left, rgba(108, 160, 255, 0.18), transparent 35%),
+                  linear-gradient(180deg, #041126 0%, #081f3c 46%, #0c2d58 100%);
+    }
+    a { color: var(--accent); }
+    button, input, select { font: inherit; }
+    .wrap { max-width: 1180px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+    header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; }
+    h1 { font-size: clamp(1.5rem, 3vw, 2.1rem); letter-spacing: -0.02em; }
+    h2 { font-size: 1.15rem; margin-bottom: 0.5rem; }
+    .subtitle { color: var(--muted); font-size: 0.92rem; margin-top: 0.35rem; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 1.5rem;
+      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.2);
+    }
+    .login { max-width: 420px; margin: 8vh auto 0; }
+    .field { display: grid; gap: 0.4rem; margin-bottom: 1rem; }
+    label { color: var(--muted); font-size: 0.85rem; }
+    input, select {
+      width: 100%;
+      padding: 0.8rem 0.9rem;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.07);
+      color: var(--text);
+      outline: none;
+    }
+    input:focus, select:focus { border-color: rgba(108, 160, 255, 0.6); box-shadow: 0 0 0 5px rgba(108, 160, 255, 0.12); }
+    button {
+      cursor: pointer;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0.65rem 0.9rem;
+      color: var(--text);
+      background: var(--surface-soft);
+      transition: background 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+    }
+    button:hover:not(:disabled) { background: rgba(108, 160, 255, 0.18); transform: translateY(-1px); }
+    button:disabled { opacity: 0.5; cursor: wait; }
+    .btn-primary { background: linear-gradient(135deg, var(--accent-strong), var(--accent)); border: none; font-weight: 700; }
+    .btn-full { width: 100%; padding: 0.9rem; margin-top: 0.5rem; }
+    .btn-danger { color: #fecaca; border-color: rgba(248, 113, 113, 0.4); }
+    .btn-ok { color: #bbf7d0; border-color: rgba(52, 211, 153, 0.4); }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin-bottom: 1.25rem; }
+    .toolbar .search { flex: 1 1 260px; }
+    .check { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--muted); font-size: 0.9rem; white-space: nowrap; }
+    .check input { width: auto; }
+    .stats { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 1.25rem; }
+    .stat { padding: 0.6rem 0.9rem; border-radius: 999px; background: var(--surface-soft); border: 1px solid var(--border); font-size: 0.85rem; color: var(--muted); }
+    .stat b { color: var(--text); }
+    .grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); }
+    .company { display: grid; gap: 0.9rem; }
+    .company-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; }
+    .company-user { font-size: 1.2rem; font-weight: 700; word-break: break-word; }
+    .company-name { color: var(--muted); font-size: 0.85rem; margin-top: 0.15rem; }
+    .badges { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .badge { font-size: 0.72rem; font-weight: 700; padding: 0.22rem 0.6rem; border-radius: 999px; background: rgba(255,255,255,0.1); }
+    .badge.premium { background: rgba(52, 211, 153, 0.2); color: #a7f3d0; }
+    .badge.trial { background: rgba(251, 191, 36, 0.2); color: #fde68a; }
+    .badge.free { background: rgba(255,255,255,0.1); color: #dbeafe; }
+    .badge.off { background: rgba(248, 113, 113, 0.2); color: #fecaca; }
+    .badge.arch { background: rgba(148, 163, 184, 0.2); color: #cbd5e1; }
+    .meta { font-size: 0.8rem; color: var(--muted); line-height: 1.7; word-break: break-word; }
+    .meta b { color: var(--text); font-weight: 600; }
+    .row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+    .row .select-dur { flex: 1 1 140px; min-width: 130px; padding: 0.55rem 0.7rem; font-size: 0.85rem; }
+    .row button { font-size: 0.8rem; padding: 0.55rem 0.75rem; }
+    .divider { height: 1px; background: var(--border); margin: 0.15rem 0; }
+    .code { margin-top: 0.5rem; padding: 0.75rem; border-radius: 12px; background: rgba(59, 130, 246, 0.14); border: 1px solid rgba(108, 160, 255, 0.3); text-align: center; }
+    .code-number { font-size: 1.7rem; font-weight: 800; letter-spacing: 0.35em; margin: 0.25rem 0; }
+    .code-exp { font-size: 0.75rem; color: var(--muted); }
+    .msg { padding: 0.8rem 1rem; border-radius: 12px; margin-bottom: 1rem; font-size: 0.9rem; }
+    .msg.error { background: rgba(248, 113, 113, 0.15); color: #fecaca; border: 1px solid rgba(248,113,113,0.35); }
+    .msg.ok { background: rgba(52, 211, 153, 0.15); color: #bbf7d0; border: 1px solid rgba(52,211,153,0.35); }
+    .empty { color: var(--muted); padding: 2rem; text-align: center; }
+    .footer-note { margin-top: 2rem; color: var(--muted); font-size: 0.8rem; text-align: center; }
+    .hidden { display: none !important; }
+    @media (max-width: 640px) {
+      .wrap { padding: 1.25rem 0.85rem 3rem; }
+      .card { padding: 1.1rem; }
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Consola del proveedor</h1>
+        <div class="subtitle">Autoservicio · administración de licencias y clientes</div>
+      </div>
+      <div id="headerActions" class="row hidden">
+        <button id="refreshBtn" type="button">Actualizar</button>
+        <button id="logoutBtn" type="button" class="btn-danger">Cerrar sesión</button>
+      </div>
+    </header>
+
+    <div id="msg" class="msg hidden"></div>
+
+    <section id="loginView" class="card login">
+      <h2>Acceso exclusivo del proveedor</h2>
+      <p class="subtitle" style="margin-bottom:1.25rem">Ingresá con las credenciales de administrador configuradas en el servidor de licencias. No están incluidas en el instalador de los clientes.</p>
+      <form id="loginForm">
+        <div class="field">
+          <label for="user">Usuario</label>
+          <input id="user" name="user" autocomplete="username" required autofocus>
+        </div>
+        <div class="field">
+          <label for="pass">Contraseña</label>
+          <input id="pass" name="pass" type="password" autocomplete="current-password" required>
+        </div>
+        <button id="loginBtn" class="btn-primary btn-full" type="submit">Ingresar</button>
+      </form>
+      <p class="footer-note">La sesión se guarda solo en memoria: se cierra al recargar la página.</p>
+    </section>
+
+    <section id="appView" class="hidden">
+      <div class="toolbar">
+        <input id="search" class="search" type="search" placeholder="Buscar por usuario, empresa, email o licencia">
+        <label class="check"><input id="showArchived" type="checkbox"> Mostrar archivadas</label>
+      </div>
+      <div id="stats" class="stats"></div>
+      <div id="list" class="grid"></div>
+      <p class="footer-note">Los cambios se aplican de inmediato en el servidor de licencias.</p>
+    </section>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      var token = null;
+      var companies = [];
+      var codes = {};
+      var busy = {};
+
+      var $ = function (id) { return document.getElementById(id); };
+      var loginView = $('loginView');
+      var appView = $('appView');
+      var headerActions = $('headerActions');
+      var msgBox = $('msg');
+
+      function escapeHtml(value) {
+        return String(value == null ? '' : value)
+          .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      }
+
+      function fmtDate(value) {
+        if (!value) return '—';
+        var d = new Date(value);
+        return isNaN(d.getTime()) ? '—' : d.toLocaleString('es-AR');
+      }
+
+      function showMsg(text, kind) {
+        if (!text) { msgBox.className = 'msg hidden'; msgBox.textContent = ''; return; }
+        msgBox.className = 'msg ' + (kind || 'ok');
+        msgBox.textContent = text;
+      }
+
+      async function api(path, options) {
+        var init = Object.assign({}, options || {});
+        init.headers = Object.assign({ 'Content-Type': 'application/json' }, init.headers || {});
+        if (token) init.headers.Authorization = 'Bearer ' + token;
+        var res = await fetch(path, init);
+        var data = {};
+        try { data = await res.json(); } catch (_) {}
+        if (res.status === 401 || res.status === 403) {
+          logout('La sesión expiró. Ingresá de nuevo.');
+          throw new Error(data.message || 'Sesión expirada');
+        }
+        if (!res.ok) throw new Error(data.message || ('Error HTTP ' + res.status));
+        return data;
+      }
+
+      function premiumActiva(c) {
+        if (!c.isPremium) return false;
+        return !c.premiumExpiry || new Date(c.premiumExpiry) > new Date();
+      }
+
+      function trialVigente(c) {
+        if (premiumActiva(c)) return false;
+        return !!c.trialEnd && new Date(c.trialEnd) > new Date();
+      }
+
+      function puedeGestionar(c) {
+        return c.activo !== false && !c.archivada;
+      }
+
+      function badge(texto, clase) {
+        return '<span class="badge ' + clase + '">' + escapeHtml(texto) + '</span>';
+      }
+
+      function renderStats() {
+        var visibles = companies.filter(function (c) { return !c.archivada; });
+        var premium = visibles.filter(premiumActiva).length;
+        var trial = visibles.filter(trialVigente).length;
+        var inactivas = visibles.filter(function (c) { return c.activo === false; }).length;
+        $('stats').innerHTML =
+          '<span class="stat">Empresas: <b>' + visibles.length + '</b></span>' +
+          '<span class="stat">Premium: <b>' + premium + '</b></span>' +
+          '<span class="stat">En trial: <b>' + trial + '</b></span>' +
+          '<span class="stat">Inactivas: <b>' + inactivas + '</b></span>';
+      }
+
+      function render() {
+        renderStats();
+        var q = $('search').value.trim().toLowerCase();
+        var includeArchived = $('showArchived').checked;
+        var visibles = companies.filter(function (c) {
+          if (!includeArchived && c.archivada) return false;
+          if (!q) return true;
+          return [c.username, c.nombre, c.email, c.licenseKey]
+            .some(function (v) { return String(v || '').toLowerCase().indexOf(q) >= 0; });
+        });
+
+        var order = function (c) { return premiumActiva(c) ? 0 : (trialVigente(c) ? 1 : 2); };
+        visibles.sort(function (a, b) { return order(a) - order(b); });
+
+        if (!visibles.length) {
+          $('list').innerHTML = '<div class="card empty">' +
+            (companies.length ? 'No hay empresas que coincidan con la búsqueda.' : 'Todavía no hay empresas registradas.') +
+            '</div>';
+          return;
+        }
+
+        $('list').innerHTML = visibles.map(function (c) {
+          var prem = premiumActiva(c);
+          var trial = trialVigente(c);
+          var activa = c.activo !== false;
+          var gestionable = puedeGestionar(c);
+          var code = codes[c.id] || (c.resetCode && c.resetCodeExpiry && new Date(c.resetCodeExpiry) > new Date()
+            ? { code: c.resetCode, expiry: c.resetCodeExpiry } : null);
+          var b = busy[c.id];
+
+          return '<article class="card company" data-id="' + escapeHtml(c.id) + '">' +
+            '<div class="company-head"><div>' +
+              '<div class="company-user">' + escapeHtml(c.username || 'Sin usuario') + '</div>' +
+              '<div class="company-name">' + escapeHtml(c.nombre || 'Sin nombre') + '</div>' +
+            '</div><div class="badges">' +
+              (prem ? badge('Premium', 'premium') : trial ? badge('Trial', 'trial') : badge('Free', 'free')) +
+              (activa ? badge('Activa', 'premium') : badge('Inactiva', 'off')) +
+              (c.archivada ? badge('Archivada', 'arch') : '') +
+            '</div></div>' +
+
+            '<div class="meta">' +
+              (c.email ? 'Email: <b>' + escapeHtml(c.email) + '</b><br>' : '') +
+              'Licencia: <b>' + escapeHtml(c.licenseKey || '—') + '</b><br>' +
+              (prem ? 'Premium hasta: <b>' + escapeHtml(c.premiumExpiry ? fmtDate(c.premiumExpiry) : 'sin vencimiento') + '</b><br>' : '') +
+              (!prem && trial ? 'Trial hasta: <b>' + escapeHtml(fmtDate(c.trialEnd)) + '</b><br>' : '') +
+              'Alta: ' + escapeHtml(fmtDate(c.createdAt)) +
+            '</div>' +
+
+            '<div class="divider"></div>' +
+
+            '<div class="row">' +
+              '<select class="select-dur" data-act="duracion" aria-label="Duración del Premium">' +
+                '<option value="30">30 días</option>' +
+                '<option value="365">1 año</option>' +
+                '<option value="sin">Sin vencimiento</option>' +
+              '</select>' +
+              '<button type="button" data-act="premium" ' + (!gestionable || b ? 'disabled' : '') + '>' + (prem ? 'Renovar Premium' : 'Activar Premium') + '</button>' +
+              (prem ? '<button type="button" data-act="desactivar-premium" class="btn-danger" ' + (!gestionable || b ? 'disabled' : '') + '>Desactivar</button>' : '') +
+            '</div>' +
+
+            '<div class="row">' +
+              (!prem ? '<button type="button" data-act="trial" ' + (!gestionable || b ? 'disabled' : '') + '>' + (trial ? 'Finalizar trial' : 'Reiniciar trial (30 días)') + '</button>' : '') +
+              '<button type="button" data-act="activo" ' + (b ? 'disabled' : '') + '>' + (activa ? 'Desactivar empresa' : 'Reactivar empresa') + '</button>' +
+              '<button type="button" data-act="archivar" ' + (b ? 'disabled' : '') + '>' + (c.archivada ? 'Desarchivar' : 'Archivar') + '</button>' +
+            '</div>' +
+
+            '<div class="divider"></div>' +
+
+            '<div class="row">' +
+              '<button type="button" data-act="code" ' + (b ? 'disabled' : '') + '>Generar código de recuperación</button>' +
+              '<button type="button" data-act="password" ' + (b ? 'disabled' : '') + '>Cambiar contraseña</button>' +
+              '<button type="button" data-act="eliminar" class="btn-danger" ' + (b ? 'disabled' : '') + '>Eliminar</button>' +
+            '</div>' +
+
+            (code ? '<div class="code"><div class="code-exp">Código para ' + escapeHtml(c.username || 'la empresa') + '</div>' +
+              '<div class="code-number">' + escapeHtml(code.code) + '</div>' +
+              '<div class="code-exp">Válido hasta ' + escapeHtml(fmtDate(code.expiry)) + '</div></div>' : '') +
+          '</article>';
+        }).join('');
+      }
+
+      async function cargar() {
+        try {
+          var data = await api('/api/admin/companies');
+          companies = Array.isArray(data) ? data : [];
+          render();
+        } catch (e) {
+          if (token) showMsg(e.message || 'No se pudieron cargar las empresas.', 'error');
+        }
+      }
+
+      function logout(reason) {
+        token = null;
+        companies = [];
+        codes = {};
+        busy = {};
+        appView.classList.add('hidden');
+        headerActions.classList.add('hidden');
+        loginView.classList.remove('hidden');
+        $('pass').value = '';
+        if (reason) showMsg(reason, 'error');
+      }
+
+      $('loginForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        showMsg('');
+        var btn = $('loginBtn');
+        btn.disabled = true;
+        btn.textContent = 'Ingresando...';
+        try {
+          var res = await fetch('/api/auth/admin/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: $('user').value.trim(), password: $('pass').value })
+          });
+          var data = {};
+          try { data = await res.json(); } catch (_) {}
+          if (!res.ok) throw new Error(data.message || 'No se pudo iniciar sesión.');
+          token = data.access_token;
+          loginView.classList.add('hidden');
+          appView.classList.remove('hidden');
+          headerActions.classList.remove('hidden');
+          showMsg('');
+          await cargar();
+        } catch (err) {
+          showMsg(err.message || 'No se pudo iniciar sesión.', 'error');
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Ingresar';
+        }
+      });
+
+      $('logoutBtn').addEventListener('click', function () { logout(''); });
+      $('refreshBtn').addEventListener('click', function () { cargar(); });
+      $('search').addEventListener('input', render);
+      $('showArchived').addEventListener('change', render);
+
+      $('list').addEventListener('change', function (e) {
+        var target = e.target;
+        if (target && target.dataset && target.dataset.act === 'duracion') {
+          var card = target.closest('.company');
+          var c = companies.find(function (x) { return x.id === card.dataset.id; });
+          if (c) c.__duracion = target.value;
+        }
+      });
+
+      $('list').addEventListener('click', async function (e) {
+        var btn = e.target.closest('button[data-act]');
+        if (!btn || btn.disabled) return;
+        var card = btn.closest('.company');
+        var id = card.dataset.id;
+        var c = companies.find(function (x) { return x.id === id; });
+        if (!c) return;
+
+        var act = btn.dataset.act;
+        var url = '/api/admin/companies/' + encodeURIComponent(id);
+        var body = null;
+        var method = 'PATCH';
+        var confirmText = '';
+
+        if (act === 'premium') {
+          var sel = card.querySelector('select[data-act="duracion"]');
+          var duracion = c.__duracion || (sel ? sel.value : '30');
+          body = duracion === 'sin'
+            ? { isPremium: true, sinVencimiento: true }
+            : { isPremium: true, days: Number(duracion) };
+        } else if (act === 'desactivar-premium') {
+          body = { isPremium: false };
+        } else if (act === 'trial') {
+          body = { activo: !trialVigente(c) };
+          url += '/trial';
+        } else if (act === 'activo') {
+          body = { activo: c.activo === false };
+          url += '/activo';
+        } else if (act === 'archivar') {
+          body = { archivada: !c.archivada };
+          url += '/archivar';
+        } else if (act === 'code') {
+          method = 'POST';
+          url += '/reset-code';
+        } else if (act === 'password') {
+          var nueva = window.prompt('Nueva contraseña para ' + (c.username || 'la empresa') + ' (mínimo 6 caracteres):');
+          if (!nueva) return;
+          if (nueva.length < 6) { showMsg('La contraseña debe tener al menos 6 caracteres.', 'error'); return; }
+          body = { password: nueva };
+          url += '/password';
+        } else if (act === 'eliminar') {
+          confirmText = '¿Eliminar definitivamente la empresa ' + (c.username || c.nombre || id) + '? Esta acción no se puede deshacer.';
+          if (!window.confirm(confirmText)) return;
+          method = 'DELETE';
+        } else {
+          return;
+        }
+
+        busy[id] = true;
+        showMsg('');
+        render();
+        try {
+          var init = { method: method };
+          if (body) init.body = JSON.stringify(body);
+          var data = await api(url, init);
+          if (act === 'code') codes[id] = { code: data.resetCode, expiry: data.resetCodeExpiry };
+          if (act === 'eliminar') {
+            companies = companies.filter(function (x) { return x.id !== id; });
+            delete codes[id];
+            showMsg('Empresa eliminada.', 'ok');
+          } else {
+            showMsg('Cambio aplicado correctamente.', 'ok');
+          }
+          await cargar();
+        } catch (err) {
+          showMsg(err.message || 'No se pudo aplicar el cambio.', 'error');
+        } finally {
+          delete busy[id];
+          render();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

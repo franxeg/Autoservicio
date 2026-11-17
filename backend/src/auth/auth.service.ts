@@ -2,32 +2,17 @@ import { Injectable, OnModuleInit, UnauthorizedException, ConflictException, For
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { Rol, Prisma } from '@prisma/client';
-import { CrearEmpresaDto } from './dto/crear-empresa.dto';
 import { SetupAdminDto } from './dto/setup-admin.dto';
 import { SetupInicialDto } from './dto/setup-inicial.dto';
-import { ResetearCredencialesDto } from './dto/resetear-credenciales.dto';
-import { CambiarPasswordAdminDto } from './dto/cambiar-password-admin.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ReiniciarSistemaDto } from './dto/reiniciar-sistema.dto';
 import { ActualizarEmpresaDto } from './dto/actualizar-empresa.dto';
 import { sembrarCatalogoInicial } from './catalogo-inicial';
 import { INSTANCIA_APP } from './instancia';
 import * as bcrypt from 'bcryptjs';
-import { randomBytes, timingSafeEqual } from 'crypto';
-import { readFileSync, writeFileSync, existsSync, mkdirSync, statSync, unlinkSync } from 'fs';
+import { existsSync, mkdirSync, statSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import { spawn } from 'child_process';
-
-function generarPasswordTemporal(): string {
-  return randomBytes(6).toString('base64url');
-}
-
-function credencialesCoinciden(ingresada: string, esperada: string): boolean {
-  const a = Buffer.from(ingresada);
-  const b = Buffer.from(esperada);
-  if (a.length !== b.length) return false;
-  return timingSafeEqual(a, b);
-}
 
 @Injectable()
 export class AuthService implements OnModuleInit {
@@ -104,16 +89,19 @@ export class AuthService implements OnModuleInit {
   }
 
   /**
-   * Token de administrador del license-server para que el backend actúe como
-   * proxy autenticado del panel de proveedor (las credenciales admin nunca
-   * viajan al frontend).
+   * Token de administrador del license-server, usado solo por flujos internos
+   * del backend (no por endpoints del panel). No hay credenciales por defecto:
+   * el instalador de clientes no las incluye.
    */
   private async lsAdminToken(): Promise<string> {
     if (this.lsTokenCache && this.lsTokenCache.expires > Date.now()) {
       return this.lsTokenCache.token;
     }
-    const adminUser = process.env.LICENSE_SERVER_ADMIN_USER || process.env.ADMIN_USER || 'admin';
-    const adminPass = process.env.LICENSE_SERVER_ADMIN_PASSWORD || process.env.ADMIN_PASSWORD || 'admin';
+    const adminUser = process.env.LICENSE_SERVER_ADMIN_USER || process.env.ADMIN_USER;
+    const adminPass = process.env.LICENSE_SERVER_ADMIN_PASSWORD || process.env.ADMIN_PASSWORD;
+    if (!adminUser || !adminPass) {
+      throw new BadGatewayException('Las credenciales de administrador del servidor de licencias no están configuradas en esta instalación.');
+    }
     let res: any;
     try {
       res = await fetch(`${this.getLicenseUrl()}/api/auth/admin/login`, {
@@ -125,7 +113,7 @@ export class AuthService implements OnModuleInit {
       throw new BadGatewayException('No se pudo conectar con el servidor de licencias. Verificá tu conexión a internet.');
     }
     if (!res.ok) {
-      throw new BadGatewayException('No se pudo autenticar con el servidor de licencias. Configurá LICENSE_SERVER_ADMIN_USER y LICENSE_SERVER_ADMIN_PASSWORD en config.env con las credenciales de administrador del license-server (ADMIN_USER / ADMIN_PASSWORD).');
+      throw new BadGatewayException('No se pudo autenticar con el servidor de licencias. Las credenciales de administrador (ADMIN_USER / ADMIN_PASSWORD) no son válidas o cambiaron.');
     }
     const data = await res.json();
     this.lsTokenCache = { token: data.access_token, expires: Date.now() + 5 * 60 * 1000 };
@@ -577,43 +565,16 @@ export class AuthService implements OnModuleInit {
     return { ok: true, nombre, telefono: dto.telefono?.trim() || '', direccion: dto.direccion?.trim() || '' };
   }
 
-  // --- Proxy de proveedor hacia el license-server ---
+  // --- Acceso interno al license-server (sin exponer endpoints de panel) ---
 
   async proveedorListarEmpresas() {
     return this.lsRequest('/api/admin/companies');
-  }
-
-  async proveedorCambiarPremium(id: string, isPremium: boolean, days = 30) {
-    return this.lsRequest(`/api/admin/companies/${encodeURIComponent(id)}/premium`, {
-      method: 'PATCH',
-      body: JSON.stringify({ isPremium, days }),
-    });
-  }
-
-  async proveedorCambiarTrial(id: string, activo: boolean) {
-    return this.lsRequest(`/api/admin/companies/${encodeURIComponent(id)}/trial`, {
-      method: 'PATCH',
-      body: JSON.stringify({ activo }),
-    });
-  }
-
-  async proveedorGenerarCodigo(id: string) {
-    return this.lsRequest(`/api/admin/companies/${encodeURIComponent(id)}/reset-code`, {
-      method: 'POST',
-    });
   }
 
   async proveedorCambiarActivo(id: string, activo: boolean) {
     return this.lsRequest(`/api/admin/companies/${encodeURIComponent(id)}/activo`, {
       method: 'PATCH',
       body: JSON.stringify({ activo }),
-    });
-  }
-
-  async proveedorArchivar(id: string, archivada: boolean) {
-    return this.lsRequest(`/api/admin/companies/${encodeURIComponent(id)}/archivar`, {
-      method: 'PATCH',
-      body: JSON.stringify({ archivada }),
     });
   }
 
@@ -693,186 +654,6 @@ export class AuthService implements OnModuleInit {
     const password = await bcrypt.hash(passwordNueva, 10);
     await this.prisma.tenant.usuario.update({ where: { id: userId }, data: { password } });
     return { ok: true, message: 'Contraseña actualizada correctamente' };
-  }
-
-  async loginProveedor(usuario: string, password: string) {
-    const expectedUser = process.env.PROVIDER_USER;
-    const expectedPass = process.env.PROVIDER_PASSWORD;
-    if (!expectedUser || !expectedPass || !credencialesCoinciden(usuario, expectedUser) || !credencialesCoinciden(password, expectedPass)) {
-      throw new UnauthorizedException('Credenciales de proveedor inválidas.');
-    }
-    const payload = { sub: 'proveedor', rol: 'PROVEEDOR', proveedor: true, instancia: INSTANCIA_APP };
-    return { access_token: this.jwtService.sign(payload), rol: 'PROVEEDOR', empresa: 'Panel de proveedor' };
-  }
-
-  async cambiarPasswordProveedor(passwordActual: string, passwordNueva: string) {
-    const esperada = process.env.PROVIDER_PASSWORD;
-    if (!esperada || !credencialesCoinciden(passwordActual, esperada)) {
-      throw new UnauthorizedException('La contraseña actual no es correcta.');
-    }
-    if (credencialesCoinciden(passwordNueva, esperada)) {
-      throw new BadRequestException('La nueva contraseña debe ser distinta de la actual.');
-    }
-    try {
-      const envPath = join(process.cwd(), '.env');
-      const contenido = readFileSync(envPath, 'utf8');
-      const escapada = passwordNueva.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-      const nuevaLinea = `PROVIDER_PASSWORD="${escapada}"`;
-      const actualizado = contenido.includes('PROVIDER_PASSWORD=')
-        ? contenido.replace(/^PROVIDER_PASSWORD=.*$/m, nuevaLinea)
-        : `${contenido}\n${nuevaLinea}\n`;
-      writeFileSync(envPath, actualizado, 'utf8');
-      process.env.PROVIDER_PASSWORD = passwordNueva;
-      return { ok: true, mensaje: 'Contraseña de proveedor actualizada. Se aplicó al instante.' };
-    } catch {
-      throw new InternalServerErrorException('No se pudo guardar el cambio. Revisá los permisos del archivo .env.');
-    }
-  }
-
-  async crearEmpresa(dto: CrearEmpresaDto) {
-    return this.prisma.runAsSystem(async (tx) => {
-      const exists = await tx.usuario.findFirst({
-        where: { OR: [{ username: dto.usuarioSetup }, { email: dto.usuarioSetup }] },
-      });
-      if (exists) throw new ConflictException(`El usuario '${dto.usuarioSetup}' ya está en uso. Elegí otro para el acceso inicial.`);
-
-      const passwordTemporal = generarPasswordTemporal();
-      const password = await bcrypt.hash(passwordTemporal, 10);
-
-      const empresa = await tx.empresa.create({
-        data: { nombre: dto.nombreEmpresa, cuit: dto.cuit ?? null },
-      });
-      const sucursal = await tx.sucursal.create({
-        data: { nombre: 'Casa Central', empresaId: empresa.id },
-      });
-      const setup = await tx.usuario.create({
-        data: {
-          username: dto.usuarioSetup,
-          password,
-          nombre: 'Configuración inicial',
-          rol: Rol.SETUP,
-          sucursalId: sucursal.id,
-          empresaId: empresa.id,
-        },
-      });
-
-      return {
-        empresa,
-        sucursal,
-        credenciales: {
-          usuario: setup.username,
-          password: passwordTemporal,
-          passwordTemporal: true,
-        },
-        nota: 'Entregá estas credenciales al cliente. Al primer ingreso deberá crear su usuario administrador.',
-      };
-    });
-  }
-
-  async resetearCredenciales(dto: ResetearCredencialesDto) {
-    return this.prisma.runAsSystem(async (tx) => {
-      const empresa = await tx.empresa.findUnique({
-        where: { id: dto.empresaId },
-        include: { sucursales: true },
-      });
-      if (!empresa) throw new NotFoundException('Empresa no encontrada.');
-      if (empresa.sucursales.length === 0) {
-        throw new BadRequestException('La empresa no tiene sucursales.');
-      }
-
-      await tx.usuario.updateMany({ where: { empresaId: empresa.id }, data: { activo: false } });
-
-      const passwordTemporal = dto.passwordTemporal?.trim() || generarPasswordTemporal();
-      const password = await bcrypt.hash(passwordTemporal, 10);
-      const username = dto.usuarioSetup?.trim()
-        || `acceso_${randomBytes(4).toString('hex')}`;
-
-      let setup;
-      try {
-        setup = await tx.usuario.create({
-          data: {
-            username,
-            password,
-            nombre: 'Configuración inicial',
-            rol: Rol.SETUP,
-            sucursalId: empresa.sucursales[0].id,
-            empresaId: empresa.id,
-          },
-        });
-      } catch (error) {
-        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-          throw new ConflictException(`El usuario '${username}' ya está en uso. Elegí otro.`);
-        }
-        throw error;
-      }
-
-      return {
-        empresa,
-        credenciales: {
-          usuario: setup.username,
-          password: passwordTemporal,
-          passwordTemporal: true,
-        },
-        nota: 'Se bloquearon los accesos anteriores. El cliente deberá crear un nuevo administrador al ingresar con estas credenciales.',
-      };
-    });
-  }
-
-  async listarEmpresas() {
-    return this.prisma.runAsSystem(async (tx) => {
-      const empresas = await tx.empresa.findMany({
-        orderBy: { createdAt: 'desc' },
-        include: { _count: { select: { sucursales: true, usuarios: true } } },
-      });
-      const pendientes = await tx.usuario.groupBy({
-        by: ['empresaId'],
-        where: { rol: Rol.SETUP, activo: true },
-        _count: true,
-      });
-      const pendientesPorEmpresa = new Map(pendientes.map(p => [p.empresaId, p._count]));
-      const admins = await tx.usuario.findMany({
-        where: { rol: Rol.ADMIN, activo: true },
-        select: { empresaId: true, username: true },
-      });
-      const adminPorEmpresa = new Map(admins.map(a => [a.empresaId, a.username]));
-      return empresas.map((e) => {
-        const setupPendiente = (pendientesPorEmpresa.get(e.id) ?? 0) > 0;
-        return {
-          id: e.id,
-          nombre: e.nombre,
-          cuit: e.cuit,
-          activa: e.activa,
-          createdAt: e.createdAt,
-          sucursales: e._count.sucursales,
-          usuarios: e._count.usuarios,
-          adminUsuario: adminPorEmpresa.get(e.id) ?? null,
-          setupPendiente,
-          configurada: !setupPendiente,
-        };
-      });
-    });
-  }
-
-  async cambiarPasswordAdmin(dto: CambiarPasswordAdminDto) {
-    return this.prisma.runAsSystem(async (tx) => {
-      const admin = await tx.usuario.findFirst({
-        where: { empresaId: dto.empresaId, rol: Rol.ADMIN, activo: true },
-      });
-      if (!admin) throw new NotFoundException('La empresa no tiene un ADMIN activo.');
-      const passwordNueva = dto.passwordNueva?.trim() || generarPasswordTemporal();
-      if (passwordNueva.length < 6) throw new BadRequestException('La contraseña debe tener al menos 6 caracteres');
-      const password = await bcrypt.hash(passwordNueva, 10);
-      await tx.usuario.update({ where: { id: admin.id }, data: { password } });
-      return {
-        empresa: { id: admin.empresaId },
-        credenciales: {
-          usuario: admin.username,
-          password: passwordNueva,
-          passwordTemporal: !dto.passwordNueva,
-        },
-        nota: 'La contraseña del ADMIN fue actualizada. Los demás usuarios no se vieron afectados.',
-      };
-    });
   }
 
   /**

@@ -14,7 +14,6 @@ import Configuracion from './pages/Configuracion';
 import Login from './pages/Login';
 import Registro from './pages/Registro';
 import Setup from './pages/Setup';
-import Proveedor from './pages/Proveedor';
 import { useAuthStore } from './lib/store';
 import PremiumGate from './components/PremiumGate';
 
@@ -49,7 +48,6 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/registro" element={<Registro />} />
         <Route path="/setup" element={<Setup />} />
-        <Route path="/proveedor" element={<Proveedor />} />
         <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
           <Route index element={<RequireRole roles={['ADMIN']}><PremiumGate titulo="Dashboard"><Dashboard /></PremiumGate></RequireRole>} />
           <Route path="pos" element={<RequireRole roles={['ADMIN', 'CAJERO']}><POS /></RequireRole>} />

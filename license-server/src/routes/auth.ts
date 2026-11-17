@@ -145,7 +145,12 @@ export default function authRoutes(prisma: PrismaClient) {
         return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres' });
       }
 
-      const company = await prisma.company.findUnique({ where: { username } });
+      // Se busca sin distinguir mayúsculas ni espacios para que el código
+      // entregado por el proveedor funcione aunque el usuario local de la
+      // aplicación no coincida exactamente con el usuario de la licencia.
+      const company = await prisma.company.findFirst({
+        where: { username: { equals: String(username).trim(), mode: 'insensitive' } },
+      });
       if (!company) {
         return res.status(400).json({ message: 'Código inválido o expirado' });
       }
@@ -170,13 +175,19 @@ export default function authRoutes(prisma: PrismaClient) {
     }
   });
 
-  // Admin login
+  // Admin login de la consola standalone del proveedor. No hay credenciales
+  // por defecto: deben configurarse ADMIN_USER y ADMIN_PASSWORD en el servidor.
   router.post('/admin/login', async (req, res) => {
-    const { username, password } = req.body;
-    const adminUser = process.env.ADMIN_USER || 'admin';
-    const adminPass = process.env.ADMIN_PASSWORD || 'admin';
+    const adminUser = process.env.ADMIN_USER;
+    const adminPass = process.env.ADMIN_PASSWORD;
+    if (!adminUser || !adminPass) {
+      return res.status(503).json({
+        message: 'Consola del proveedor no configurada: definí ADMIN_USER y ADMIN_PASSWORD en el servidor de licencias.',
+      });
+    }
+    const { username, password } = req.body || {};
     if (username !== adminUser || password !== adminPass) {
-      return res.status(401).json({ message: 'Credenciales de admin inválidas' });
+      return res.status(401).json({ message: 'Credenciales de administrador inválidas' });
     }
     const token = jwt.sign({ sub: 'admin', isAdmin: true }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
     res.json({ access_token: token });

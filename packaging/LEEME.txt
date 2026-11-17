@@ -21,13 +21,17 @@
 
 -- PRIMERA PUESTA EN MARCHA (solo una vez) ----------------------------
 
- 1. Abrir  http://localhost:3000/proveedor
- 2. Ingresar con el usuario y contrasena de proveedor, que estan en el
-    archivo  config.env  (lineas PROVIDER_USER y PROVIDER_PASSWORD).
- 3. Completar "Crear nueva empresa" con el nombre del negocio.
-    El sistema muestra un usuario y contrasena temporales.
- 4. Entregar esas credenciales al comercio para que ingrese por
-    http://localhost:3000/login  y cree su administrador definitivo.
+ 1. Abrir  http://localhost:3000/registro  (requiere conexion a Internet).
+ 2. Elegir "Registrarse" y completar nombre del negocio, usuario y
+    contrasena. La cuenta queda vinculada al servidor de licencias con
+    30 dias de prueba.
+ 3. Al finalizar se crea automaticamente el usuario administrador local.
+ 4. Si ya tenes una licencia, elegir "Iniciar sesion" e ingresar con el
+    usuario y contrasena de la cuenta.
+
+  La administracion de licencias (Premium, trial, codigos de
+  recuperacion) la realiza el proveedor desde su consola, no desde
+  esta instalacion.
 
 
 -- QUE NO TOCAR --------------------------------------------------------

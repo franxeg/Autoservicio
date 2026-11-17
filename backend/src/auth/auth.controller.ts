@@ -1,20 +1,13 @@
-import { Controller, Post, Body, Get, Patch, Param, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Get, Patch, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
-import { CrearEmpresaDto } from './dto/crear-empresa.dto';
 import { SetupAdminDto } from './dto/setup-admin.dto';
 import { SetupInicialDto } from './dto/setup-inicial.dto';
-import { CambiarPasswordProveedorDto } from './dto/cambiar-password-proveedor.dto';
-import { ResetearCredencialesDto } from './dto/resetear-credenciales.dto';
-import { CambiarPasswordAdminDto } from './dto/cambiar-password-admin.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ActualizarEmpresaDto } from './dto/actualizar-empresa.dto';
-import { PremiumProveedorDto } from './dto/premium-proveedor.dto';
-import { TrialProveedorDto } from './dto/trial-proveedor.dto';
 import { ReiniciarSistemaDto } from './dto/reiniciar-sistema.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { ProviderGuard } from './guards/provider.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 
 @ApiTags('auth')
@@ -56,89 +49,6 @@ export class AuthController {
   @Patch('empresa')
   async actualizarEmpresa(@CurrentUser() user: any, @Body() dto: ActualizarEmpresaDto) {
     return this.authService.actualizarEmpresa(user, dto);
-  }
-
-  @Post('login-proveedor')
-  async loginProveedor(@Body() dto: LoginDto) {
-    return this.authService.loginProveedor(dto.usuario, dto.password);
-  }
-
-  // Panel de proveedor: proxy autenticado hacia el license-server.
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, ProviderGuard)
-  @Get('proveedor/empresas')
-  async proveedorEmpresas() {
-    return this.authService.proveedorListarEmpresas();
-  }
-
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, ProviderGuard)
-  @Patch('proveedor/empresas/:id/premium')
-  async proveedorPremium(@Param('id') id: string, @Body() dto: PremiumProveedorDto) {
-    return this.authService.proveedorCambiarPremium(id, dto.isPremium, dto.days);
-  }
-
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, ProviderGuard)
-  @Patch('proveedor/empresas/:id/trial')
-  async proveedorTrial(@Param('id') id: string, @Body() dto: TrialProveedorDto) {
-    return this.authService.proveedorCambiarTrial(id, dto.activo);
-  }
-
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, ProviderGuard)
-  @Patch('proveedor/empresas/:id/activo')
-  async proveedorActivo(@Param('id') id: string, @Body() body: { activo?: boolean }) {
-    return this.authService.proveedorCambiarActivo(id, body.activo !== false);
-  }
-
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, ProviderGuard)
-  @Patch('proveedor/empresas/:id/archivar')
-  async proveedorArchivar(@Param('id') id: string, @Body() body: { archivada?: boolean }) {
-    return this.authService.proveedorArchivar(id, body.archivada !== false);
-  }
-
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, ProviderGuard)
-  @Post('proveedor/empresas/:id/reset-code')
-  async proveedorResetCode(@Param('id') id: string) {
-    return this.authService.proveedorGenerarCodigo(id);
-  }
-
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, ProviderGuard)
-  @Get('empresas')
-  async listarEmpresas() {
-    return this.authService.listarEmpresas();
-  }
-
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, ProviderGuard)
-  @Post('crear-empresa')
-  async crearEmpresa(@Body() dto: CrearEmpresaDto) {
-    return this.authService.crearEmpresa(dto);
-  }
-
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, ProviderGuard)
-  @Post('cambiar-password-proveedor')
-  async cambiarPasswordProveedor(@Body() dto: CambiarPasswordProveedorDto) {
-    return this.authService.cambiarPasswordProveedor(dto.passwordActual, dto.passwordNueva);
-  }
-
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, ProviderGuard)
-  @Post('resetear-credenciales')
-  async resetearCredenciales(@Body() dto: ResetearCredencialesDto) {
-    return this.authService.resetearCredenciales(dto);
-  }
-
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, ProviderGuard)
-  @Post('cambiar-password-admin')
-  async cambiarPasswordAdmin(@Body() dto: CambiarPasswordAdminDto) {
-    return this.authService.cambiarPasswordAdmin(dto);
   }
 
   @Post('setup-inicial')

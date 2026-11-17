@@ -153,11 +153,7 @@ if (!$cfg.ContainsKey('APP_PORT'))              { $cfg.APP_PORT = '3000' }
 if (!$cfg.ContainsKey('APP_VERSION'))           { $cfg.APP_VERSION = '1.1.0' }
 if (!$cfg.ContainsKey('JWT_SECRET'))            { $cfg.JWT_SECRET = (New-Secret 48) }
 if (!$cfg.ContainsKey('JWT_EXPIRES_IN'))        { $cfg.JWT_EXPIRES_IN = '30d' }
-if (!$cfg.ContainsKey('PROVIDER_USER'))         { $cfg.PROVIDER_USER = 'Jupiter' }
-if (!$cfg.ContainsKey('PROVIDER_PASSWORD'))     { $cfg.PROVIDER_PASSWORD = 'Proveedor21' }
 if (!$cfg.ContainsKey('LICENSE_SERVER_URL'))    { $cfg.LICENSE_SERVER_URL = 'https://autoservicio-license-server.onrender.com' }
-if (!$cfg.ContainsKey('LICENSE_SERVER_ADMIN_USER'))     { $cfg.LICENSE_SERVER_ADMIN_USER = 'admin' }
-if (!$cfg.ContainsKey('LICENSE_SERVER_ADMIN_PASSWORD')) { $cfg.LICENSE_SERVER_ADMIN_PASSWORD = 'admin123' }
 ($cfg.GetEnumerator() | Sort-Object Name | ForEach-Object { "$($_.Key)=$($_.Value)" }) | Set-Content -Path $configPath -Encoding ASCII
 
 $versionActual = $cfg.APP_VERSION
@@ -267,11 +263,7 @@ Pop-Location
 $env:DATABASE_URL    = $appUrl
 $env:JWT_SECRET      = $cfg.JWT_SECRET
 $env:JWT_EXPIRES_IN  = $cfg.JWT_EXPIRES_IN
-$env:PROVIDER_USER   = $cfg.PROVIDER_USER
-$env:PROVIDER_PASSWORD = $cfg.PROVIDER_PASSWORD
 $env:LICENSE_SERVER_URL = $cfg.LICENSE_SERVER_URL
-$env:LICENSE_SERVER_ADMIN_USER = $cfg.LICENSE_SERVER_ADMIN_USER
-$env:LICENSE_SERVER_ADMIN_PASSWORD = $cfg.LICENSE_SERVER_ADMIN_PASSWORD
 $env:PORT            = $cfg.APP_PORT
 $env:WEB_DIR         = Join-Path $appDir 'public'
 $env:NODE_ENV        = 'production'
@@ -307,7 +299,7 @@ if (!$up) { Log "La aplicacion todavia no responde. Revisa logs\app.err" }
 
 $mensajeFinal = if ($NoBrowser) { 'Aplicacion lista.' } else { 'Aplicacion lista. Abriendo el navegador...' }
 Step 100 $mensajeFinal
-Log "(Panel de proveedor para crear la empresa: http://localhost:$($cfg.APP_PORT)/proveedor)"
+Log "(Primer registro de la empresa: http://localhost:$($cfg.APP_PORT)/registro)"
 Log "Se ejecuta en segundo plano. Para detener: ejecuta detener.bat"
 if (!$NoBrowser) { Start-Process "http://localhost:$($cfg.APP_PORT)" }
 
