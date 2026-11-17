@@ -117,7 +117,9 @@ export async function loginCompany(username: string, password: string): Promise<
       isPremium: data.company.isPremium,
       isTrial: data.company.isTrial,
       trialDaysLeft: data.company.trialDaysLeft,
-      expiryDate: data.company.premiumExpiry || data.company.trialEnd,
+      expiryDate: data.company.isTrial
+        ? data.company.trialEnd
+        : (data.company.premiumExpiry ?? null),
       licenseKey: data.company.licenseKey,
       nombre: data.company.nombre,
     });
@@ -144,7 +146,9 @@ export function saveLicenseSession(session: { token: string; licenseKey?: string
     isPremium: !!company.isPremium,
     isTrial: !!company.isTrial,
     trialDaysLeft: Number(company.trialDaysLeft || 0),
-    expiryDate: company.premiumExpiry || company.trialEnd || null,
+    expiryDate: company.isTrial
+      ? (company.trialEnd || null)
+      : (company.premiumExpiry ?? null),
     licenseKey: session.licenseKey || company.licenseKey || null,
     nombre: company.nombre || null,
   });
@@ -185,7 +189,7 @@ export async function checkLicenseStatus(): Promise<LicenseStatus> {
         isPremium: data.isPremium,
         isTrial: data.isTrial,
         trialDaysLeft: data.trialDaysLeft,
-        expiryDate: data.premiumExpiry || data.trialEnd,
+        expiryDate: data.isTrial ? data.trialEnd : (data.premiumExpiry ?? null),
         licenseKey: data.licenseKey,
         nombre: data.nombre,
       };

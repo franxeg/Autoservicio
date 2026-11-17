@@ -80,11 +80,6 @@
    "nombre": "Congelados",
    "descripcion": null,
    "esSistema": false
-  },
-  {
-   "nombre": "Elaborado",
-   "descripcion": null,
-   "esSistema": false
   }
  ],
  "productos": [
@@ -4142,61 +4137,6 @@
    "nombre": "Mani Con Cascra x 200",
    "codigoBarras": "00000000069",
    "categoria": "Snack"
-  },
-  {
-   "nombre": "Pre Pizza x 2",
-   "codigoBarras": "00000000088",
-   "categoria": "Elaborado"
-  },
-  {
-   "nombre": "Ensaladas Mixtas",
-   "codigoBarras": "00000000151",
-   "categoria": "Elaborado"
-  },
-  {
-   "nombre": "Picada Eco.",
-   "codigoBarras": "00000000153",
-   "categoria": "Elaborado"
-  },
-  {
-   "nombre": "Picada Elaborada",
-   "codigoBarras": "00000000154",
-   "categoria": "Elaborado"
-  },
-  {
-   "nombre": "Tarta Jamoin y Queso 1/2",
-   "codigoBarras": "00000000145",
-   "categoria": "Elaborado"
-  },
-  {
-   "nombre": "Tarta Pollo 1/2",
-   "codigoBarras": "00000000144",
-   "categoria": "Elaborado"
-  },
-  {
-   "nombre": "Tarta Carne 1/2",
-   "codigoBarras": "00000000143",
-   "categoria": "Elaborado"
-  },
-  {
-   "nombre": "Empanada Jamón y Queso c/u",
-   "codigoBarras": "00000000142",
-   "categoria": "Elaborado"
-  },
-  {
-   "nombre": "Empanada de Pollo",
-   "codigoBarras": "00000000141",
-   "categoria": "Elaborado"
-  },
-  {
-   "nombre": "Empanada de Carne",
-   "codigoBarras": "00000000140",
-   "categoria": "Elaborado"
-  },
-  {
-   "nombre": "Pizza Lista Para Hornear",
-   "codigoBarras": "00000000086",
-   "categoria": "Elaborado"
   },
   {
    "nombre": "Topline Seven freezing Mentohol",

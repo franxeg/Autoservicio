@@ -64,8 +64,22 @@ function TabPremium() {
     return () => { activo = false; };
   }, []);
 
-  const diasTrial = status.trialDaysLeft === 1 ? '1 día' : `${status.trialDaysLeft} días`;
-  const venceTrial = status.expiryDate ? new Date(status.expiryDate).toLocaleDateString() : null;
+  // Días y fecha se calculan desde la misma fecha de vencimiento para que el
+  // mensaje no muestre, por ejemplo, "quedan 30 días" con una fecha que no
+  // coincide. La fecha se muestra en formato argentino (día/mes con mes en
+  // letras) para que no se confunda con el formato de EE.UU.
+  const formatoFecha = (valor: string | null) =>
+    valor
+      ? new Date(valor).toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' })
+      : null;
+  const venceTrial = formatoFecha(status.expiryDate);
+  const diasRestantesTrial = (() => {
+    if (!status.expiryDate) return status.trialDaysLeft;
+    const ms = new Date(status.expiryDate).getTime() - Date.now();
+    if (isNaN(ms)) return status.trialDaysLeft;
+    return Math.max(0, Math.ceil(ms / (24 * 60 * 60 * 1000)));
+  })();
+  const diasTrial = diasRestantesTrial === 1 ? '1 día' : `${diasRestantesTrial} días`;
 
   return (
     <div>
@@ -74,7 +88,7 @@ function TabPremium() {
         {status.isTrial ? (
           <span style={{ color: '#059669' }}>✅ Estás en <b>período de prueba</b>. Te quedan <b>{diasTrial}</b> de Premium{venceTrial ? ` (hasta el ${venceTrial})` : ''}.</span>
         ) : status.isPremium ? (
-          <span style={{ color: '#059669' }}>✅ Premium activo hasta {status.expiryDate ? new Date(status.expiryDate).toLocaleDateString() : '—'}</span>
+          <span style={{ color: '#059669' }}>✅ Premium activo {venceTrial ? `hasta el ${venceTrial}` : '(sin vencimiento)'}</span>
         ) : (
           <span style={{ color: '#dc2626' }}>⚠️ Tu período de prueba venció. Suscribite para seguir usando Dashboard, Movimientos y Empleados.</span>
         )}
@@ -425,10 +439,11 @@ function TabPassword() {
         confirmar="Aceptar y continuar"
         onCancel={() => setConfirmarRegistro(false)}
         onConfirm={() => { navigate('/setup?nueva=1'); logout(); }}
-        nota="Antes de eliminar se guarda un respaldo automático en la carpeta de respaldos de la instalación."
+        nota="El respaldo se guarda en la carpeta de respaldos de la instalación (por defecto, C:\Autoservicio\backups)."
       >
-        Atención: si registra una nueva empresa, los datos registrados anteriormente se eliminarán
-        permanentemente y ya no se podrán recuperar. ¿Desea continuar?
+        Atención: si registra una nueva empresa, los datos actuales se eliminarán de esta instalación.
+        Antes de borrarlos se guarda automáticamente un respaldo, así que podrán recuperarse si hace falta.
+        ¿Desea continuar?
       </ConfirmDialog>
     </div>
   );

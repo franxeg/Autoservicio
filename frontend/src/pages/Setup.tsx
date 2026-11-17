@@ -138,7 +138,8 @@ export default function Setup() {
           <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b', padding: 12, borderRadius: 8, margin: '0 0 16px', fontSize: 13, lineHeight: 1.5 }}>
             ⚠️ <b>Atención:</b> al registrar una empresa nueva se eliminarán los datos actuales
             {empresaActual ? <> de <b>{empresaActual}</b></> : null} (ventas, stock, productos y usuarios).
-            Se guardará una copia de seguridad automática antes de eliminar.
+            Antes de eliminarlos se guarda automáticamente un <b>respaldo</b> (copia de seguridad) en la carpeta
+            de respaldos de la instalación, para poder recuperarlos si hace falta.
           </div>
         )}
 
@@ -149,8 +150,14 @@ export default function Setup() {
           </div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0 24px' }}>
-          {/* Columna izquierda: Usuario, Contraseña, Teléfono */}
+        {/*
+          Ordenados por filas (izquierda → derecha) para que el Tab siga el
+          sentido de lectura y las etiquetas de cada fila queden alineadas.
+          El mensaje del verificador de usuario se reserva con minHeight para
+          que no desplace la fila de contraseñas.
+        */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '8px 24px' }}>
+          {/* Fila 1: Usuario | Nombre de la empresa */}
           <div>
             <label>Usuario *</label>
             <input
@@ -160,32 +167,39 @@ export default function Setup() {
               required
               placeholder="Ej: panaderiaelsol"
               autoComplete="off"
-              style={{ width: '100%', padding: 10, margin: '6px 0 4px', borderRadius: 6, border: '1px solid #d1d5db', boxSizing: 'border-box' }}
+              style={{ width: '100%', padding: 10, margin: '6px 0 0', borderRadius: 6, border: '1px solid #d1d5db', boxSizing: 'border-box' }}
             />
-            <div style={{ minHeight: 18 }}>
+            <div style={{ minHeight: 20, paddingTop: 2 }}>
               {usernameStatus === 'checking' && <small style={{ color: '#6b7280' }}>Verificando disponibilidad...</small>}
               {usernameStatus === 'available' && <small style={{ color: '#059669' }}>✅ Usuario disponible</small>}
               {usernameStatus === 'taken' && <small style={{ color: '#dc2626' }}>❌ El usuario ya está en uso en el servidor de licencias</small>}
             </div>
+          </div>
+          <div>
+            <label>Nombre de la empresa *</label>
+            <input value={nombreEmpresa} onChange={e => setNombreEmpresa(e.target.value)} required placeholder="Ej: Panadería El Sol" style={{ width: '100%', padding: 10, margin: '6px 0 0', borderRadius: 6, border: '1px solid #d1d5db', boxSizing: 'border-box' }} />
+            <div style={{ minHeight: 20 }} />
+          </div>
 
-            <label style={{ display: 'block', marginTop: 8 }}>Contraseña *</label>
-            <div style={{ position: 'relative', margin: '6px 0 12px' }}>
+          {/* Fila 2: Contraseña | Repetir contraseña */}
+          <div>
+            <label>Contraseña *</label>
+            <div style={{ position: 'relative', margin: '6px 0 0' }}>
               <input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="Mínimo 6 caracteres" style={{ width: '100%', padding: 10, paddingRight: 40, borderRadius: 6, border: '1px solid #d1d5db', boxSizing: 'border-box' }} />
               <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 18 }} title={showPassword ? 'Ocultar' : 'Mostrar'}>{showPassword ? '🙈' : '👁️'}</button>
             </div>
+          </div>
+          <div>
+            <label>Repetir contraseña *</label>
+            <input type={showPassword ? 'text' : 'password'} value={confirmar} onChange={e => setConfirmar(e.target.value)} placeholder="Repetí la contraseña" style={{ width: '100%', padding: 10, margin: '6px 0 0', borderRadius: 6, border: '1px solid #d1d5db', boxSizing: 'border-box' }} />
+          </div>
 
+          {/* Fila 3: Teléfono | Dirección */}
+          <div>
             <label>Teléfono (opcional)</label>
             <input value={telefono} onChange={e => setTelefono(e.target.value)} placeholder="Ej: 1122334455" style={{ width: '100%', padding: 10, margin: '6px 0 0', borderRadius: 6, border: '1px solid #d1d5db', boxSizing: 'border-box' }} />
           </div>
-
-          {/* Columna derecha: Nombre de la empresa, Repetir contraseña, Dirección */}
           <div>
-            <label>Nombre de la empresa *</label>
-            <input value={nombreEmpresa} onChange={e => setNombreEmpresa(e.target.value)} required placeholder="Ej: Panadería El Sol" style={{ width: '100%', padding: 10, margin: '6px 0 12px', borderRadius: 6, border: '1px solid #d1d5db', boxSizing: 'border-box' }} />
-
-            <label>Repetir contraseña *</label>
-            <input type={showPassword ? 'text' : 'password'} value={confirmar} onChange={e => setConfirmar(e.target.value)} placeholder="Repetí la contraseña" style={{ width: '100%', padding: 10, margin: '6px 0 12px', borderRadius: 6, border: '1px solid #d1d5db', boxSizing: 'border-box' }} />
-
             <label>Dirección (opcional)</label>
             <input value={direccion} onChange={e => setDireccion(e.target.value)} placeholder="Ej: Av. Principal 123" style={{ width: '100%', padding: 10, margin: '6px 0 0', borderRadius: 6, border: '1px solid #d1d5db', boxSizing: 'border-box' }} />
           </div>
@@ -220,10 +234,11 @@ export default function Setup() {
         procesando={loading}
         onCancel={() => setConfirmarBorrado(false)}
         onConfirm={registrar}
-        nota="Antes de eliminar se guarda un respaldo automático en la carpeta de respaldos de la instalación."
+        nota="El respaldo se guarda en la carpeta de respaldos de la instalación (por defecto, C:\Autoservicio\backups)."
       >
         Atención: si continúa con el registro, los datos de <b>{empresaActual || 'la empresa actual'}</b> se
-        eliminarán permanentemente y ya no se podrán recuperar. ¿Desea continuar?
+        eliminarán de esta instalación. Antes de borrarlos se guarda automáticamente un respaldo,
+        así que podrán recuperarse si hace falta. ¿Desea continuar?
       </ConfirmDialog>
     </div>
   );

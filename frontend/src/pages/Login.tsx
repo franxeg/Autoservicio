@@ -164,10 +164,11 @@ export default function Login() {
         confirmar="Aceptar y continuar"
         onCancel={() => setConfirmarRegistro(false)}
         onConfirm={() => { setConfirmarRegistro(false); setShowForgot(false); navigate('/setup?nueva=1'); }}
-        nota="Antes de eliminar se guarda un respaldo automático en la carpeta de respaldos de la instalación."
+        nota="El respaldo se guarda en la carpeta de respaldos de la instalación (por defecto, C:\Autoservicio\backups)."
       >
-        Atención: si registra una nueva empresa, los datos registrados anteriormente se eliminarán
-        permanentemente y ya no se podrán recuperar. ¿Desea continuar?
+        Atención: si registra una nueva empresa, los datos actuales se eliminarán de esta instalación.
+        Antes de borrarlos se guarda automáticamente un respaldo, así que podrán recuperarse si hace falta.
+        ¿Desea continuar?
       </ConfirmDialog>
     </div>
   );

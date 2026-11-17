@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException, ForbiddenException, BadRequestException, InternalServerErrorException, NotFoundException, BadGatewayException, Logger } from '@nestjs/common';
+import { Injectable, OnModuleInit, UnauthorizedException, ConflictException, ForbiddenException, BadRequestException, InternalServerErrorException, NotFoundException, BadGatewayException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { Rol, Prisma } from '@prisma/client';
@@ -30,11 +30,71 @@ function credencialesCoinciden(ingresada: string, esperada: string): boolean {
 }
 
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleInit {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
   ) {}
+
+  async onModuleInit() {
+    // Limpieza única del catálogo precargado por versiones anteriores, que
+    // incluía productos "Elaborado" sin receta ni insumos. Solo se eliminan
+    // los que nunca se usaron y no tienen stock cargado.
+    await this.limpiarElaboradosPrecargados();
+  }
+
+  private async limpiarElaboradosPrecargados() {
+    try {
+      const eliminados = await this.prisma.runAsSystem(async (tx) => {
+        const categoria = await tx.categoria.findFirst({
+          where: { nombre: 'Elaborado', esSistema: false },
+          select: { id: true },
+        });
+        if (!categoria) return 0;
+
+        const productos = await tx.producto.findMany({
+          where: { categoriaId: categoria.id, esElaborado: false, esCombo: false },
+          select: { id: true },
+        });
+        if (productos.length === 0) return 0;
+
+        let total = 0;
+        for (const producto of productos) {
+          const [ventas, compras, movimientos, recetas, combos, stockCargado] = await Promise.all([
+            tx.detalleVenta.count({ where: { productoId: producto.id } }),
+            tx.detalleCompra.count({ where: { productoId: producto.id } }),
+            tx.movimientoStock.count({ where: { productoId: producto.id } }),
+            tx.recetaItem.count({
+              where: { OR: [{ elaboradoId: producto.id }, { insumoId: producto.id }] },
+            }),
+            tx.comboItem.count({
+              where: { OR: [{ comboId: producto.id }, { productoId: producto.id }] },
+            }),
+            tx.stock.count({ where: { productoId: producto.id, cantidad: { gt: 0 } } }),
+          ]);
+          if (ventas || compras || movimientos || recetas || combos || stockCargado) continue;
+
+          await tx.stock.deleteMany({ where: { productoId: producto.id } });
+          await tx.producto.delete({ where: { id: producto.id } });
+          total++;
+        }
+
+        const restantes = await tx.producto.count({ where: { categoriaId: categoria.id } });
+        if (restantes === 0) {
+          await tx.categoria.delete({ where: { id: categoria.id } }).catch(() => null);
+        }
+        return total;
+      });
+
+      if (eliminados > 0) {
+        this.logger.log(
+          `Catálogo: se quitaron ${eliminados} producto(s) "Elaborado" precargados que no tenían receta ni movimientos.`,
+        );
+      }
+    } catch (e: any) {
+      this.logger.warn(`No se pudo limpiar el catálogo de elaborados precargados: ${e?.message || e}`);
+    }
+  }
 
   private lsTokenCache: { token: string; expires: number } | null = null;
   private readonly logger = new Logger(AuthService.name);
