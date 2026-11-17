@@ -77,24 +77,43 @@ export default function Caja() {
     } catch (e: any) { setError(e.response?.data?.message || e.message); }
   };
 
-  const handleAjuste = async () => {
+  const handleAjuste = async (esIngreso: boolean) => {
     if (!caja) return;
     setAjusteError(''); setAjusteOk('');
-    const monto = parseFloat(ajusteMonto);
-    if (isNaN(monto) || monto === 0) { setAjusteError('Ingresá un monto válido (distinto de 0)'); return; }
+    const monto = Math.round(parseFloat(ajusteMonto));
+    if (isNaN(monto) || monto <= 0) { setAjusteError('Ingresá un monto mayor a cero'); return; }
     try {
       await api.post(`/caja/${caja.id}/movimiento`, {
         tipo: 'AJUSTE',
-        monto: Math.round(monto),
-        descripcion: ajusteDesc.trim() || (monto > 0 ? 'Ajuste de caja (ingreso)' : 'Ajuste de caja (egreso)'),
+        monto,
+        esIngreso,
+        descripcion: ajusteDesc.trim() || (esIngreso ? 'Ajuste de caja (ingreso)' : 'Ajuste de caja (egreso)'),
         metodoPago: ajusteMedio,
       });
-      setAjusteOk('Ajuste registrado correctamente');
+      setAjusteOk(esIngreso ? 'Ingreso registrado correctamente' : 'Egreso registrado correctamente');
       setAjusteMonto(''); setAjusteDesc('');
       fetch();
       setTimeout(() => { setAjusteOpen(false); setAjusteOk(''); }, 1200);
     } catch (e: any) { setAjusteError(e.response?.data?.message || e.message); }
   };
+
+  const eliminarMovimiento = async (m: any) => {
+    if (!caja || !confirm(`¿Deshacer ${m.tipo === 'AJUSTE' ? 'el ajuste' : 'el gasto'} de $${Math.abs(Number(m.monto)).toFixed(0)}?\n\nSe quitará el movimiento y se recalculará el saldo de la caja.`)) return;
+    setError(''); setSuccess('');
+    try {
+      await api.delete(`/caja/${caja.id}/movimiento/${m.id}`);
+      setSuccess('Movimiento deshecho correctamente');
+      fetch();
+    } catch (e: any) { setError(e.response?.data?.message || e.message); }
+  };
+
+  const esIngresoMovimiento = (m: any) => m.tipo === 'AJUSTE'
+    ? Number(m.monto) < 0
+    : ['VENTA', 'APERTURA', 'PAGO_CUENTA'].includes(m.tipo);
+  const etiquetaMovimiento = (m: any) => m.tipo === 'AJUSTE'
+    ? (Number(m.monto) < 0 ? 'Ingreso' : 'Egreso')
+    : m.tipo;
+  const sePuedeDeshacer = (m: any) => ['GASTO', 'RETIRO', 'AJUSTE'].includes(m.tipo);
 
   const imprimirCaja = async (id: string) => {
     try {
@@ -121,8 +140,11 @@ export default function Caja() {
         const hora = m.createdAt ? new Date(m.createdAt).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : '';
         const desc = esc(m.descripcion || '-');
         const medio = esc(m.metodoPago || '-');
-        const monto = Number(m.monto || 0).toFixed(0);
-        return `<tr><td>${hora}</td><td>${esc(m.tipo)}</td><td>${medio}</td><td>${desc}</td><td style="text-align:right">$${monto}</td></tr>`;
+        const monto = Math.abs(Number(m.monto || 0)).toFixed(0);
+        const ingreso = m.tipo === 'AJUSTE' ? Number(m.monto) < 0 : ['VENTA', 'APERTURA', 'PAGO_CUENTA'].includes(m.tipo);
+        const signo = m.tipo === 'CIERRE' ? '' : ingreso ? '+' : '-';
+        const tipoLabel = m.tipo === 'AJUSTE' ? (ingreso ? 'Ingreso' : 'Egreso') : esc(m.tipo);
+        return `<tr><td>${hora}</td><td>${tipoLabel}</td><td>${medio}</td><td>${desc}</td><td style="text-align:right">${signo}$${monto}</td></tr>`;
       }).join('');
       const movsHtml = movs ? `<div class="line"></div><p style="font-weight:bold;margin:4px 0">Movimientos (${(data.movimientos || []).length})</p><table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr><th style="text-align:left">Hora</th><th style="text-align:left">Tipo</th><th style="text-align:left">Medio</th><th style="text-align:left">Desc.</th><th style="text-align:right">Monto</th></tr></thead><tbody>${movs}</tbody></table>` : '';
       win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Caja ${data.id}</title><style>body{font-family:monospace;font-size:12px;margin:0;padding:10px}h2{text-align:center;margin:4px}p{margin:2px 0}.line{border-top:1px dashed #000;margin:6px 0}.row{display:flex;justify-content:space-between}.tot{font-weight:bold;font-size:13px}th,td{padding:2px 4px;border-bottom:1px dotted #ddd}</style></head><body><h2>${nombreEmp}</h2>${datosEmpHtml}<p style="text-align:center">Caja ${data.estado}</p><p style="text-align:center">${data.fechaApertura ? new Date(data.fechaApertura).toLocaleString() : ''} ${data.fechaCierre ? '→ ' + new Date(data.fechaCierre).toLocaleString() : ''}</p><div class="line"></div><div class="row"><span>Empleado</span><span>${esc(empleado)}</span></div><div class="line"></div><div class="row"><span>Inicial efectivo</span><span>$${inicialEf.toFixed(0)}</span></div><div class="row"><span>Inicial virtual</span><span>$${inicialVirt.toFixed(0)}</span></div><div class="line"></div><div class="row"><span>Ventas efectivo</span><span>$${ventasEf.toFixed(0)}</span></div><div class="row"><span>Ventas transferencia</span><span>$${ventasTransf.toFixed(0)}</span></div><div class="row"><span>Ventas tarjeta</span><span>$${ventasTarjeta.toFixed(0)}</span></div><div class="row"><span>Ventas cta. cte.</span><span>$${ventasCC.toFixed(0)}</span></div><div class="line"></div><div class="row"><span>Gastos</span><span>$${gastos.toFixed(0)}</span></div><div class="row"><span>Compras</span><span>$${compras.toFixed(0)}</span></div><div class="line"></div><div class="row tot"><span>Final efectivo</span><span>$${finalEf.toFixed(0)}</span></div><div class="row tot"><span>Final virtual</span><span>$${finalVirt.toFixed(0)}</span></div>${movsHtml}<div class="line"></div><p style="text-align:center">¡Gracias!</p><script>window.onload=function(){window.print();setTimeout(function(){window.close();},500);};</script></body></html>`);
@@ -170,7 +192,7 @@ export default function Caja() {
             <div style={{ marginTop: 20 }}>
               <h4>Movimientos</h4>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead><tr style={{ borderBottom: '2px solid #e5e7eb', textAlign: 'left' }}><th>Tipo</th><th>Monto</th><th>Descripción</th><th>Medio</th><th>Fecha</th></tr></thead>
+                <thead><tr style={{ borderBottom: '2px solid #e5e7eb', textAlign: 'left' }}><th>Tipo</th><th>Monto</th><th>Descripción</th><th>Medio</th><th>Fecha</th><th></th></tr></thead>
                 <tbody>
                   {caja.movimientos.map((m: any) => {
                     let medio = '-';
@@ -183,11 +205,14 @@ export default function Caja() {
                     }
                     return (
                       <tr key={m.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                        <td>{m.tipo}</td>
-                        <td style={{ color: m.tipo === 'VENTA' || m.tipo === 'APERTURA' ? '#059669' : '#dc2626' }}>${Number(m.monto).toFixed(0)}</td>
+                        <td>{etiquetaMovimiento(m)}</td>
+                        <td style={{ color: esIngresoMovimiento(m) ? '#059669' : '#dc2626' }}>${Math.abs(Number(m.monto)).toFixed(0)}</td>
                         <td>{m.descripcion}</td>
                         <td>{medio}</td>
                         <td>{horaCorta(m.createdAt)}</td>
+                        <td>{sePuedeDeshacer(m) && (
+                          <button onClick={() => eliminarMovimiento(m)} style={{ padding: '4px 8px', background: '#fee2e2', color: '#b91c1c', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 11 }}>Deshacer</button>
+                        )}</td>
                       </tr>
                     );
                   })}
@@ -226,7 +251,7 @@ export default function Caja() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'grid', placeItems: 'center', zIndex: 50 }} onClick={() => setAjusteOpen(false)}>
           <div style={{ background: 'white', padding: 24, borderRadius: 12, width: 420 }} onClick={e => e.stopPropagation()}>
             <h3 style={{ marginTop: 0 }}>Ajuste de caja</h3>
-            <p style={{ color: '#6b7280', fontSize: 13 }}>Sumar o restar dinero de la caja (ingreso extra, cambio mal dado, etc.).</p>
+            <p style={{ color: '#6b7280', fontSize: 13 }}>Cargá el monto y elegí si el dinero entra o sale de la caja (ingreso extra, cambio mal dado, etc.).</p>
             <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
               <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>Medio
                 <select value={ajusteMedio} onChange={e => setAjusteMedio(e.target.value)} style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }}>
@@ -235,14 +260,15 @@ export default function Caja() {
                   <option value="TARJETA">Tarjeta</option>
                 </select>
               </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>Monto (positivo = ingreso, negativo = egreso)
-                <input type="number" step="1" value={ajusteMonto} onChange={e => setAjusteMonto(e.target.value)} style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }} />
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>Monto
+                <input type="number" min="0" step="1" value={ajusteMonto} onChange={e => setAjusteMonto(e.target.value)} placeholder="0" style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }} />
               </label>
               <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>Descripción (opcional)
                 <input value={ajusteDesc} onChange={e => setAjusteDesc(e.target.value)} style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }} />
               </label>
               <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                <button onClick={handleAjuste} style={{ flex: 1, padding: 10, background: '#2563eb', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Confirmar</button>
+                <button onClick={() => handleAjuste(true)} style={{ flex: 1, padding: 10, background: '#059669', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}>Ingresar</button>
+                <button onClick={() => handleAjuste(false)} style={{ flex: 1, padding: 10, background: '#dc2626', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}>Egresar</button>
                 <button onClick={() => setAjusteOpen(false)} style={{ padding: '10px 16px', background: '#e5e7eb', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Cancelar</button>
               </div>
               {ajusteError && <div style={{ color: '#dc2626', fontSize: 13 }}>{ajusteError}</div>}

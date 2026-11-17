@@ -75,14 +75,52 @@ export class CajaService {
     });
   }
 
-  async addMovimiento(cajaId: string, tipo: string, monto: number, descripcion?: string, metodoPago?: string) {
+  async addMovimiento(cajaId: string, tipo: string, monto: number, descripcion?: string, metodoPago?: string, esIngreso?: boolean) {
     const tx = this.prisma.tenant;
     const caja = await tx.caja.findUnique({ where: { id: cajaId } });
     if (!caja) throw new NotFoundException('Caja no encontrada');
     if (caja.estado === 'CERRADA') throw new BadRequestException('Caja cerrada');
     const tiposValidos = ['VENTA', 'COMPRA', 'GASTO', 'RETIRO', 'APERTURA', 'CIERRE', 'AJUSTE', 'PAGO_PROVEEDOR', 'PAGO_CUENTA'];
     if (!tiposValidos.includes(tipo)) throw new BadRequestException(`Tipo inválido: ${tipo}`);
-    return tx.movimientoCaja.create({ data: { cajaId, tipo: tipo as any, monto: Math.round(monto), descripcion, metodoPago: metodoPago || 'EFECTIVO', empresaId: this.prisma.empresaId! } });
+    // El usuario carga siempre el monto positivo y elige la dirección con el botón.
+    // Internamente los ingresos se guardan en negativo porque el balance resta los movimientos.
+    const montoGuardado = tipo === 'AJUSTE'
+      ? (esIngreso ? -Math.abs(Math.round(monto)) : Math.abs(Math.round(monto)))
+      : Math.round(monto);
+    return tx.movimientoCaja.create({ data: { cajaId, tipo: tipo as any, monto: montoGuardado, descripcion, metodoPago: metodoPago || 'EFECTIVO', empresaId: this.prisma.empresaId! } });
+  }
+
+  private async movimientoEditable(cajaId: string, movimientoId: string) {
+    const tx = this.prisma.tenant;
+    const caja = await tx.caja.findUnique({ where: { id: cajaId } });
+    if (!caja) throw new NotFoundException('Caja no encontrada');
+    if (caja.estado === 'CERRADA') throw new BadRequestException('No se pueden modificar movimientos de una caja cerrada');
+    const movimiento = await tx.movimientoCaja.findFirst({ where: { id: movimientoId, cajaId } });
+    if (!movimiento) throw new NotFoundException('Movimiento no encontrado');
+    if (!['GASTO', 'RETIRO', 'AJUSTE'].includes(movimiento.tipo)) throw new BadRequestException('Este movimiento no se puede modificar');
+    return movimiento;
+  }
+
+  async updateMovimiento(cajaId: string, movimientoId: string, dto: { monto: number; descripcion?: string; metodoPago?: string; esIngreso?: boolean }) {
+    const tx = this.prisma.tenant;
+    const movimiento = await this.movimientoEditable(cajaId, movimientoId);
+    const monto = movimiento.tipo === 'AJUSTE'
+      ? (dto.esIngreso ? -Math.abs(Math.round(dto.monto)) : Math.abs(Math.round(dto.monto)))
+      : Math.abs(Math.round(dto.monto));
+    return tx.movimientoCaja.update({
+      where: { id: movimientoId },
+      data: {
+        monto,
+        descripcion: dto.descripcion !== undefined ? dto.descripcion.trim() : movimiento.descripcion,
+        metodoPago: dto.metodoPago || movimiento.metodoPago,
+      },
+    });
+  }
+
+  async deleteMovimiento(cajaId: string, movimientoId: string) {
+    const tx = this.prisma.tenant;
+    await this.movimientoEditable(cajaId, movimientoId);
+    return tx.movimientoCaja.delete({ where: { id: movimientoId } });
   }
 
   async findBySucursal(sucursalId: string, limit = 10) {
