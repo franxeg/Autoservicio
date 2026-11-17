@@ -50,10 +50,10 @@ npm run dev
 Los lectores USB HID funcionan como teclado. El POS captura el `onKeyDown` + `Enter`.
 Para cámara: usar `html5-qrcode` (ya previsto en frontend).
 
-## Descarga e instalación (versión 1.0)
+## Descarga e instalación (versión 1.0.1)
 
 - Página del producto: https://franxeg.github.io/Web-design/autoservicio.html
-- Instalador directo: https://github.com/franxeg/Autoservicio/releases/latest/download/Autoservicio-1.0-Setup.exe
+- Instalador directo: https://github.com/franxeg/Autoservicio/releases/latest/download/Autoservicio-1.0.1-Setup.exe
 - Todas las versiones: https://github.com/franxeg/Autoservicio/releases
 
 El instalador incluye PostgreSQL y el backend, no necesita Docker ni internet
