@@ -11,6 +11,7 @@ import { CambiarPasswordAdminDto } from './dto/cambiar-password-admin.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ActualizarEmpresaDto } from './dto/actualizar-empresa.dto';
 import { PremiumProveedorDto } from './dto/premium-proveedor.dto';
+import { TrialProveedorDto } from './dto/trial-proveedor.dto';
 import { ReiniciarSistemaDto } from './dto/reiniciar-sistema.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { ProviderGuard } from './guards/provider.guard';
@@ -75,6 +76,13 @@ export class AuthController {
   @Patch('proveedor/empresas/:id/premium')
   async proveedorPremium(@Param('id') id: string, @Body() dto: PremiumProveedorDto) {
     return this.authService.proveedorCambiarPremium(id, dto.isPremium, dto.days);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, ProviderGuard)
+  @Patch('proveedor/empresas/:id/trial')
+  async proveedorTrial(@Param('id') id: string, @Body() dto: TrialProveedorDto) {
+    return this.authService.proveedorCambiarTrial(id, dto.activo);
   }
 
   @ApiBearerAuth()

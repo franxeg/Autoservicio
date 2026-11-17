@@ -86,6 +86,24 @@ export default function Proveedor() {
     }
   };
 
+  const toggleTrial = async (company: any) => {
+    setMsg('');
+    setListError('');
+    setAccionId(company.id);
+    try {
+      const activo = !estadoTrial(company);
+      await api.patch(`/auth/proveedor/empresas/${company.id}/trial`, { activo }, headers());
+      setMsg(
+        `${company.username || company.nombre}: ${activo ? 'período de prueba reiniciado (30 días)' : 'período de prueba finalizado (plan Free)'}.`,
+      );
+      await cargarEmpresas();
+    } catch (err: any) {
+      setListError(err.response?.data?.message || 'No se pudo cambiar el período de prueba.');
+    } finally {
+      setAccionId('');
+    }
+  };
+
   const toggleActivo = async (company: any) => {
     setMsg('');
     setListError('');
@@ -214,7 +232,7 @@ export default function Proveedor() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 12, flexWrap: 'wrap' }}>
               <div>
                 <h2 style={{ margin: 0 }}>Empresas registradas</h2>
-                <p style={{ color: '#6b7280', fontSize: 13, margin: '4px 0 0' }}>Usuarios creados al instalar el sistema. Desde cada tarjeta podés administrar Premium, el estado de la empresa y generar un código de recuperación de contraseña.</p>
+                <p style={{ color: '#6b7280', fontSize: 13, margin: '4px 0 0' }}>Usuarios creados al instalar el sistema. Desde cada tarjeta podés administrar Premium, el período de prueba (para ver cómo funciona el plan Free), el estado de la empresa y generar un código de recuperación de contraseña.</p>
               </div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, userSelect: 'none' }}>
@@ -293,6 +311,13 @@ export default function Proveedor() {
                         {premium ? 'Desactivar premium' : 'Activar premium'}
                       </button>
                       {botonSecundario(activa ? 'Desactivar' : 'Reactivar', () => toggleActivo(c), activa ? '#991b1b' : '#065f46', ocupada)}
+                      {!premium &&
+                        botonSecundario(
+                          trialVigente ? 'Finalizar trial' : 'Reiniciar trial',
+                          () => toggleTrial(c),
+                          trialVigente ? '#92400e' : '#1d4ed8',
+                          ocupada,
+                        )}
                     </div>
 
                     {premium && <div style={{ fontSize: 12, color: '#6b7280' }}>Vence: {formatoFecha(c.premiumExpiry)}</div>}

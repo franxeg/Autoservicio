@@ -67,6 +67,30 @@ export default function adminRoutes(prisma: PrismaClient) {
     }
   });
 
+  // Finalizar o reiniciar el período de prueba. Sirve para probar el plan
+  // Free sin esperar a que venza el trial. No toca el premium pago.
+  router.patch('/companies/:id/trial', requireAdmin, async (req, res, next) => {
+    try {
+      const activo = req.body?.activo !== false;
+      const trialEnd = activo
+        ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        : new Date(Date.now() - 60 * 1000);
+      const company = await prisma.company.update({
+        where: { id: req.params.id },
+        data: { trialEnd },
+      });
+      res.json({
+        id: company.id,
+        nombre: company.nombre,
+        isPremium: company.isPremium,
+        premiumExpiry: company.premiumExpiry,
+        trialEnd: company.trialEnd,
+      });
+    } catch (err) {
+      next(err);
+    }
+  });
+
   // Desactivar empresa (bloquear acceso)
   router.patch('/companies/:id/activo', requireAdmin, async (req, res, next) => {
     try {

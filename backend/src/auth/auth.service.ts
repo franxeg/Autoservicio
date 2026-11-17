@@ -590,6 +590,13 @@ export class AuthService implements OnModuleInit {
     });
   }
 
+  async proveedorCambiarTrial(id: string, activo: boolean) {
+    return this.lsRequest(`/api/admin/companies/${encodeURIComponent(id)}/trial`, {
+      method: 'PATCH',
+      body: JSON.stringify({ activo }),
+    });
+  }
+
   async proveedorGenerarCodigo(id: string) {
     return this.lsRequest(`/api/admin/companies/${encodeURIComponent(id)}/reset-code`, {
       method: 'POST',
