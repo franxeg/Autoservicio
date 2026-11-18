@@ -492,8 +492,10 @@
           body = duracion === 'sin'
             ? { isPremium: true, sinVencimiento: true }
             : { isPremium: true, days: Number(duracion) };
+          url += '/premium';
         } else if (act === 'desactivar-premium') {
           body = { isPremium: false };
+          url += '/premium';
         } else if (act === 'trial') {
           body = { activo: !trialVigente(c) };
           url += '/trial';
