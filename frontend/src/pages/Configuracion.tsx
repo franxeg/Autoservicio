@@ -17,7 +17,9 @@ const TABS = [
   { id: 'password', label: 'Cambiar contraseña' },
 ];
 
-const VERSION_ACTUAL = '1.0.4';
+const VERSION_ACTUAL = '1.0.5';
+
+const MENSAJE_PLAN_FULL = 'Felicidades, usted a contratado el plan full del sistema, su licencia esta activa de por vida, gracias por confiar la gestion de su negocio, recuerde que estamos abiertos a cualquier sugerencia, inquietud o reporte de error del sistema';
 
 function userPrefKey(base: string, userId?: string | null) {
   return userId ? `${base}_${userId}` : base;
@@ -84,6 +86,10 @@ function TabPremium() {
   })();
   const diasTrial = diasRestantesTrial === 1 ? '1 día' : `${diasRestantesTrial} días`;
 
+  // El plan "Sin vencimiento" se guarda con premiumExpiry = null. Solo se
+  // considera plan full si además Premium está activo y no es un trial.
+  const esPlanFull = status.isPremium && !status.isTrial && !status.expiryDate;
+
   const planes = [
     { nombre: '30 días', precio: '$8.000 ARS', detalle: 'Un mes de Premium', link: 'https://mpago.la/1XcoPQc' },
     { nombre: '1 año', precio: '$60.000 ARS', detalle: 'Un año completo de Premium', link: 'https://mpago.li/23rmUxL' },
@@ -93,54 +99,62 @@ function TabPremium() {
   return (
     <div>
       <h3>Suscribite a uno de nuestros planes y sacale el maximo provecho a tu sistema</h3>
-      <div style={{ background: status.isPremium ? '#ecfdf5' : '#fef2f2', border: `1px solid ${status.isPremium ? '#a7f3d0' : '#fecaca'}`, padding: 12, borderRadius: 6, marginBottom: 16 }}>
-        {verificando ? (
-          <span style={{ color: '#6b7280' }}>Verificando licencia con el servidor...</span>
-        ) : status.isTrial ? (
-          <span style={{ color: '#059669' }}>✅ Estás en <b>período de prueba</b>. Te quedan <b>{diasTrial}</b> de Premium{venceTrial ? ` (hasta el ${venceTrial})` : ''}.</span>
-        ) : status.isPremium ? (
-          <span style={{ color: '#059669' }}>✅ Premium activo {venceTrial ? `hasta el ${venceTrial}` : '(sin vencimiento)'}</span>
-        ) : (
-          <span style={{ color: '#dc2626' }}>⚠️ Tu período de prueba venció. Suscribite para seguir usando Dashboard, Movimientos y Empleados.</span>
-        )}
-      </div>
-      {!verificando && status.offline && (
-        <div style={{ background: '#fffbeb', border: '1px solid #fde68a', padding: 10, borderRadius: 6, marginBottom: 16, fontSize: 13, color: '#92400e' }}>
-          No se pudo verificar la licencia con el servidor. Iniciá sesión para sincronizar el estado.
+      {esPlanFull ? (
+        <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', padding: 18, borderRadius: 8, marginTop: 12, color: '#065f46', lineHeight: 1.6 }}>
+          {MENSAJE_PLAN_FULL}
         </div>
-      )}
-      <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: 16, borderRadius: 8, marginTop: 12 }}>
-        <h4 style={{ marginTop: 0 }}>Todos los Planes incluyen:</h4>
-        <ul style={{ lineHeight: 1.8 }}>
-          <li>Dashboard con estadísticas de ventas</li>
-          <li>Movimientos detallados</li>
-          <li>Gestión de empleados y permisos</li>
-          <li>Soporte prioritario</li>
-          <li>Actualizaciones gratuitas</li>
-        </ul>
-      </div>
-      <div style={{ marginTop: 16, display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
-        {planes.map((plan) => (
-          <div key={plan.nombre} style={{ border: '1px solid #bfdbfe', borderRadius: 8, padding: 16, background: '#f8fbff' }}>
-            <h4 style={{ marginTop: 0 }}>{plan.nombre}</h4>
-            <div style={{ fontSize: 20, fontWeight: 700, color: '#1d4ed8', marginBottom: 4 }}>{plan.precio}</div>
-            <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 12px' }}>{plan.detalle}</p>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <a href={plan.link} target="_blank" rel="noreferrer" style={{ padding: '10px 14px', background: '#009ee3', color: 'white', borderRadius: 8, textDecoration: 'none', fontWeight: 600, fontSize: 13 }}>
-                Pagar con Mercado Pago
-              </a>
-              <button onClick={() => { navigator.clipboard?.writeText(plan.link); alert('Link copiado'); }} style={{ padding: '10px 14px', background: '#e5e7eb', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13 }}>
-                Copiar link
-              </button>
-            </div>
+      ) : (
+        <>
+          <div style={{ background: status.isPremium ? '#ecfdf5' : '#fef2f2', border: `1px solid ${status.isPremium ? '#a7f3d0' : '#fecaca'}`, padding: 12, borderRadius: 6, marginBottom: 16 }}>
+            {verificando ? (
+              <span style={{ color: '#6b7280' }}>Verificando licencia con el servidor...</span>
+            ) : status.isTrial ? (
+              <span style={{ color: '#059669' }}>✅ Estás en <b>período de prueba</b>. Te quedan <b>{diasTrial}</b> de Premium{venceTrial ? ` (hasta el ${venceTrial})` : ''}.</span>
+            ) : status.isPremium ? (
+              <span style={{ color: '#059669' }}>✅ Premium activo {venceTrial ? `hasta el ${venceTrial}` : '(sin vencimiento)'}</span>
+            ) : (
+              <span style={{ color: '#dc2626' }}>⚠️ Tu período de prueba venció. Suscribite para seguir usando Dashboard, Movimientos y Empleados.</span>
+            )}
           </div>
-        ))}
-      </div>
-      <div style={{ marginTop: 20, padding: 12, background: '#f0f9ff', border: '1px solid #bfdbfe', borderRadius: 6 }}>
-        <h4 style={{ marginTop: 0 }}>Activación:</h4>
-        <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 6 }}>Los planes se activan desde el panel de proveedor una vez confirmado el pago. Si ya pagaste, por favor comunicate con nosotros a los medios de contacto publicados, tu plan se activara dentro de las 24 hs.</p>
-        <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 0 }}>Gracias por utilizar nuestro sistema, estamos a tu disposicion!!</p>
-      </div>
+          {!verificando && status.offline && (
+            <div style={{ background: '#fffbeb', border: '1px solid #fde68a', padding: 10, borderRadius: 6, marginBottom: 16, fontSize: 13, color: '#92400e' }}>
+              No se pudo verificar la licencia con el servidor. Iniciá sesión para sincronizar el estado.
+            </div>
+          )}
+          <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: 16, borderRadius: 8, marginTop: 12 }}>
+            <h4 style={{ marginTop: 0 }}>Todos los Planes incluyen:</h4>
+            <ul style={{ lineHeight: 1.8 }}>
+              <li>Dashboard con estadísticas de ventas</li>
+              <li>Movimientos detallados</li>
+              <li>Gestión de empleados y permisos</li>
+              <li>Soporte prioritario</li>
+              <li>Actualizaciones gratuitas</li>
+            </ul>
+          </div>
+          <div style={{ marginTop: 16, display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+            {planes.map((plan) => (
+              <div key={plan.nombre} style={{ border: '1px solid #bfdbfe', borderRadius: 8, padding: 16, background: '#f8fbff' }}>
+                <h4 style={{ marginTop: 0 }}>{plan.nombre}</h4>
+                <div style={{ fontSize: 20, fontWeight: 700, color: '#1d4ed8', marginBottom: 4 }}>{plan.precio}</div>
+                <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 12px' }}>{plan.detalle}</p>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <a href={plan.link} target="_blank" rel="noreferrer" style={{ padding: '10px 14px', background: '#009ee3', color: 'white', borderRadius: 8, textDecoration: 'none', fontWeight: 600, fontSize: 13 }}>
+                    Pagar con Mercado Pago
+                  </a>
+                  <button onClick={() => { navigator.clipboard?.writeText(plan.link); alert('Link copiado'); }} style={{ padding: '10px 14px', background: '#e5e7eb', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13 }}>
+                    Copiar link
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: 20, padding: 12, background: '#f0f9ff', border: '1px solid #bfdbfe', borderRadius: 6 }}>
+            <h4 style={{ marginTop: 0 }}>Activación:</h4>
+            <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 6 }}>Los planes se activan desde el panel de proveedor una vez confirmado el pago. Si ya pagaste, por favor comunicate con nosotros a los medios de contacto publicados, tu plan se activara dentro de las 24 hs.</p>
+            <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 0 }}>Gracias por utilizar nuestro sistema, estamos a tu disposicion!!</p>
+          </div>
+        </>
+      )}
     </div>
   );
 }
