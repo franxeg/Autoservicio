@@ -14,7 +14,7 @@
 ; =========================================================================
 
 #define AppName "Autoservicio"
-#define AppVersion "1.0.3"
+#define AppVersion "1.0.4"
 #define SourceDir "..\release"
 
 [Setup]

@@ -2,7 +2,7 @@
 // Se integra con lib/license.ts para verificar contra el servidor.
 // Soporta modo offline con grace period.
 
-import { checkLicenseStatus, isRegistered } from './license';
+import { checkLicenseStatus, getLicenseKey, isRegistered } from './license';
 
 export interface PremiumStatus {
   isPremium: boolean;
@@ -35,6 +35,21 @@ function diasRestantes(iso: string | null): number | null {
 // Sincrónico: usa cache o trial local
 export function getPremiumStatus(): PremiumStatus {
   const cached = localStorage.getItem('license_status_cache');
+  const registrado = isRegistered();
+
+  // Si falta el token pero quedaron datos de una licencia anterior, no mostrar
+  // un trial local ni un cache viejo: se sincroniza al iniciar sesión.
+  if (cached && !registrado) {
+    return {
+      isPremium: false,
+      isTrial: false,
+      trialDaysLeft: 0,
+      expiryDate: null,
+      licenseKey: getLicenseKey(),
+      offline: true,
+    };
+  }
+
   if (cached) {
     try {
       const parsed = JSON.parse(cached);
@@ -71,8 +86,20 @@ export function getPremiumStatus(): PremiumStatus {
     } catch {}
   }
 
-  // Si no está registrado, usar trial local de 30 días
-  if (!isRegistered()) {
+  // Si no está registrado pero hay datos de licencia, no inventar un trial local.
+  if (!registrado && (getLicenseKey() || localStorage.getItem('license_company'))) {
+    return {
+      isPremium: false,
+      isTrial: false,
+      trialDaysLeft: 0,
+      expiryDate: null,
+      licenseKey: getLicenseKey(),
+      offline: true,
+    };
+  }
+
+  // Instalación realmente sin registrar: trial local de 30 días
+  if (!registrado) {
     const trialStart = getTrialStart();
     const trialEnd = trialStart + 30 * 24 * 60 * 60 * 1000;
     const daysLeft = Math.max(0, Math.ceil((trialEnd - Date.now()) / (24 * 60 * 60 * 1000)));

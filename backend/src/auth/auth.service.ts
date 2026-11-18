@@ -585,6 +585,31 @@ export class AuthService implements OnModuleInit {
     });
   }
 
+  /**
+   * Obtiene una sesión del license-server con las credenciales del usuario.
+   * Devuelve null si no hay conexión o si las credenciales ya no sirven allí;
+   * el login local no debe depender de esto.
+   */
+  private async sesionLicenseServer(username: string, password: string): Promise<{ token: string; licenseKey: string | null; company: any } | null> {
+    const licenseUrl = this.getLicenseUrl();
+    try {
+      const res = await fetch(`${licenseUrl}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      if (!res.ok) return null;
+      const data: any = await res.json();
+      return {
+        token: data.access_token,
+        licenseKey: data.company?.licenseKey ?? null,
+        company: data.company,
+      };
+    } catch {
+      return null;
+    }
+  }
+
   async login(usuario: string, password: string) {
     return this.prisma.runAsSystem(async (tx) => {
       const user = await tx.usuario.findFirst({
@@ -596,28 +621,17 @@ export class AuthService implements OnModuleInit {
 
       // Si la contraseña local no coincide, intentar sincronizar con el license-server
       // (el proveedor pudo haber reseteado la contraseña en la nube)
+      let license: { token: string; licenseKey: string | null; company: any } | null = null;
       if (!valid) {
-        const licenseUrl = process.env.LICENSE_SERVER_URL || 'https://autoservicio-license-server.onrender.com';
-        try {
-          const res = await fetch(`${licenseUrl}/api/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: usuario, password }),
-          });
-          if (res.ok) {
-            const data = await res.json();
-            // La contraseña es válida en el license-server: actualizar localmente
-            const hashed = await bcrypt.hash(password, 10);
-            await tx.usuario.update({ where: { id: user.id }, data: { password: hashed } });
-            // Continuar con el login normal
-          } else {
-            throw new UnauthorizedException('Credenciales inválidas. Verifique usuario y contraseña.');
-          }
-        } catch (e: any) {
-          if (e instanceof UnauthorizedException) throw e;
-          // Sin conexión: usar solo contraseña local
-          throw new UnauthorizedException('Credenciales inválidas. Verifique usuario y contraseña.');
-        }
+        license = await this.sesionLicenseServer(user.username, password);
+        if (!license) throw new UnauthorizedException('Credenciales inválidas. Verifique usuario y contraseña.');
+        // La contraseña es válida en el license-server: actualizar localmente
+        const hashed = await bcrypt.hash(password, 10);
+        await tx.usuario.update({ where: { id: user.id }, data: { password: hashed } });
+      } else {
+        // Con contraseña local válida también sincronizamos la sesión de licencia.
+        // Si falla, se conserva el último estado guardado en el cliente.
+        license = await this.sesionLicenseServer(user.username, password);
       }
 
       const payload = {
@@ -631,7 +645,7 @@ export class AuthService implements OnModuleInit {
       };
       const access_token = this.jwtService.sign(payload);
       const { password: _, ...result } = user;
-      return { access_token, user: result, setupPendiente: user.rol === Rol.SETUP };
+      return { access_token, user: result, setupPendiente: user.rol === Rol.SETUP, license };
     });
   }
 

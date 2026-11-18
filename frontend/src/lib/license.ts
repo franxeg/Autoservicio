@@ -59,6 +59,44 @@ export function getLicenseKey(): string | null {
   return localStorage.getItem(STORAGE_KEY_LICENSE_KEY);
 }
 
+export interface EnviarReporteInput {
+  contacto?: string | null;
+  descripcion: string;
+  version?: string | null;
+  nombreEmpresa?: string | null;
+  usuario?: string | null;
+}
+
+/** Envía una sugerencia o reporte al license-server. Funciona con o sin token. */
+export async function enviarReporte(input: EnviarReporteInput): Promise<{ id: string }> {
+  const token = getLicenseToken();
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(`${LICENSE_SERVER_URL}/api/license/reportes`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      contacto: input.contacto ?? '',
+      descripcion: input.descripcion,
+      version: input.version ?? null,
+      nombreEmpresa: input.nombreEmpresa ?? null,
+      usuario: input.usuario ?? null,
+    }),
+  });
+  const data: any = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.message || 'No se pudo enviar el reporte');
+  return { id: data.id };
+}
+
+function tieneDatosDeLicencia(): boolean {
+  return !!(
+    localStorage.getItem(STORAGE_KEY_LICENSE_KEY) ||
+    localStorage.getItem(STORAGE_KEY_COMPANY) ||
+    getCachedStatus()
+  );
+}
+
 export function isRegistered(): boolean {
   return !!localStorage.getItem(STORAGE_KEY_TOKEN);
 }
@@ -157,8 +195,23 @@ export function saveLicenseSession(session: { token: string; licenseKey?: string
 export async function checkLicenseStatus(): Promise<LicenseStatus> {
   const token = getLicenseToken();
 
-  // Si no está registrado, usar trial local
+  // Si no hay token pero la instalación ya tiene datos de licencia, NO inventar
+  // un trial local nuevo: eso hacía que la app mostrara 30 días desde la fecha
+  // de instalación aunque el servidor tuviera otro vencimiento.
   if (!token) {
+    if (tieneDatosDeLicencia()) {
+      return {
+        isPremium: false,
+        isTrial: false,
+        trialDaysLeft: 0,
+        expiryDate: null,
+        licenseKey: getLicenseKey(),
+        nombre: null,
+        offline: true,
+      };
+    }
+
+    // Instalación realmente sin registrar: trial local de 30 días.
     const trialStart = localStorage.getItem(STORAGE_KEY_TRIAL_START);
     if (!trialStart) {
       localStorage.setItem(STORAGE_KEY_TRIAL_START, String(Date.now()));

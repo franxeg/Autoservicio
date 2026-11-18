@@ -174,5 +174,48 @@ export default function adminRoutes(prisma: PrismaClient) {
     }
   });
 
+  // Reportes enviados desde la app, más recientes primero.
+  router.get('/reportes', requireAdmin, async (_req, res, next) => {
+    try {
+      const reportes = await prisma.reporte.findMany({
+        select: {
+          id: true,
+          companyId: true,
+          licenseKey: true,
+          nombreEmpresa: true,
+          usuario: true,
+          contacto: true,
+          descripcion: true,
+          version: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 200,
+      });
+      res.json(reportes);
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  router.delete('/reportes/:id', requireAdmin, async (req, res, next) => {
+    try {
+      await prisma.reporte.delete({ where: { id: req.params.id } });
+      res.json({ ok: true, id: req.params.id });
+    } catch (err: any) {
+      if (err?.code === 'P2025') return res.status(404).json({ message: 'Reporte no encontrado' });
+      next(err);
+    }
+  });
+
+  router.delete('/reportes', requireAdmin, async (_req, res, next) => {
+    try {
+      const result = await prisma.reporte.deleteMany();
+      res.json({ ok: true, count: result.count });
+    } catch (err) {
+      next(err);
+    }
+  });
+
   return router;
 }

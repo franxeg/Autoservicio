@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../lib/store';
 import { api } from '../lib/api';
+import { saveLicenseSession } from '../lib/license';
 import ContactoProveedor from '../components/ContactoProveedor';
 import ConfirmDialog from '../components/ConfirmDialog';
 
@@ -47,6 +48,9 @@ export default function Login() {
     try {
       const { data } = await api.post('/auth/login', { usuario, password });
       setAuth(data.access_token, data.user);
+      // Restaura el token/cache del license-server: sin esto la app caía al
+      // trial local y no reflejaba cambios hechos desde el panel del proveedor.
+      if (data.license) saveLicenseSession(data.license);
       if (data.user.sucursalId) {
         localStorage.setItem('sucursalId', data.user.sucursalId);
       }

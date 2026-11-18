@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { requireAuth, AuthRequest } from '../middleware/auth';
+import { requireAuth, optionalAuth, AuthRequest } from '../middleware/auth';
 
 export default function licenseRoutes(prisma: PrismaClient) {
   const router = Router();
@@ -57,6 +57,48 @@ export default function licenseRoutes(prisma: PrismaClient) {
       });
 
       res.json({ message: 'Contraseña actualizada correctamente' });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Sugerencias / reportes de errores. Acepta token opcional: si el cliente
+  // tiene sesión se asocia la empresa; si no, se guarda igual con los datos
+  // que completó el usuario.
+  router.post('/reportes', optionalAuth, async (req: AuthRequest, res, next) => {
+    try {
+      const descripcion = String(req.body?.descripcion ?? '').trim().slice(0, 5000);
+      if (!descripcion) return res.status(400).json({ message: 'La descripción es obligatoria' });
+
+      const contacto = String(req.body?.contacto ?? '').trim().slice(0, 200);
+      const version = req.body?.version ? String(req.body.version).trim().slice(0, 50) : null;
+
+      let company: { id: string; nombre: string; licenseKey: string } | null = null;
+      if (req.company?.id) {
+        company = await prisma.company.findUnique({
+          where: { id: req.company.id },
+          select: { id: true, nombre: true, licenseKey: true },
+        });
+      }
+
+      const nombreEmpresa = company?.nombre
+        || (req.body?.nombreEmpresa ? String(req.body.nombreEmpresa).trim().slice(0, 200) : null);
+      const usuario = req.body?.usuario ? String(req.body.usuario).trim().slice(0, 200) : null;
+
+      const reporte = await prisma.reporte.create({
+        data: {
+          companyId: company?.id ?? null,
+          licenseKey: company?.licenseKey ?? null,
+          nombreEmpresa,
+          usuario,
+          contacto,
+          descripcion,
+          version,
+        },
+        select: { id: true },
+      });
+
+      return res.status(201).json({ ok: true, id: reporte.id });
     } catch (err) {
       next(err);
     }

@@ -28,17 +28,22 @@ npm run dev
 - `POST /api/auth/reset-password` - `{ username, code, newPassword }` → valida el código de 4 dígitos generado por el proveedor, actualiza la contraseña en el LS y consume el código
 - `POST /api/auth/admin/login` - `{ username, password }` → JWT admin (valida `ADMIN_USER`/`ADMIN_PASSWORD` del servidor)
 
-### License (requiere auth de empresa)
+### License (requiere auth de empresa, salvo el último)
 - `GET /api/license/status` → estado de licencia (premium/trial, días restantes, vencimientos)
 - `POST /api/license/change-password` - `{ passwordActual, passwordNueva }` → cambia contraseña de la empresa
 - `POST /api/license/activate` - `{ code }` → activa premium (30 días)
+- `POST /api/license/reportes` - `{ contacto, descripcion, version?, nombreEmpresa?, usuario? }` → guarda una sugerencia o error. El token es opcional; si se envía, el reporte se asocia a la empresa.
 
 ### Admin (requiere auth admin)
 - `GET /api/admin/companies` → lista de empresas registradas (incluye `resetCode`/`resetCodeExpiry`)
 - `PATCH /api/admin/companies/:id/premium` - `{ isPremium, days }` → activar/desactivar premium
+- `PATCH /api/admin/companies/:id/trial` - `{ activo }` → finalizar o reiniciar el trial
 - `PATCH /api/admin/companies/:id/activo` - `{ activo }` → bloquear/desbloquear
 - `POST /api/admin/companies/:id/reset-code` → genera un código numérico de 4 dígitos (válido 30 minutos) para recuperar la contraseña
 - `PATCH /api/admin/companies/:id/password` - `{ password }` → resetear contraseña de la empresa en el LS
+- `GET /api/admin/reportes` → últimos 200 reportes de clientes (más recientes primero)
+- `DELETE /api/admin/reportes/:id` → elimina un reporte
+- `DELETE /api/admin/reportes` → elimina todos los reportes
 
 ## Flujo del cliente
 1. El cliente configura su empresa en el Setup del sistema y se registra con `nombre` + `username` + `password` en el servidor de licencias.
@@ -46,8 +51,9 @@ npm run dev
 3. El sistema local guarda el `licenseKey` y el token (`license_token`, `license_key`, cache de estado).
 4. Periódicamente consulta `GET /api/license/status`. Si no hay conexión, usa el último estado cacheado dentro de un grace period de 7 días; fuera de grace degrada a modo free.
 5. Si el trial vence o no paga, las funciones/pestañas premium se bloquean.
-6. Vos (admin del LS) entrás a `/proveedor` con las credenciales de proveedor del sistema local (`PROVIDER_USER`/`PROVIDER_PASSWORD`, por defecto `Jupiter`/`Proveedor21`). El backend local actúa como proxy autenticado hacia el LS usando `LICENSE_SERVER_ADMIN_USER`/`LICENSE_SERVER_ADMIN_PASSWORD` (deben coincidir con `ADMIN_USER`/`ADMIN_PASSWORD` del servidor).
-7. Desde cada tarjeta podés activar/desactivar Premium y generar un código de 4 dígitos. El cliente usa ese código en **Login → Olvidé mi contraseña** para cambiar su contraseña local.
+6. Vos (admin del LS) entrás a `/admin` con `ADMIN_USER`/`ADMIN_PASSWORD` del servidor. La consola es standalone y no está incluida en el instalador de los clientes.
+7. Desde cada tarjeta podés activar/desactivar Premium, finalizar/reiniciar el trial y generar un código de 4 dígitos. El cliente usa ese código en **Login → Olvidé mi contraseña** para cambiar su contraseña local.
+8. La sección “Reportes de clientes” lista los mensajes enviados desde Configuración → Ayudanos a mejorar, con opción de eliminar uno o todos.
 
 ## Deploy / actualización (Render + Neon)
 - Variables de entorno: `DATABASE_URL` (Neon), `JWT_SECRET`, `ADMIN_USER`, `ADMIN_PASSWORD`, `CORS_ORIGIN` (o `*` según config), `PORT`.

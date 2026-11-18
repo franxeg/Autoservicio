@@ -102,6 +102,8 @@
     .msg.ok { background: rgba(52, 211, 153, 0.15); color: #bbf7d0; border: 1px solid rgba(52,211,153,0.35); }
     .empty { color: var(--muted); padding: 2rem; text-align: center; }
     .footer-note { margin-top: 2rem; color: var(--muted); font-size: 0.8rem; text-align: center; }
+    .reportes-list { display: grid; gap: 0.75rem; }
+    .reporte { background: var(--surface-soft); box-shadow: none; border-radius: 14px; padding: 1rem; }
     .hidden { display: none !important; }
     @media (max-width: 640px) {
       .wrap { padding: 1.25rem 0.85rem 3rem; }
@@ -149,6 +151,21 @@
       </div>
       <div id="stats" class="stats"></div>
       <div id="list" class="grid"></div>
+
+      <section class="card" style="margin-top: 1.5rem;">
+        <div class="company-head">
+          <div>
+            <h2>Reportes de clientes</h2>
+            <div class="subtitle">Sugerencias y errores enviados desde la aplicación.</div>
+          </div>
+          <div class="row">
+            <button id="refreshReportesBtn" type="button">Actualizar reportes</button>
+            <button id="deleteAllReportesBtn" type="button" class="btn-danger">Eliminar todos</button>
+          </div>
+        </div>
+        <div id="reportesList" class="reportes-list" style="margin-top: 1rem;"></div>
+      </section>
+
       <p class="footer-note">Los cambios se aplican de inmediato en el servidor de licencias.</p>
     </section>
   </div>
@@ -161,12 +178,14 @@
       var companies = [];
       var codes = {};
       var busy = {};
+      var reportes = [];
 
       var $ = function (id) { return document.getElementById(id); };
       var loginView = $('loginView');
       var appView = $('appView');
       var headerActions = $('headerActions');
       var msgBox = $('msg');
+      var reportesList = $('reportesList');
 
       function escapeHtml(value) {
         return String(value == null ? '' : value)
@@ -312,6 +331,31 @@
         }).join('');
       }
 
+      function renderReportes() {
+        if (!reportes.length) {
+          reportesList.innerHTML = '<div class="empty">No hay reportes.</div>';
+          return;
+        }
+        reportesList.innerHTML = reportes.map(function (r) {
+          var id = escapeHtml(r.id);
+          return '<article class="reporte" data-id="' + id + '">' +
+            '<div class="company-head">' +
+              '<div>' +
+                '<div class="company-user" style="font-size: 1rem;">' + escapeHtml(r.nombreEmpresa || 'Cliente sin empresa') + '</div>' +
+                '<div class="company-name">' + escapeHtml(fmtDate(r.createdAt)) + ' · ' + escapeHtml(r.contacto || 'Sin contacto') + '</div>' +
+              '</div>' +
+              '<button type="button" class="btn-danger" data-reporte-act="eliminar">Eliminar</button>' +
+            '</div>' +
+            '<div class="meta" style="margin-top: 0.6rem;">' +
+              '<b>Licencia:</b> ' + escapeHtml(r.licenseKey || '—') + '<br>' +
+              '<b>Usuario:</b> ' + escapeHtml(r.usuario || '—') + '<br>' +
+              '<b>Versión:</b> ' + escapeHtml(r.version || '—') +
+            '</div>' +
+            '<div class="meta" style="margin-top: 0.5rem; white-space: pre-wrap;">' + escapeHtml(r.descripcion) + '</div>' +
+          '</article>';
+        }).join('');
+      }
+
       async function cargar() {
         try {
           var data = await api('/api/admin/companies');
@@ -320,6 +364,15 @@
         } catch (e) {
           if (token) showMsg(e.message || 'No se pudieron cargar las empresas.', 'error');
         }
+        try {
+          var reportesData = await api('/api/admin/reportes');
+          reportes = Array.isArray(reportesData) ? reportesData : [];
+          renderReportes();
+        } catch (e) {
+          reportes = [];
+          renderReportes();
+          if (token) showMsg(e.message || 'No se pudieron cargar los reportes.', 'error');
+        }
       }
 
       function logout(reason) {
@@ -327,6 +380,7 @@
         companies = [];
         codes = {};
         busy = {};
+        reportes = [];
         appView.classList.add('hidden');
         headerActions.classList.add('hidden');
         loginView.classList.remove('hidden');
@@ -367,6 +421,47 @@
       $('refreshBtn').addEventListener('click', function () { cargar(); });
       $('search').addEventListener('input', render);
       $('showArchived').addEventListener('change', render);
+
+      $('refreshReportesBtn').addEventListener('click', async function () {
+        try {
+          var data = await api('/api/admin/reportes');
+          reportes = Array.isArray(data) ? data : [];
+          renderReportes();
+          showMsg('Reportes actualizados.', 'ok');
+        } catch (err) {
+          showMsg(err.message || 'No se pudieron cargar los reportes.', 'error');
+        }
+      });
+
+      $('deleteAllReportesBtn').addEventListener('click', async function () {
+        if (!window.confirm('¿Eliminar todos los reportes? Esta acción no se puede deshacer.')) return;
+        try {
+          var data = await api('/api/admin/reportes', { method: 'DELETE' });
+          reportes = [];
+          renderReportes();
+          showMsg('Se eliminaron ' + (data.count || 0) + ' reportes.', 'ok');
+        } catch (err) {
+          showMsg(err.message || 'No se pudieron eliminar los reportes.', 'error');
+        }
+      });
+
+      reportesList.addEventListener('click', async function (e) {
+        var btn = e.target.closest('button[data-reporte-act]');
+        if (!btn || btn.disabled) return;
+        var card = btn.closest('.reporte');
+        if (!card || !window.confirm('¿Eliminar este reporte? Esta acción no se puede deshacer.')) return;
+        var id = card.dataset.id;
+        btn.disabled = true;
+        try {
+          await api('/api/admin/reportes/' + encodeURIComponent(id), { method: 'DELETE' });
+          reportes = reportes.filter(function (r) { return r.id !== id; });
+          renderReportes();
+          showMsg('Reporte eliminado.', 'ok');
+        } catch (err) {
+          showMsg(err.message || 'No se pudo eliminar el reporte.', 'error');
+          btn.disabled = false;
+        }
+      });
 
       $('list').addEventListener('change', function (e) {
         var target = e.target;

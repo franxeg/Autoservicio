@@ -25,6 +25,24 @@ model Company {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  reportes      Reporte[]
+
   @@index([username])
   @@index([licenseKey])
+}
+
+model Reporte {
+  id            String    @id @default(cuid())
+  companyId     String?
+  company       Company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  licenseKey    String?
+  nombreEmpresa String?
+  usuario       String?
+  contacto      String
+  descripcion   String
+  version       String?
+  createdAt     DateTime  @default(now())
+
+  @@index([companyId])
+  @@index([createdAt])
 }

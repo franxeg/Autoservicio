@@ -3,20 +3,21 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../lib/store';
 import { api } from '../lib/api';
 import { getPremiumStatus, refreshPremiumStatus } from '../lib/premium';
+import { enviarReporte } from '../lib/license';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 const TABS = [
-  { id: 'premium', label: 'Suscribirse a Premium' },
+  { id: 'premium', label: 'Planes y Premium' },
   { id: 'tema', label: 'Cambiar tema' },
   { id: 'empresa', label: 'Datos de la empresa' },
   { id: 'documentacion', label: 'Documentación' },
-  { id: 'error', label: 'Informar un error' },
+  { id: 'error', label: 'Ayudanos a mejorar' },
   { id: 'actualizaciones', label: 'Actualizaciones' },
   { id: 'acerca', label: 'Acerca de' },
   { id: 'password', label: 'Cambiar contraseña' },
 ];
 
-const VERSION_ACTUAL = '1.0';
+const VERSION_ACTUAL = '1.0.4';
 
 function userPrefKey(base: string, userId?: string | null) {
   return userId ? `${base}_${userId}` : base;
@@ -53,6 +54,7 @@ export default function Configuracion() {
 
 function TabPremium() {
   const [status, setStatus] = useState(() => getPremiumStatus());
+  const [verificando, setVerificando] = useState(true);
 
   // Sincroniza con el license-server al abrir la pestaña para mostrar los días
   // reales de trial (el cache puede tener los 30 días del registro inicial).
@@ -60,7 +62,8 @@ function TabPremium() {
     let activo = true;
     refreshPremiumStatus()
       .then(s => { if (activo) setStatus(s); })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => { if (activo) setVerificando(false); });
     return () => { activo = false; };
   }, []);
 
@@ -89,9 +92,11 @@ function TabPremium() {
 
   return (
     <div>
-      <h3>Suscribirse a Premium</h3>
+      <h3>Suscribite a uno de nuestros planes y sacale el maximo provecho a tu sistema</h3>
       <div style={{ background: status.isPremium ? '#ecfdf5' : '#fef2f2', border: `1px solid ${status.isPremium ? '#a7f3d0' : '#fecaca'}`, padding: 12, borderRadius: 6, marginBottom: 16 }}>
-        {status.isTrial ? (
+        {verificando ? (
+          <span style={{ color: '#6b7280' }}>Verificando licencia con el servidor...</span>
+        ) : status.isTrial ? (
           <span style={{ color: '#059669' }}>✅ Estás en <b>período de prueba</b>. Te quedan <b>{diasTrial}</b> de Premium{venceTrial ? ` (hasta el ${venceTrial})` : ''}.</span>
         ) : status.isPremium ? (
           <span style={{ color: '#059669' }}>✅ Premium activo {venceTrial ? `hasta el ${venceTrial}` : '(sin vencimiento)'}</span>
@@ -99,8 +104,13 @@ function TabPremium() {
           <span style={{ color: '#dc2626' }}>⚠️ Tu período de prueba venció. Suscribite para seguir usando Dashboard, Movimientos y Empleados.</span>
         )}
       </div>
+      {!verificando && status.offline && (
+        <div style={{ background: '#fffbeb', border: '1px solid #fde68a', padding: 10, borderRadius: 6, marginBottom: 16, fontSize: 13, color: '#92400e' }}>
+          No se pudo verificar la licencia con el servidor. Iniciá sesión para sincronizar el estado.
+        </div>
+      )}
       <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: 16, borderRadius: 8, marginTop: 12 }}>
-        <h4 style={{ marginTop: 0 }}>Planes Premium</h4>
+        <h4 style={{ marginTop: 0 }}>Todos los Planes incluyen:</h4>
         <ul style={{ lineHeight: 1.8 }}>
           <li>Dashboard con estadísticas de ventas</li>
           <li>Movimientos detallados</li>
@@ -126,12 +136,10 @@ function TabPremium() {
           </div>
         ))}
       </div>
-      <div style={{ marginTop: 20, padding: 12, background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 6, fontSize: 13, color: '#92400e' }}>
-        ⚠️ Después de pagar, enviame el comprobante por WhatsApp/Instagram y te activo Premium manualmente dentro de las 24 hs.
-      </div>
-      <div style={{ marginTop: 16, padding: 12, background: '#f0f9ff', border: '1px solid #bfdbfe', borderRadius: 6 }}>
-        <h4 style={{ marginTop: 0 }}>Activación de Premium</h4>
-        <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 0 }}>El Premium se activa desde el panel de proveedor una vez confirmado el pago. Si ya pagaste, esperá a que te lo activen (dentro de las 24 hs).</p>
+      <div style={{ marginTop: 20, padding: 12, background: '#f0f9ff', border: '1px solid #bfdbfe', borderRadius: 6 }}>
+        <h4 style={{ marginTop: 0 }}>Activación:</h4>
+        <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 6 }}>Los planes se activan desde el panel de proveedor una vez confirmado el pago. Si ya pagaste, por favor comunicate con nosotros a los medios de contacto publicados, tu plan se activara dentro de las 24 hs.</p>
+        <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 0 }}>Gracias por utilizar nuestro sistema, estamos a tu disposicion!!</p>
       </div>
     </div>
   );
@@ -316,23 +324,40 @@ function TabError() {
   const { user } = useAuthStore();
   const [desc, setDesc] = useState('');
   const [email, setEmail] = useState('');
-  const [enviado, setEnviado] = useState(false);
-  const enviar = () => {
-    if (!desc.trim()) { alert('Describí el error'); return; }
-    const subject = encodeURIComponent('Reporte de error - Autoservicio');
-    const body = encodeURIComponent(`Email: ${email}\nUsuario: ${user?.nombre || 'N/A'}\nEmpresa: ${user?.empresa?.nombre || 'N/A'}\n\nDescripción:\n${desc}\n\nVersión: ${VERSION_ACTUAL}`);
-    window.open(`mailto:jupitertecnologias@gmail.com?subject=${subject}&body=${body}`, '_blank');
-    setEnviado(true);
+  const [enviando, setEnviando] = useState(false);
+  const [msg, setMsg] = useState<{ texto: string; ok: boolean } | null>(null);
+
+  const enviar = async () => {
+    if (!desc.trim()) { alert('Describí el problema o sugerencia'); return; }
+    setEnviando(true);
+    setMsg(null);
+    try {
+      await enviarReporte({
+        contacto: email.trim(),
+        descripcion: desc.trim(),
+        version: VERSION_ACTUAL,
+        nombreEmpresa: user?.empresa?.nombre || null,
+        usuario: user?.nombre || null,
+      });
+      setDesc('');
+      setEmail('');
+      setMsg({ texto: 'Reporte enviado. Te responderemos a la brevedad.', ok: true });
+    } catch (e: any) {
+      setMsg({ texto: e?.message || 'No se pudo enviar el reporte. Revisá tu conexión e intentá de nuevo.', ok: false });
+    } finally {
+      setEnviando(false);
+    }
   };
+
   return (
     <div>
-      <h3>Informar de un error</h3>
-      <p style={{ color: '#6b7280', fontSize: 13 }}>Describí el problema y te responderemos a la brevedad. El reporte se enviará por email a jupitertecnologias@gmail.com.</p>
+      <h3>Enviar sugerencias o informar de un error</h3>
+      <p style={{ color: '#6b7280', fontSize: 13 }}>El reporte se enviará a tu proveedor. Describí el problema o sugerencia y te responderemos a la brevedad a tu email o telefono.</p>
       <div style={{ display: 'grid', gap: 12, marginTop: 12, maxWidth: 600 }}>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>Tu email<input value={email} onChange={e => setEmail(e.target.value)} type="email" style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>Descripción del error<textarea value={desc} onChange={e => setDesc(e.target.value)} rows={5} style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db', resize: 'vertical' }} /></label>
-        <button onClick={enviar} style={{ padding: '10px 20px', background: '#dc2626', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', width: 'fit-content' }}>Enviar reporte</button>
-        {enviado && <small style={{ color: '#059669' }}>Se abrió tu cliente de email. Si no se abrió, escribinos a jupitertecnologias@gmail.com</small>}
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>Tu email o telefono<input value={email} onChange={e => setEmail(e.target.value)} type="text" style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }} /></label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>Descripción<textarea value={desc} onChange={e => setDesc(e.target.value)} rows={5} style={{ padding: 10, borderRadius: 6, border: '1px solid #d1d5db', resize: 'vertical' }} /></label>
+        <button onClick={enviar} disabled={enviando} style={{ padding: '10px 20px', background: '#dc2626', color: 'white', border: 'none', borderRadius: 6, cursor: enviando ? 'wait' : 'pointer', width: 'fit-content' }}>{enviando ? 'Enviando...' : 'Enviar reporte'}</button>
+        {msg && <small style={{ color: msg.ok ? '#059669' : '#dc2626' }}>{msg.texto}</small>}
       </div>
     </div>
   );
@@ -345,7 +370,7 @@ function TabActualizaciones() {
   const check = async () => {
     setChecking(true); setMsg(''); setDisponible(false);
     try {
-      const res = await fetch('https://raw.githubusercontent.com/franxeg/Autoservicio/main/package.json');
+      const res = await fetch('https://raw.githubusercontent.com/franxeg/Autoservicio/main/frontend/package.json');
       if (!res.ok) throw new Error('No se pudo verificar');
       const data = await res.json();
       const remote = data.version || '?';
